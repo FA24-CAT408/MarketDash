@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.InputSystem;
 
 public class PlayerMovementTutorial : MonoBehaviour
 {
@@ -9,17 +10,22 @@ public class PlayerMovementTutorial : MonoBehaviour
     public float moveSpeed;
 
     public float groundDrag;
-
     public float jumpForce;
     public float jumpCooldown;
     public float airMultiplier;
     bool readyToJump;
 
-    [HideInInspector] public float walkSpeed;
-    [HideInInspector] public float sprintSpeed;
+    public float walkSpeed;
+    public float sprintSpeed;
 
     [Header("Keybinds")]
-    public KeyCode jumpKey = KeyCode.Space;
+    public PlayerControls controls;
+    private InputAction movement;
+    private InputAction jump;
+    private InputAction sprint;
+
+    // public KeyCode jumpKey = KeyCode.Space;
+    // public KeyCode sprintKey = KeyCode.LeftShift;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -28,12 +34,73 @@ public class PlayerMovementTutorial : MonoBehaviour
 
     public Transform orientation;
 
-    float horizontalInput;
-    float verticalInput;
+    // float horizontalInput;
+    // float verticalInput;
 
+    bool isSprinting;
+    Vector2 movementInput;
     Vector3 moveDirection;
 
     Rigidbody rb;
+
+    public MovementState currentMovementState;
+
+    public enum MovementState
+    {
+        Walking,
+        Sprinting,
+        Air
+    }
+
+    private void StateHandler()
+    {
+        if (grounded && isSprinting)
+        {
+            currentMovementState = MovementState.Sprinting;
+            moveSpeed = sprintSpeed;
+        }
+        else if (grounded)
+        {
+            currentMovementState = MovementState.Walking;
+            moveSpeed = walkSpeed;
+        }
+        else
+        {
+            currentMovementState = MovementState.Air;
+        }
+    }
+
+    private void Awake()
+    {
+        controls = new PlayerControls();
+    }
+
+    private void OnEnable()
+    {
+        movement = controls.Player.Move;
+        movement.Enable();
+        movement.performed += ctx => movementInput = ctx.ReadValue<Vector2>();
+        movement.canceled += ctx => movementInput = Vector2.zero;
+
+
+        jump = controls.Player.Jump;
+        jump.Enable();
+
+
+        sprint = controls.Player.Sprint;
+        sprint.Enable();
+        sprint.performed += ctx => isSprinting = true;
+        sprint.canceled += ctx => isSprinting = false;
+
+
+    }
+
+    private void OnDisable()
+    {
+        movement.Disable();
+        jump.Disable();
+        sprint.Disable();
+    }
 
     private void Start()
     {
@@ -48,8 +115,8 @@ public class PlayerMovementTutorial : MonoBehaviour
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
 
-        MyInput();
         SpeedControl();
+        StateHandler();
 
         // handle drag
         if (grounded)
@@ -63,13 +130,9 @@ public class PlayerMovementTutorial : MonoBehaviour
         MovePlayer();
     }
 
-    private void MyInput()
+    public void OnJump(InputAction.CallbackContext context)
     {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
-        verticalInput = Input.GetAxisRaw("Vertical");
-
-        // when to jump
-        if(Input.GetKey(jumpKey) && readyToJump && grounded)
+        if (context.performed && readyToJump && grounded)
         {
             readyToJump = false;
 
@@ -82,15 +145,15 @@ public class PlayerMovementTutorial : MonoBehaviour
     private void MovePlayer()
     {
         // calculate movement direction
-        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        moveDirection = orientation.forward * movementInput.y + orientation.right * movementInput.x;
 
         // on ground
-        if(grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+        if (grounded)
+            rb.AddForce(10f * moveSpeed * moveDirection.normalized, ForceMode.Force);
 
         // in air
-        else if(!grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
+        else if (!grounded)
+            rb.AddForce(10f * airMultiplier * moveSpeed * moveDirection.normalized, ForceMode.Force);
     }
 
     private void SpeedControl()
@@ -98,7 +161,7 @@ public class PlayerMovementTutorial : MonoBehaviour
         Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
         // limit velocity if needed
-        if(flatVel.magnitude > moveSpeed)
+        if (flatVel.magnitude > moveSpeed)
         {
             Vector3 limitedVel = flatVel.normalized * moveSpeed;
             rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
