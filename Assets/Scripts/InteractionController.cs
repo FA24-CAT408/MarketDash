@@ -1,10 +1,33 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Linq;
 
 public class InteractionController : MonoBehaviour
 {
-    public bool canInteract = false;
+    [Header("Keybinds")]
+    public PlayerControls controls;
+    private InputAction interact;
+
+    [Header("Interaction")]
+    public Transform interactCheck;
+    public LayerMask interactLayer;
+    public float interactRadius;
+    public bool interactGizmos = false;
+    public Collider[] interactColliders;
+
+    private void Awake()
+    {
+        controls = new PlayerControls();
+    }
+
+    private void OnEnable()
+    {
+        interact = controls.Player.Interact;
+        controls.Enable();
+        interact.performed += ctx => Interact();
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -15,18 +38,29 @@ public class InteractionController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (canInteract && Input.GetKeyDown(KeyCode.E))
+        interactColliders = Physics.OverlapSphere(interactCheck.position, interactRadius, interactLayer);
+    }
+
+    void Interact()
+    {
+        Collider closestCollider = interactColliders.OrderBy(x => Vector3.Distance(interactCheck.position, x.transform.position)).FirstOrDefault();
+
+        if (closestCollider != null)
         {
-            Debug.Log("Interacted with object!");
+            closestCollider.GetComponent<IInteractable>().Interact();
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnDrawGizmos()
     {
-        if (other.CompareTag("Interactable"))
+        if (interactGizmos)
         {
-            Debug.Log("Interactable object detected!");
-            canInteract = true;
+            if (interactColliders.Length > 0)
+                Gizmos.color = Color.green;
+            else
+                Gizmos.color = Color.red;
+
+            Gizmos.DrawWireSphere(interactCheck.position, interactRadius);
         }
     }
 }
