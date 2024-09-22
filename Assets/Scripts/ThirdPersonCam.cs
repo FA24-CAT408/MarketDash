@@ -20,6 +20,7 @@ public class ThirdPersonCam : MonoBehaviour
     private InputAction moveAction;
 
     private Vector2 moveInput;
+    private Vector3 lastInputDir;
 
     private void Awake()
     {
@@ -31,12 +32,14 @@ public class ThirdPersonCam : MonoBehaviour
         moveAction = controls.Player.Move;
         moveAction.Enable();
         moveAction.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+        // moveAction.canceled += ctx => moveInput = Vector2.zero;
     }
 
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        lastInputDir = playerObj.forward;
     }
 
     private void Update()
@@ -50,7 +53,16 @@ public class ThirdPersonCam : MonoBehaviour
 
         Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
+
         if (inputDir != Vector3.zero)
+        {
             playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
+
+        }
+        else
+        {
+            // Maintain the last rotation when there's no input
+            playerObj.forward = Vector3.Slerp(playerObj.forward, lastInputDir, Time.deltaTime * rotationSpeed);
+        }
     }
 }

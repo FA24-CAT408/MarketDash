@@ -34,9 +34,6 @@ public class PlayerMovementTutorial : MonoBehaviour
 
     public Transform orientation;
 
-    // float horizontalInput;
-    // float verticalInput;
-
     bool isSprinting;
     Vector2 movementInput;
     Vector3 moveDirection;
