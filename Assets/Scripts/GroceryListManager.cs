@@ -29,7 +29,7 @@ public class GroceryListManager : MonoBehaviour
     {
         GameObject itemUIText = Instantiate(itemTextPrefab, new Vector3(groceryListText.transform.position.x + 50, groceryListText.transform.position.y - 30 * groceryList.Count, groceryListText.transform.position.z), Quaternion.identity);
         itemUIText.transform.SetParent(groceryListText.transform.parent);
-        itemUIText.GetComponent<TMP_Text>().text = item.itemName + " x" + item.amount;
+        itemUIText.GetComponent<TMP_Text>().text = item.itemName + " x " + item.amount;
         itemUITexts.Add(itemUIText);
     }
 
@@ -46,7 +46,7 @@ public class GroceryListManager : MonoBehaviour
         if (item.amount == 0)
         {
             item.alreadyPickedUp = true;
-            item.GetComponent<MeshRenderer>().material.color = Color.green;
+            item.GetComponent<Renderer>().material.color = Color.green;
             itemUITexts.Find(x => x.GetComponent<TMP_Text>().text.Contains(item.itemName)).GetComponent<TMP_Text>().color = Color.green;
         }
     }

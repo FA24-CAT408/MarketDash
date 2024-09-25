@@ -16,10 +16,15 @@ public class Item : MonoBehaviour, IInteractable
         groceryListManager = FindObjectOfType<GroceryListManager>();
 
         // Set the item color
-        GetComponent<MeshRenderer>().material.color = itemColor;
+        // GetComponent<Renderer>().material.color = itemColor;
+    }
 
-        //turn off emission
-        GetComponent<MeshRenderer>().material.DisableKeyword("_EMISSION");
+    void Update()
+    {
+
+        // Rotate the item
+        transform.Rotate(new Vector3(0, 30, 0) * Time.deltaTime);
+
     }
 
     public void Interact()
