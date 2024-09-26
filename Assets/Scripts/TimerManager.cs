@@ -11,14 +11,22 @@ public class TimerManager : MonoBehaviour
     public GameObject startTimerObj;
     public GameObject stopTimerObj;
 
+    public GameObject startWall;
+    public GameObject stopWall;
+
     public float timer;
     public bool timerActive;
 
     public void StartTimer()
     {
+        timer = 0;
+
         timerActive = true;
         startTimerObj.SetActive(false);
         stopTimerObj.SetActive(true);
+
+        startWall.SetActive(true);
+        stopWall.SetActive(false);
 
         StartCoroutine(Timer());
     }
@@ -28,6 +36,9 @@ public class TimerManager : MonoBehaviour
         timerActive = false;
         stopTimerObj.SetActive(false);
         startTimerObj.SetActive(true);
+
+        startWall.SetActive(false);
+        stopWall.SetActive(true);
 
         UpdateTimerUI();
         StopCoroutine(Timer());

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovementTutorial : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class PlayerMovementTutorial : MonoBehaviour
     private InputAction movement;
     private InputAction jump;
     private InputAction sprint;
+    private InputAction restartGame;
 
     // public KeyCode jumpKey = KeyCode.Space;
     // public KeyCode sprintKey = KeyCode.LeftShift;
@@ -89,6 +91,9 @@ public class PlayerMovementTutorial : MonoBehaviour
         sprint.performed += ctx => isSprinting = true;
         sprint.canceled += ctx => isSprinting = false;
 
+        restartGame = controls.Player.Restart;
+        restartGame.Enable();
+        restartGame.performed += ctx => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 
     }
 

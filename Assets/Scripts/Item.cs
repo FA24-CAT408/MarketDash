@@ -6,7 +6,6 @@ public class Item : MonoBehaviour, IInteractable
 {
     public string itemName;
     public int amount;
-    public Color itemColor;
     public bool alreadyPickedUp = false;
 
     private GroceryListManager groceryListManager;
@@ -25,12 +24,17 @@ public class Item : MonoBehaviour, IInteractable
         // Rotate the item
         transform.Rotate(new Vector3(0, 30, 0) * Time.deltaTime);
 
+        if (amount <= 0)
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void Interact()
     {
         if (!alreadyPickedUp)
         {
+            amount--;
             groceryListManager.RemoveItem(this);
         }
     }

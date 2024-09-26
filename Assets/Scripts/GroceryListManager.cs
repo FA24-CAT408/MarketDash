@@ -7,47 +7,61 @@ using System.Linq;
 public class GroceryListManager : MonoBehaviour
 {
     public List<Item> groceryList;
-    public List<GameObject> itemUITexts;
-
-    [Header("UI")]
-    public TMP_Text groceryListText;
+    public Transform listContainer; // Parent container for all item texts
     public GameObject itemTextPrefab;
+
+    private Dictionary<string, TMP_Text> itemUITexts = new Dictionary<string, TMP_Text>(); // Track UI by item name
+    private Dictionary<string, int> itemCounts = new Dictionary<string, int>(); // Track total counts of each item
 
     // Start is called before the first frame update
     void Start()
     {
-        groceryListText.text = "Items:\n";
-
         foreach (Item item in groceryList)
         {
-            // Instantiate the item text
-            InstantiateItemText(item);
+            if (!itemCounts.ContainsKey(item.itemName))
+            {
+                itemCounts[item.itemName] = item.amount;
+                TMP_Text itemText = InstantiateItemText(item);
+                itemUITexts[item.itemName] = itemText;
+            }
+            else
+            {
+                itemCounts[item.itemName] += item.amount;
+                UpdateItemText(item);
+            }
         }
     }
 
-    void InstantiateItemText(Item item)
+    TMP_Text InstantiateItemText(Item item)
     {
-        GameObject itemUIText = Instantiate(itemTextPrefab, new Vector3(groceryListText.transform.position.x + 50, groceryListText.transform.position.y - 30 * groceryList.Count, groceryListText.transform.position.z), Quaternion.identity);
-        itemUIText.transform.SetParent(groceryListText.transform.parent);
-        itemUIText.GetComponent<TMP_Text>().text = item.itemName + " x " + item.amount;
-        itemUITexts.Add(itemUIText);
+        GameObject itemUIText = Instantiate(itemTextPrefab, listContainer);
+        TMP_Text textComponent = itemUIText.GetComponent<TMP_Text>();
+        textComponent.text = $"{item.itemName} x {item.amount}";
+        return textComponent;
     }
 
     public void RemoveItem(Item item)
     {
-        // Subtract 1 from the amount of the item, until it reaches 0 then turn that item text green
-
-        if (item.amount > 0)
+        if (itemCounts.ContainsKey(item.itemName) && itemCounts[item.itemName] > 0)
         {
-            item.amount--;
-            itemUITexts.Find(x => x.GetComponent<TMP_Text>().text.Contains(item.itemName)).GetComponent<TMP_Text>().text = item.itemName + " x" + item.amount;
+            itemCounts[item.itemName]--;
+            UpdateItemText(item);
+
+            // If item count reaches 0, mark it as completed (turn the text green)
+            if (itemCounts[item.itemName] == 0)
+            {
+                item.alreadyPickedUp = true;
+                itemUITexts[item.itemName].color = Color.green;
+            }
         }
+    }
 
-        if (item.amount == 0)
+    void UpdateItemText(Item item)
+    {
+        if (itemUITexts.ContainsKey(item.itemName))
         {
-            item.alreadyPickedUp = true;
-            item.GetComponent<Renderer>().material.color = Color.green;
-            itemUITexts.Find(x => x.GetComponent<TMP_Text>().text.Contains(item.itemName)).GetComponent<TMP_Text>().color = Color.green;
+            TMP_Text itemText = itemUITexts[item.itemName];
+            itemText.text = $"{item.itemName} x {itemCounts[item.itemName]}";
         }
     }
 }
