@@ -6,12 +6,28 @@ using System.Linq;
 
 public class GroceryListManager : MonoBehaviour
 {
+    public static GroceryListManager Instance { get; private set; }
+
     public List<Item> groceryList;
     public Transform listContainer; // Parent container for all item texts
     public GameObject itemTextPrefab;
 
     private Dictionary<string, TMP_Text> itemUITexts = new Dictionary<string, TMP_Text>(); // Track UI by item name
     private Dictionary<string, int> itemCounts = new Dictionary<string, int>(); // Track total counts of each item
+
+    private void Awake()
+    {
+        // Check if an instance already exists and destroy this one if it does
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+            // DontDestroyOnLoad(gameObject);
+        }
+    }
 
     // Start is called before the first frame update
     void Start()

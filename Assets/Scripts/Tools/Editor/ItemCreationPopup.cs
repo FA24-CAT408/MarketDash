@@ -7,8 +7,12 @@ public class ItemCreationPopup : EditorWindow
 {
     private string itemName = "";
 
-    public static void ShowWindow()
+    private static GameObject itemPrefab;
+
+    public static void ShowWindow(GameObject prefab)
     {
+        itemPrefab = prefab;
+
         // Open the popup window
         var window = GetWindow<ItemCreationPopup>(true, "Create New Item", true);
         window.maxSize = new Vector2(500, 500);
@@ -30,8 +34,12 @@ public class ItemCreationPopup : EditorWindow
         {
             if (!string.IsNullOrEmpty(itemName))
             {
-                CreateItem(itemName);
+                Item item = CreateItem(itemName);
+
                 this.Close();  // Close the popup after creation
+
+                AddItemToGroceryList(item);
+
             }
             else
             {
@@ -40,10 +48,43 @@ public class ItemCreationPopup : EditorWindow
         }
     }
 
-    private void CreateItem(string itemName)
+    private Item CreateItem(string itemName)
     {
-        // Create a new GameObject in the scene with the provided item name
-        GameObject newItem = new GameObject(itemName);
-        Debug.Log($"Item '{itemName}' created in the scene.");
+        if (itemPrefab != null)
+        {
+            // Instantiate the prefab
+            GameObject newItem = (GameObject)PrefabUtility.InstantiatePrefab(itemPrefab);
+            newItem.name = itemName;  // Set the name to the user-provided item name
+
+            Item itemComponent = newItem.GetComponent<Item>();
+            itemComponent.itemName = itemName;
+
+            GameObject itemsParent = GameObject.Find("Items");
+            newItem.transform.parent = itemsParent.transform;
+
+            Debug.Log($"Item '{itemName}' created from prefab in the scene.");
+
+            return newItem.GetComponent<Item>();
+        }
+        else
+        {
+            Debug.LogError("Prefab is not assigned.");
+        }
+
+        return null;
+    }
+
+    private void AddItemToGroceryList(Item item)
+    {
+        GroceryListManager groceryListManager = FindObjectOfType<GroceryListManager>();
+
+        if (groceryListManager != null && item != null)
+        {
+            groceryListManager.groceryList.Add(item);
+        }
+        else
+        {
+            GUILayout.Label("Grocery List Manager not found in the scene", EditorStyles.boldLabel);
+        }
     }
 }

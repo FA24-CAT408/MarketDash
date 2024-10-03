@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6279620859132893515}
   m_Layer: 6
   m_Name: Item
-  m_TagString: Untagged
+  m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -121,4 +121,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Muffin
   amount: 1
-  alreadyPickedUp: 0

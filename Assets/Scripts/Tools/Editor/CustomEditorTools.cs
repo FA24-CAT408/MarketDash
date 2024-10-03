@@ -9,8 +9,6 @@ public class CustomEditorTools : EditorWindow
     GameObject playerSpawnPoint;
     GameObject itemPrefab;
 
-    string itemName;
-
     [MenuItem("Tools/CrazyMarket/Crazy Market Window")]
     private static void ShowWindow()
     {
@@ -86,7 +84,23 @@ public class CustomEditorTools : EditorWindow
         if (GUILayout.Button("Instantiate Item"))
         {
             // Open custom popup window to ask for item name
-            ItemCreationPopup.ShowWindow();
+            GameObject itemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Item.prefab");
+            ItemCreationPopup.ShowWindow(itemPrefab);
+        }
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Find Grocery List"))
+        {
+            GroceryListManager groceryListManager = FindObjectOfType<GroceryListManager>();
+            if (groceryListManager != null)
+            {
+                Selection.activeGameObject = groceryListManager.gameObject;
+            }
+            else
+            {
+                Debug.LogError("Grocery List Manager not found in the scene");
+            }
         }
     }
 
