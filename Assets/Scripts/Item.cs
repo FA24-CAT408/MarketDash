@@ -6,16 +6,12 @@ public class Item : MonoBehaviour, IInteractable
 {
     public string itemName;
     public int amount;
-    public bool alreadyPickedUp = false;
 
     private GroceryListManager groceryListManager;
 
     public void Start()
     {
         groceryListManager = FindObjectOfType<GroceryListManager>();
-
-        // Set the item color
-        // GetComponent<Renderer>().material.color = itemColor;
     }
 
     void Update()
@@ -32,7 +28,7 @@ public class Item : MonoBehaviour, IInteractable
 
     public void Interact()
     {
-        if (!alreadyPickedUp)
+        if (amount > 0)
         {
             amount--;
             groceryListManager.RemoveItem(this);

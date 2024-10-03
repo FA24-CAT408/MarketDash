@@ -50,7 +50,6 @@ public class GroceryListManager : MonoBehaviour
             // If item count reaches 0, mark it as completed (turn the text green)
             if (itemCounts[item.itemName] == 0)
             {
-                item.alreadyPickedUp = true;
                 itemUITexts[item.itemName].color = Color.green;
             }
         }

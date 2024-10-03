@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028373, g: 0.22571398, b: 0.30692294, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -9211,7 +9211,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Chocolate
   amount: 5
-  alreadyPickedUp: 0
 --- !u!64 &768499356
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -18708,7 +18707,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!54 &1736960638
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -21209,7 +21208,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!54 &1876019544
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -22842,12 +22841,12 @@ PrefabInstance:
     - target: {fileID: 5155503876392902122, guid: a169dc00cb20e6a4d992ea29b7378b37,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.000000017659854
+      value: -0.00000001765986
       objectReference: {fileID: 0}
     - target: {fileID: 5155503876392902122, guid: a169dc00cb20e6a4d992ea29b7378b37,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.0000000016409462
+      value: 0.0000000016409466
       objectReference: {fileID: 0}
     - target: {fileID: 5270382301852483760, guid: a169dc00cb20e6a4d992ea29b7378b37,
         type: 3}
