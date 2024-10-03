@@ -7,7 +7,6 @@ public class PlayerCollisionManager : MonoBehaviour
 {
     public UnityEvent startTimer;
     public UnityEvent stopTimer;
-
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.name == "Start Timer")
@@ -17,6 +16,10 @@ public class PlayerCollisionManager : MonoBehaviour
         else if (other.gameObject.name == "Stop Timer")
         {
             stopTimer.Invoke();
+        }
+        else if (other.gameObject.CompareTag("Item"))
+        {
+            other.GetComponent<Item>().Interact();
         }
     }
 }

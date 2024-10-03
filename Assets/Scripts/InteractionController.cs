@@ -22,12 +22,12 @@ public class InteractionController : MonoBehaviour
         controls = new PlayerControls();
     }
 
-    private void OnEnable()
-    {
-        interact = controls.Player.Interact;
-        controls.Enable();
-        interact.performed += ctx => Interact();
-    }
+    // private void OnEnable()
+    // {
+    //     interact = controls.Player.Interact;
+    //     controls.Enable();
+    //     interact.performed += ctx => Interact();
+    // }
 
     // Start is called before the first frame update
     void Start()
