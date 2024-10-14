@@ -6,8 +6,9 @@ using System;
 
 public class CustomEditorTools : EditorWindow
 {
-    GameObject playerSpawnPoint;
-    GameObject itemPrefab;
+    GameObject _playerSpawnPoint;
+    PlayerStateMachine _playerStateMachine;
+
 
     [MenuItem("Tools/CrazyMarket/Crazy Market Window")]
     private static void ShowWindow()
@@ -19,6 +20,7 @@ public class CustomEditorTools : EditorWindow
 
     private void OnGUI()
     {
+        // Repaint();
 
         DrawPlayerTools();
 
@@ -32,7 +34,37 @@ public class CustomEditorTools : EditorWindow
     {
         GUILayout.Label("Player Tools", EditorStyles.boldLabel);
 
-        playerSpawnPoint = (GameObject)EditorGUILayout.ObjectField("Player Spawn Point", playerSpawnPoint, typeof(GameObject), true);
+        // _playerSpawnPoint = (GameObject)EditorGUILayout.ObjectField("Player Spawn Point", _playerSpawnPoint, typeof(GameObject), true);
+
+        _playerSpawnPoint = GameObject.FindGameObjectWithTag("SpawnPoint");
+        var player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player != null)
+        {
+            _playerStateMachine = player.GetComponent<PlayerStateMachine>();
+            if (_playerStateMachine != null)
+            {
+                // Display Current State
+                GUILayout.Label("Current State: " + _playerStateMachine.CurrentStateName, EditorStyles.label);
+
+                // Display Sub-State if applicable
+                var currentSubState = _playerStateMachine.CurrentState; // Assuming sub-state tracking in your PlayerStateMachine
+                if (currentSubState != null)
+                {
+                    GUILayout.Label("Sub-State: " + currentSubState.GetType().Name, EditorStyles.label);
+                }
+            }
+            else
+            {
+                GUILayout.Label("PlayerStateMachine component not found on Player", EditorStyles.helpBox);
+            }
+        }
+        else
+        {
+            GUILayout.Label("Player not found in the scene", EditorStyles.helpBox);
+        }
+
+        GUILayout.Space(5);
 
         GUILayout.Space(5);
 
@@ -45,7 +77,7 @@ public class CustomEditorTools : EditorWindow
 
         if (GUILayout.Button("Move Player To Spawn Point"))
         {
-            if (playerSpawnPoint != null)
+            if (_playerSpawnPoint != null)
             {
                 MovePlayerToSpawnPoint();
             }
@@ -69,7 +101,7 @@ public class CustomEditorTools : EditorWindow
             MoveSpawnPointToSceneViewCamera();
         }
 
-        if (playerSpawnPoint == null)
+        if (_playerSpawnPoint == null)
         {
             EditorGUILayout.HelpBox("Please assign the Player Spawn Point", MessageType.Warning);
         }
@@ -107,22 +139,21 @@ public class CustomEditorTools : EditorWindow
     // Tool Methods (Modularize these to keep OnGUI clean)
     private void ResetSpawnPointPosition()
     {
-        if (playerSpawnPoint != null)
+        if (_playerSpawnPoint != null)
         {
-            playerSpawnPoint.transform.position = new Vector3(59, -3, -21);
-            playerSpawnPoint.transform.rotation = Quaternion.identity;
+            _playerSpawnPoint.transform.position = new Vector3(59, -3, -21);
+            _playerSpawnPoint.transform.rotation = Quaternion.identity;
         }
     }
 
     private void MovePlayerToSpawnPoint()
     {
-        if (playerSpawnPoint != null)
+        if (_playerSpawnPoint != null)
         {
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                player.transform.position = playerSpawnPoint.transform.position;
-                player.transform.rotation = playerSpawnPoint.transform.rotation;
+                player.transform.position = _playerSpawnPoint.transform.position;
             }
             else
             {
@@ -134,10 +165,9 @@ public class CustomEditorTools : EditorWindow
     private void MoveSpawnPointToPlayer()
     {
         var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null && playerSpawnPoint != null)
+        if (player != null && _playerSpawnPoint != null)
         {
-            playerSpawnPoint.transform.position = player.transform.position;
-            playerSpawnPoint.transform.rotation = player.transform.rotation;
+            _playerSpawnPoint.transform.position = player.transform.position;
         }
         else
         {
@@ -148,10 +178,9 @@ public class CustomEditorTools : EditorWindow
     private void MoveSpawnPointToSceneViewCamera()
     {
         var sceneViewCamera = SceneView.lastActiveSceneView.camera;
-        if (sceneViewCamera != null && playerSpawnPoint != null)
+        if (sceneViewCamera != null && _playerSpawnPoint != null)
         {
-            playerSpawnPoint.transform.position = sceneViewCamera.transform.position;
-            playerSpawnPoint.transform.rotation = sceneViewCamera.transform.rotation;
+            _playerSpawnPoint.transform.position = sceneViewCamera.transform.position;
         }
     }
 }
