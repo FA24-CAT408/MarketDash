@@ -22,6 +22,7 @@ public class PlayerStateMachine : MonoBehaviour
 
     //Constants
     float _rotationFactorPerFrame = 15f;
+    bool _hasStoppedMoving;
     [SerializeField] float _baseSpeed = 10.0f;
     [SerializeField] float _runMultiplier = 3.0f;
 
@@ -31,8 +32,8 @@ public class PlayerStateMachine : MonoBehaviour
     //jumping variables
     bool _isJumpPressed = false;
     float _initialJumpVelocity;
-    float _maxJumpHeight = 3.0f;
-    float _maxJumpTime = 0.75f;
+    [SerializeField] float _maxJumpHeight = 3.0f;
+    [SerializeField] float _maxJumpTime = 0.75f;
     bool _isJumping;
     bool _requireNewJumpPress;
 
@@ -49,7 +50,7 @@ public class PlayerStateMachine : MonoBehaviour
         set
         {
             _currentState = value;
-            // _currentStateName = _currentState.GetStateHierarchy();
+            _currentStateName = _currentState.GetStateHierarchy();
         }
     }
 
@@ -65,6 +66,7 @@ public class PlayerStateMachine : MonoBehaviour
     public float AppliedMovementY { get { return _appliedMovement.y; } set { _appliedMovement.y = value; } }
     public float AppliedMovementX { get { return _appliedMovement.x; } set { _appliedMovement.x = value; } }
     public float AppliedMovementZ { get { return _appliedMovement.z; } set { _appliedMovement.z = value; } }
+    public bool HasStoppedMoving { get { return _hasStoppedMoving; } }
     public float RunMultiplier { get { return _runMultiplier; } }
     public float BaseSpeed { get { return _baseSpeed; } }
     public Vector2 CurrentMovementInput { get { return _currentMovementInput; } }
@@ -90,6 +92,10 @@ public class PlayerStateMachine : MonoBehaviour
         _playerInput.Player.Jump.canceled += OnJump;
 
         SetupJumpVariables();
+
+        //Turn off cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void SetupJumpVariables()
@@ -106,13 +112,21 @@ public class PlayerStateMachine : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         HandleRotation();
+        HasPlayerStoppedMoving();
         _currentState.UpdateStates();
         _cameraRelativeMovement = ConvertToCameraSpace(_appliedMovement);
-        _characterController.Move(_cameraRelativeMovement * Time.fixedDeltaTime);
+        _characterController.Move(_cameraRelativeMovement * Time.deltaTime);
     }
+
+    void HasPlayerStoppedMoving()
+    {
+        float threshold = 0.05f;
+        _hasStoppedMoving = Mathf.Abs(_appliedMovement.x) < threshold && Mathf.Abs(_appliedMovement.z) < threshold;
+    }
+
 
     Vector3 ConvertToCameraSpace(Vector3 vectorToRotate)
     {

@@ -18,7 +18,6 @@ public class PlayerGroundedState : PlayerBaseState, IRootState
     public override void EnterState()
     {
         InitializeSubStates();
-        Debug.Log("IN GROUNDED STATE!");
         HandleGravity();
     }
 
@@ -29,7 +28,6 @@ public class PlayerGroundedState : PlayerBaseState, IRootState
 
     public override void ExitState()
     {
-        Debug.Log("LEAVING GROUNDED STATE");
     }
 
     public override void CheckSwitchStates()
@@ -46,19 +44,16 @@ public class PlayerGroundedState : PlayerBaseState, IRootState
 
     public override void InitializeSubStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed)
+        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed && Ctx.HasStoppedMoving)
         {
-            Debug.Log("IDLE STATE");
             SetSubState(Factory.Idle());
         }
         else if (Ctx.IsMovementPressed && !Ctx.IsRunPressed)
         {
-            Debug.Log("WALK STATE STATE");
             SetSubState(Factory.Walk());
         }
         else
         {
-            Debug.Log("IDLE STATE");
             SetSubState(Factory.Run());
         }
     }

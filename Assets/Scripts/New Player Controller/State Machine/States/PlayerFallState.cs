@@ -40,7 +40,7 @@ public class PlayerFallState : PlayerBaseState, IRootState
 
     public override void InitializeSubStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed)
+        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed && Ctx.HasStoppedMoving)
         {
             SetSubState(Factory.Idle());
         }

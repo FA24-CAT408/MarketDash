@@ -9,8 +9,31 @@ public class PlayerRunState : PlayerBaseState
 
     public override void UpdateState()
     {
-        Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
-        Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+        Debug.Log("RUNNING");
+
+        if (Ctx.IsMovementPressed)
+        {
+            // Apply movement based on input
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+        }
+        else
+        {
+            if (Ctx.CharacterController.isGrounded)
+            {
+                // Gradually decelerate when input is released
+                Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, 0, 1f);
+                Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, 0, 1f);
+            }
+            else
+            {
+                Debug.Log("SLOWING DOWN - RUN STATE");
+
+                Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
+                Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
+            }
+        }
+
         CheckSwitchStates();
     }
 
@@ -20,7 +43,7 @@ public class PlayerRunState : PlayerBaseState
 
     public override void CheckSwitchStates()
     {
-        if (!Ctx.IsMovementPressed)
+        if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
         {
             SwitchState(Factory.Idle());
         }

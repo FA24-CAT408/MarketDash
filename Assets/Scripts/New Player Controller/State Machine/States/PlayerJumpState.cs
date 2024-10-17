@@ -18,6 +18,7 @@ public class PlayerJumpState : PlayerBaseState, IRootState
     public override void UpdateState()
     {
         HandleGravity();
+        HandleHorizontalMomentum();
         CheckSwitchStates();
     }
 
@@ -31,7 +32,7 @@ public class PlayerJumpState : PlayerBaseState, IRootState
 
     public override void InitializeSubStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed)
+        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed && Ctx.HasStoppedMoving)
         {
             SetSubState(Factory.Idle());
         }
@@ -76,6 +77,33 @@ public class PlayerJumpState : PlayerBaseState, IRootState
             float previousYVelocity = Ctx.CurrentMovementY;
             Ctx.CurrentMovementY = Ctx.CurrentMovementY + (Ctx.Gravity * Time.deltaTime);
             Ctx.AppliedMovementY = (previousYVelocity + Ctx.CurrentMovementY) * .5f;
+        }
+    }
+
+    private void HandleHorizontalMomentum()
+    {
+        if (Ctx.IsMovementPressed)
+        {
+            // Debug.Log("MOVEMENT IS PRESSED");
+            // Debug.Log("Applied Movement X: " + Ctx.AppliedMovementX);
+            // Debug.Log("Applied Movement Z: " + Ctx.AppliedMovementZ);
+            // Debug.Log("==========");
+
+            // Continue using player input for movement if available
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+        }
+        else
+        {
+            // Debug.Log("MOVEMENT IS NOT PRESSED");
+            // Debug.Log("Applied Movement X: " + Ctx.AppliedMovementX);
+            // Debug.Log("Applied Movement Z: " + Ctx.AppliedMovementZ);
+
+            // Gradual deceleration when input is not pressed
+            float decelerationRate = 0.01f;
+            Debug.Log("Decelerating - JUMP STATE");
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, 0, decelerationRate * Time.deltaTime);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, 0, decelerationRate * Time.deltaTime);
         }
     }
 }

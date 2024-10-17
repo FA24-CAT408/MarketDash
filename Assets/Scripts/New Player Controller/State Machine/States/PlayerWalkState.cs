@@ -11,8 +11,30 @@ public class PlayerWalkState : PlayerBaseState
 
     public override void UpdateState()
     {
-        Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed, 0.1f);
-        Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed, 0.1f);
+        Debug.Log("WALKING");
+
+        if (Ctx.IsMovementPressed)
+        {
+            // Apply movement based on input
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed, 0.1f);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed, 0.1f);
+        }
+        else
+        {
+            if (Ctx.CharacterController.isGrounded)
+            {
+                // Gradually decelerate when input is released
+                Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, 0, 1f);
+                Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, 0, 1f);
+            }
+            else
+            {
+                Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed, 0.01f);
+                Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed, 0.01f);
+            }
+        }
+
+
         CheckSwitchStates();
     }
 
@@ -22,11 +44,11 @@ public class PlayerWalkState : PlayerBaseState
 
     public override void CheckSwitchStates()
     {
-        if (!Ctx.IsMovementPressed)
+        if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
         {
             SwitchState(Factory.Idle());
         }
-        else if (Ctx.IsMovementPressed && Ctx.IsMovementPressed)
+        else if (Ctx.IsMovementPressed && Ctx.IsRunPressed)
         {
             SwitchState(Factory.Run());
         }
