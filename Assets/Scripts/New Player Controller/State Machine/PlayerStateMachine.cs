@@ -108,10 +108,6 @@ public class PlayerStateMachine : MonoBehaviour
         _playerInput.Player.Jump.canceled += OnJump;
 
         SetupJumpVariables();
-
-        //Turn off cursor
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     void SetupJumpVariables()
