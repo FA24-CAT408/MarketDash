@@ -5,11 +5,16 @@ using UnityEngine.InputSystem;
 
 public class PlayerStateMachine : MonoBehaviour
 {
+
+    //Singleton
+    public static PlayerStateMachine Instance { get; private set; }
+
     [SerializeField] string _currentStateName;
 
     //reference variables
     PlayerControls _playerInput;
     CharacterController _characterController;
+    DebugController _debugController;
 
     //Variables to store player input
     Vector2 _currentMovementInput;
@@ -68,13 +73,24 @@ public class PlayerStateMachine : MonoBehaviour
     public float AppliedMovementZ { get { return _appliedMovement.z; } set { _appliedMovement.z = value; } }
     public bool HasStoppedMoving { get { return _hasStoppedMoving; } }
     public float RunMultiplier { get { return _runMultiplier; } }
-    public float BaseSpeed { get { return _baseSpeed; } }
+    public float BaseSpeed { get { return _baseSpeed; } set { _baseSpeed = value; } }
     public Vector2 CurrentMovementInput { get { return _currentMovementInput; } }
 
     void Awake()
     {
+        //Singleton
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
+
         _playerInput = new PlayerControls();
         _characterController = GetComponent<CharacterController>();
+        _debugController = GetComponent<DebugController>();
 
         // setup state
         _states = new PlayerStateFactory(this);
@@ -114,6 +130,8 @@ public class PlayerStateMachine : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (_debugController.ShowConsole) return;
+
         HandleRotation();
         HasPlayerStoppedMoving();
         _currentState.UpdateStates();
