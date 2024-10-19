@@ -35,11 +35,14 @@ public class PlayerStateMachine : MonoBehaviour
     [SerializeField] float _gravity = -9.8f;
 
     //jumping variables
+    [SerializeField] bool _godMode = false;
     bool _isJumpPressed = false;
+    bool _isCrouchPressed = false;
     float _initialJumpVelocity;
     [SerializeField] float _maxJumpHeight = 3.0f;
     [SerializeField] float _maxJumpTime = 0.75f;
     bool _isJumping;
+    bool _isFlying;
     bool _requireNewJumpPress;
 
     // state variables
@@ -60,12 +63,15 @@ public class PlayerStateMachine : MonoBehaviour
     }
 
     public CharacterController CharacterController { get { return _characterController; } }
+    public bool GodMode { get { return _godMode; } set { _godMode = value; } }
     public float InitialJumpVelocity { get { return _initialJumpVelocity; } }
     public float Gravity { get { return _gravity; } }
     public bool IsJumpPressed { get { return _isJumpPressed; } }
     public bool IsMovementPressed { get { return _isMovementPresed; } }
     public bool IsRunPressed { get { return _isRunPressed; } }
+    public bool IsCrouchPressed { get { return _isCrouchPressed; } }
     public bool IsJumping { set { _isJumping = value; } }
+    public bool IsFlying { set { _isFlying = value; } }
     public bool RequireNewJumpPress { get { return _requireNewJumpPress; } set { _requireNewJumpPress = value; } }
     public float CurrentMovementY { get { return _currentMovement.y; } set { _currentMovement.y = value; } }
     public float AppliedMovementY { get { return _appliedMovement.y; } set { _appliedMovement.y = value; } }
@@ -106,6 +112,9 @@ public class PlayerStateMachine : MonoBehaviour
 
         _playerInput.Player.Jump.started += OnJump;
         _playerInput.Player.Jump.canceled += OnJump;
+
+        _playerInput.Player.Crouch.started += OnCrouch;
+        _playerInput.Player.Crouch.canceled += OnCrouch;
 
         SetupJumpVariables();
     }
@@ -197,7 +206,12 @@ public class PlayerStateMachine : MonoBehaviour
 
     void OnRun(InputAction.CallbackContext ctx)
     {
-        _isRunPressed = ctx.ReadValueAsButton();
+        _isRunPressed = ctx.ReadValueAsButton() || ctx.ReadValue<float>() > 0;
+    }
+
+    void OnCrouch(InputAction.CallbackContext ctx)
+    {
+        _isCrouchPressed = ctx.ReadValueAsButton();
     }
 
     void OnEnable()
