@@ -134,6 +134,21 @@ public class CustomEditorTools : EditorWindow
                 Debug.LogError("Grocery List Manager not found in the scene");
             }
         }
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Swap Between Main Menu and In-Game UI"))
+        {
+            MainMenu mainMenu = FindObjectOfType<MainMenu>();
+            if (mainMenu != null)
+            {
+                mainMenu.SwapUI();
+            }
+            else
+            {
+                Debug.LogError("Main Menu not found in the scene");
+            }
+        }
     }
 
     // Tool Methods (Modularize these to keep OnGUI clean)

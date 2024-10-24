@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 
 public class PlayerStateMachine : MonoBehaviour
 {
-
     //Singleton
     public static PlayerStateMachine Instance { get; private set; }
 

@@ -53,9 +53,6 @@ public class PlayerFallState : PlayerBaseState, IRootState
         float previousYVelocity = Ctx.CurrentMovementY;
 
         Ctx.CurrentMovementY += Ctx.Gravity * _fallMultiplier * Time.deltaTime;
-
-        // Ensure the falling speed is clamped to match jump speed
-        // float terminalVelocity = -Ctx.InitialJumpVelocity + ; // Match the fall speed to the jump speed
         Ctx.AppliedMovementY = Mathf.Max((previousYVelocity + Ctx.CurrentMovementY) * .5f, -Ctx.InitialJumpVelocity * 2f);
 
         Debug.Log("Applying Gravity: " + applyFullGravity);

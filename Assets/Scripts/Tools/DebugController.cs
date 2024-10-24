@@ -39,7 +39,8 @@ public class DebugController : MonoBehaviour
             foreach (var command in commandList)
             {
                 DebugCommandBase cmd = command as DebugCommandBase;
-                outputLog.Add($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
+                // outputLog.Add($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
+                LogCommandOutput($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
             }
         });
 
@@ -52,14 +53,16 @@ public class DebugController : MonoBehaviour
         {
             Debug.Log("Setting base speed");
             PlayerStateMachine.Instance.BaseSpeed = x;
-            outputLog.Add("Base speed set to " + x, DebugCommandTag.GOOD);
+            // outputLog.Add("Base speed set to " + x, DebugCommandTag.GOOD);
+            LogCommandOutput("Base speed set to " + x, DebugCommandTag.GOOD);
         });
 
         SET_GOD_MODE = new DebugCommand<bool>("set_god_mode", "Set god mode for the player", "set_god_mode <true/false>", (x) =>
         {
             Debug.Log("Setting god mode");
             PlayerStateMachine.Instance.GodMode = x;
-            outputLog.Add("God mode set to " + x, DebugCommandTag.GOOD);
+            // outputLog.Add("God mode set to " + x, DebugCommandTag.GOOD);
+            LogCommandOutput("God mode set to " + x, DebugCommandTag.GOOD);
         });
 
         commandList = new List<object> {
@@ -196,7 +199,8 @@ public class DebugController : MonoBehaviour
                     }
                     else
                     {
-                        outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
+                        // outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
+                        LogCommandOutput("Invalid argument for command", DebugCommandTag.ERROR);
                     }
                 }
                 else if (commandList[i] as DebugCommand<bool> != null)
@@ -207,7 +211,8 @@ public class DebugController : MonoBehaviour
                     }
                     else
                     {
-                        outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
+                        // outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
+                        LogCommandOutput("Invalid argument for command", DebugCommandTag.ERROR);
                     }
                 }
 
@@ -220,5 +225,22 @@ public class DebugController : MonoBehaviour
         {
             outputLog.Add("Command not found", DebugCommandTag.ERROR);
         }
+    }
+
+    private void LogCommandOutput(string output, DebugCommandTag tag)
+    {
+        // Ensure the key is unique before adding it to the dictionary
+        string outputKey = output;
+        int duplicateCount = 1;
+
+        // If the key already exists, append a unique count to avoid duplication
+        while (outputLog.ContainsKey(outputKey))
+        {
+            outputKey = $"{output} ({duplicateCount})";
+            duplicateCount++;
+        }
+
+        // Add the unique key to the outputLog
+        outputLog.Add(outputKey, tag);
     }
 }

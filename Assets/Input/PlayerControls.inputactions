@@ -288,6 +288,17 @@
                 },
                 {
                     "name": "",
+                    "id": "432338cf-ac32-4458-a5b2-b796c2083f8e",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Submit",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "2c6f2edc-9cf7-43fb-a087-6e0de737a7d4",
                     "path": "<Keyboard>/leftCtrl",
                     "interactions": "",
