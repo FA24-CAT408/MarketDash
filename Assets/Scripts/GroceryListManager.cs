@@ -1,8 +1,6 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using System.Linq;
 using DG.Tweening;
 
 public class GroceryListManager : MonoBehaviour
@@ -10,12 +8,16 @@ public class GroceryListManager : MonoBehaviour
     public static GroceryListManager Instance { get; private set; }
 
     public List<Item> allAvailableItems;
-    public List<Item> groceryList;
+
     public Transform listContainer; // Parent container for all item texts
     public GameObject itemTextPrefab;
 
-    private Dictionary<string, TMP_Text> _itemUITexts = new Dictionary<string, TMP_Text>(); // Track UI by item name
-    private Dictionary<string, int> _itemQuantities = new Dictionary<string, int>(); // Track total counts of each item
+    public Item targetItem;
+
+
+    private List<Item> groceryList = new();
+    private Dictionary<string, TMP_Text> _itemUITexts = new(); // Track UI by item name
+    private Dictionary<string, int> _itemQuantities = new();  // Track total counts of each item
 
     private void Awake()
     {
@@ -34,29 +36,19 @@ public class GroceryListManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        allAvailableItems = FindObjectsOfType<Item>().ToList();
+        // _itemUITexts = new Dictionary<string, TMP_Text>();
+        // _itemQuantities = new Dictionary<string, int>();
+        // groceryList = new List<Item>();
 
-        // foreach (Item item in groceryList)
-        // {
-        //     if (!itemCounts.ContainsKey(item.itemName))
-        //     {
-        //         itemCounts[item.itemName] = item.amount;
-        //         TMP_Text itemText = InstantiateItemText(item);
-        //         itemUITexts[item.itemName] = itemText;
-        //     }
-        //     else
-        //     {
-        //         itemCounts[item.itemName] += item.amount;
-        //         UpdateItemText(item);
-        //     }
-        // }
+        foreach (Item item in allAvailableItems)
+        {
+            item.gameObject.SetActive(false);
+        }
     }
 
     public List<Item> GetNewOrder(int numOfUniqueItems = 5)
     {
         List<Item> newOrder = new List<Item>();
-
-        Sequence sequence = DOTween.Sequence();
 
         for (int i = 0; i < numOfUniqueItems; i++)
         {
@@ -73,18 +65,46 @@ public class GroceryListManager : MonoBehaviour
 
         // sequence.Play();
 
+        Debug.Log("New order created!");
+        Debug.Log("Grocery List:");
+        Debug.Log(string.Join(", ", groceryList));
+
+
         return newOrder;
     }
 
     void Update()
     {
+        // Set target item to the first item in the grocery list
+        if (groceryList.Count > 0)
+        {
+            targetItem = groceryList[0];
+        }
+        else
+        {
+            targetItem = null;
+        }
 
+        // set target item to bold else set it to normal
+        if (targetItem != null)
+        {
+            _itemUITexts[targetItem.itemName].fontStyle = FontStyles.Bold;
+        }
+        else
+        {
+            foreach (var item in _itemUITexts)
+            {
+                item.Value.fontStyle = FontStyles.Normal;
+            }
+        }
     }
 
     public Item AddRandomItemToOrder()
     {
         int randomIndex = Random.Range(0, allAvailableItems.Count);
         groceryList.Add(allAvailableItems[randomIndex]);
+
+        allAvailableItems[randomIndex].gameObject.SetActive(true);
 
         return allAvailableItems[randomIndex];
     }
@@ -165,4 +185,12 @@ public class GroceryListManager : MonoBehaviour
             itemText.text = $"{item.itemName} x {_itemQuantities[item.itemName]}";
         }
     }
+
+    public void ResetLists()
+    {
+        groceryList.Clear();
+        _itemUITexts.Clear();
+        _itemQuantities.Clear();
+    }
+
 }

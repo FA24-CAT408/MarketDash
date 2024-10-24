@@ -21,7 +21,8 @@ public class Item : MonoBehaviour
 
         if (amount <= 0)
         {
-            Destroy(gameObject);
+            // Destroy(gameObject);
+            gameObject.SetActive(false);
         }
     }
 

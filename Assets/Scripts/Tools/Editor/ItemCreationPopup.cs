@@ -80,7 +80,7 @@ public class ItemCreationPopup : EditorWindow
 
         if (groceryListManager != null && item != null)
         {
-            groceryListManager.groceryList.Add(item);
+            groceryListManager.AddRandomItemToOrder();
         }
         else
         {
