@@ -16,6 +16,8 @@ public class MainMenu : MonoBehaviour
 
     CinemachineBrain _cinemachineBrain;
 
+    bool isGameActive = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -30,11 +32,17 @@ public class MainMenu : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        isGameActive = false;
     }
 
     public void StartGame()
     {
-        StartCoroutine(StartGameCoroutine());
+        if (!isGameActive)
+        {
+            isGameActive = true;
+            StartCoroutine(StartGameCoroutine());
+        }
     }
 
     IEnumerator StartGameCoroutine()
