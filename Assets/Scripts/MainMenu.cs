@@ -21,8 +21,7 @@ public class MainMenu : MonoBehaviour
     {
         _cinemachineBrain = FindObjectOfType<CinemachineBrain>();
 
-        mainMenu.SetActive(true);
-        inGameUI.SetActive(false);
+        // SwapUI();
 
         player.gameObject.SetActive(false);
 
@@ -40,22 +39,21 @@ public class MainMenu : MonoBehaviour
 
     IEnumerator StartGameCoroutine()
     {
-        mainMenu.SetActive(false);
+        SwapUI();
 
         thirdPersonCamera.Priority = 10;
         mainMenuCamera.Priority = 0;
 
-        // cause IsBlending has little bit delay so it's need to wait
-        yield return new WaitUntil(() => _cinemachineBrain.IsBlending);
+        yield return new WaitForSeconds(1f);
 
-        // wait until blending is finished
-        yield return new WaitUntil(() => !_cinemachineBrain.IsBlending);
+        Debug.Log("Game Started");
 
-        inGameUI.SetActive(true);
         player.gameObject.SetActive(true);
         Debug.Log("Game Started");
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        GroceryListManager.Instance.GetNewOrder(3);
     }
 
     public void SwapUI()

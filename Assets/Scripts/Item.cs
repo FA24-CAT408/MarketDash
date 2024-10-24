@@ -16,7 +16,6 @@ public class Item : MonoBehaviour
 
     void Update()
     {
-
         // Rotate the item
         transform.Rotate(new Vector3(0, 30, 0) * Time.deltaTime);
 

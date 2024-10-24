@@ -149,6 +149,22 @@ public class CustomEditorTools : EditorWindow
                 Debug.LogError("Main Menu not found in the scene");
             }
         }
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Add New Item To Order"))
+        {
+            GroceryListManager groceryListManager = FindObjectOfType<GroceryListManager>();
+            if (groceryListManager != null)
+            {
+                // groceryListManager.GetNewOrder(1);
+                groceryListManager.AddRandomItemToOrder();
+            }
+            else
+            {
+                Debug.LogError("Grocery List Manager not found in the scene");
+            }
+        }
     }
 
     // Tool Methods (Modularize these to keep OnGUI clean)
