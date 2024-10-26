@@ -107,6 +107,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SwapTargets"",
+                    ""type"": ""Value"",
+                    ""id"": ""f769abd7-298a-4b0f-9b0f-818803024519"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -340,6 +349,72 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""action"": ""Crouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Down and Up"",
+                    ""id"": ""4c96e785-6435-4c2a-9808-722b0337dbdc"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""620ec08f-7885-4c69-b08f-cb631c7ceced"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""097f5ee2-a879-4dc7-8320-b842c356d999"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Down and Up"",
+                    ""id"": ""5e0c55b1-554f-41de-8859-acfed3da2225"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""92996669-eacd-4be8-af1d-744ea276d843"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""f3cf1c41-4c8d-4776-8f04-7ca114fed71b"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwapTargets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -357,6 +432,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Player_ToggleDebug = m_Player.FindAction("ToggleDebug", throwIfNotFound: true);
         m_Player_Submit = m_Player.FindAction("Submit", throwIfNotFound: true);
         m_Player_Crouch = m_Player.FindAction("Crouch", throwIfNotFound: true);
+        m_Player_SwapTargets = m_Player.FindAction("SwapTargets", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -427,6 +503,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_ToggleDebug;
     private readonly InputAction m_Player_Submit;
     private readonly InputAction m_Player_Crouch;
+    private readonly InputAction m_Player_SwapTargets;
     public struct PlayerActions
     {
         private @PlayerControls m_Wrapper;
@@ -440,6 +517,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @ToggleDebug => m_Wrapper.m_Player_ToggleDebug;
         public InputAction @Submit => m_Wrapper.m_Player_Submit;
         public InputAction @Crouch => m_Wrapper.m_Player_Crouch;
+        public InputAction @SwapTargets => m_Wrapper.m_Player_SwapTargets;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -476,6 +554,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @Crouch.started += instance.OnCrouch;
             @Crouch.performed += instance.OnCrouch;
             @Crouch.canceled += instance.OnCrouch;
+            @SwapTargets.started += instance.OnSwapTargets;
+            @SwapTargets.performed += instance.OnSwapTargets;
+            @SwapTargets.canceled += instance.OnSwapTargets;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -507,6 +588,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @Crouch.started -= instance.OnCrouch;
             @Crouch.performed -= instance.OnCrouch;
             @Crouch.canceled -= instance.OnCrouch;
+            @SwapTargets.started -= instance.OnSwapTargets;
+            @SwapTargets.performed -= instance.OnSwapTargets;
+            @SwapTargets.canceled -= instance.OnSwapTargets;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -535,5 +619,6 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnToggleDebug(InputAction.CallbackContext context);
         void OnSubmit(InputAction.CallbackContext context);
         void OnCrouch(InputAction.CallbackContext context);
+        void OnSwapTargets(InputAction.CallbackContext context);
     }
 }

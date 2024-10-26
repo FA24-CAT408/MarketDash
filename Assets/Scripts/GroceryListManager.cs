@@ -2,17 +2,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using DG.Tweening;
+using UnityEngine.InputSystem;
 
 public class GroceryListManager : MonoBehaviour
 {
+    [Header("Input")]
+    public PlayerControls playerInput;
+
     public static GroceryListManager Instance { get; private set; }
 
+    [Header("Items")]
     public List<Item> allAvailableItems;
 
     public Transform listContainer; // Parent container for all item texts
     public GameObject itemTextPrefab;
 
+    [Header("Target Item")]
+    public int targetItemIndex = 0;
     public Item targetItem;
+
+    // Add input buffering to prevent too rapid cycling
+    private float lastInputTime = 0f;
+    private float inputCooldown = 0.05f; // Adjust this value to control cycling speed
 
 
     private List<Item> groceryList = new();
@@ -31,6 +42,12 @@ public class GroceryListManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+
+        playerInput = new PlayerControls();
+
+        playerInput.Player.SwapTargets.performed += OnSwapItemInput;
+        playerInput.Player.SwapTargets.canceled += OnSwapItemInput;
+        playerInput.Player.SwapTargets.started += OnSwapItemInput;
     }
 
     // Start is called before the first frame update
@@ -44,6 +61,8 @@ public class GroceryListManager : MonoBehaviour
         {
             item.gameObject.SetActive(false);
         }
+
+        UpdateTargetItem();
     }
 
     public List<Item> GetNewOrder(int numOfUniqueItems = 5)
@@ -75,26 +94,76 @@ public class GroceryListManager : MonoBehaviour
 
     void Update()
     {
-        // Set target item to the first item in the grocery list
-        if (groceryList.Count > 0)
+        UpdateItemHighlighting();
+    }
+
+    private void UpdateItemHighlighting()
+    {
+        // Reset all items to normal style
+        foreach (var item in _itemUITexts)
         {
-            targetItem = groceryList[0];
-        }
-        else
-        {
-            targetItem = null;
+            item.Value.fontStyle = FontStyles.Normal;
         }
 
-        // set target item to bold else set it to normal
-        if (targetItem != null)
+        // Bold the current target item if it exists
+        if (targetItem != null && _itemUITexts.ContainsKey(targetItem.itemName))
         {
             _itemUITexts[targetItem.itemName].fontStyle = FontStyles.Bold;
         }
+    }
+
+    private void UpdateTargetItem()
+    {
+        if (groceryList.Count > 0)
+        {
+            // Ensure targetItemIndex stays within bounds
+            targetItemIndex = Mathf.Clamp(targetItemIndex, 0, groceryList.Count - 1);
+            targetItem = groceryList[targetItemIndex];
+        }
         else
         {
-            foreach (var item in _itemUITexts)
+            targetItemIndex = 0;
+            targetItem = null;
+        }
+    }
+
+    void OnSwapItemInput(InputAction.CallbackContext ctx)
+    {
+        // Only process input if we have items and enough time has passed since last input
+        if (groceryList.Count > 0 && Time.time >= lastInputTime + inputCooldown)
+        {
+            float axisValue = ctx.ReadValue<float>();
+
+            // Only process if there's actual input
+            if (Mathf.Abs(axisValue) > 0.1f)
             {
-                item.Value.fontStyle = FontStyles.Normal;
+                // Positive value (Q key) cycles forward
+                if (axisValue > 0)
+                {
+                    targetItemIndex++;
+                    if (targetItemIndex >= groceryList.Count)
+                    {
+                        targetItemIndex = 0;
+                    }
+                }
+                // Negative value (E key) cycles backward
+                else if (axisValue < 0)
+                {
+                    targetItemIndex--;
+                    if (targetItemIndex < 0)
+                    {
+                        targetItemIndex = groceryList.Count - 1;
+                    }
+                }
+
+                // Update the target item
+                UpdateTargetItem();
+
+                // Update the input buffer time
+                lastInputTime = Time.time;
+
+                // Debug log to verify cycling
+                Debug.Log($"Switched to item: {targetItem.itemName} at index: {targetItemIndex}");
             }
         }
     }
@@ -193,4 +262,13 @@ public class GroceryListManager : MonoBehaviour
         _itemQuantities.Clear();
     }
 
+    void OnEnable()
+    {
+        playerInput.Player.Enable();
+    }
+
+    void OnDisable()
+    {
+        playerInput.Player.Disable();
+    }
 }

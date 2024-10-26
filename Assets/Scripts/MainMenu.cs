@@ -16,7 +16,7 @@ public class MainMenu : MonoBehaviour
 
     CinemachineBrain _cinemachineBrain;
 
-    bool isGameActive = false;
+    public bool isGameActive;
 
     // Start is called before the first frame update
     void Start()
@@ -25,15 +25,18 @@ public class MainMenu : MonoBehaviour
 
         // SwapUI();
 
-        player.gameObject.SetActive(false);
+        // player.gameObject.SetActive(false);
 
-        thirdPersonCamera.Priority = 0;
-        mainMenuCamera.Priority = 10;
+        // thirdPersonCamera.Priority = 0;
+        // mainMenuCamera.Priority = 10;
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        GroceryListManager.Instance.GetNewOrder(3);
 
-        isGameActive = false;
+        // StartGame();
+
+        // isGameActive = false;
     }
 
     public void StartGame()
@@ -48,9 +51,6 @@ public class MainMenu : MonoBehaviour
     IEnumerator StartGameCoroutine()
     {
         SwapUI();
-
-        thirdPersonCamera.Priority = 10;
-        mainMenuCamera.Priority = 0;
 
         yield return new WaitForSeconds(1f);
 
@@ -68,5 +68,8 @@ public class MainMenu : MonoBehaviour
     {
         mainMenu.GetComponent<Canvas>().enabled = !mainMenu.GetComponent<Canvas>().enabled;
         inGameUI.GetComponent<Canvas>().enabled = !inGameUI.GetComponent<Canvas>().enabled;
+
+        thirdPersonCamera.Priority = inGameUI.GetComponent<Canvas>().enabled ? 10 : 0;
+        mainMenuCamera.Priority = mainMenu.GetComponent<Canvas>().enabled ? 10 : 0;
     }
 }
