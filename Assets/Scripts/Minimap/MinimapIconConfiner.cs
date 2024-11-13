@@ -3,40 +3,54 @@ using UnityEngine;
 
 public class MinimapIconConfiner : MonoBehaviour
 {
-    [Header("References")]
-    public Transform target;          // The target game object the icon represents
-    private PlayerStateMachine player;          // The player's transform (center of the minimap)
-    private SpriteRenderer icon;       // The SpriteRenderer component of the icon
+	Transform MinimapCam;
+	float MinimapSize;
+	[SerializeField] Vector3 TempV3;
+	float originalYPosition;
 
-    [Header("Minimap Settings")]
-    public float minimapRadius = 5f;  // Radius of the minimap in world units
+	void Start()
+	{
+		MinimapCam = GameObject.Find("Minimap Cam").transform;
+		MinimapSize = MinimapCam.GetComponent<Camera>().orthographicSize - 1;
+	}
 
-    void Start()
-    {
-        player = FindObjectOfType<PlayerStateMachine>();
-        icon = GetComponent<SpriteRenderer>();
-    }
+	void Update()
+	{
+		TempV3 = transform.parent.transform.position;
+		TempV3.y = transform.position.y;
+		transform.position = TempV3;
+	}
 
-    void Update()
-    {
-        // Calculate the offset from the player to the target on the XZ plane
-        Vector3 offset = target.position - player.transform.position;
-        Vector2 offset2D = new Vector2(offset.x, offset.z);
 
-        // Calculate the distance to the target
-        float distance = offset2D.magnitude;
+	void LateUpdate()
+	{
+		// Center of Minimap
+		Vector3 centerPosition = MinimapCam.transform.localPosition;
 
-        if (distance <= minimapRadius)
-        {
-            // Target is within minimap range; place the icon at the target's position
-            icon.transform.position = new Vector3(target.position.x, icon.transform.position.y, target.position.z);
-        }
-        else
-        {
-            // Target is out of range; place the icon at the edge of the minimap ring
-            Vector2 clampedOffset = offset2D.normalized * minimapRadius;
-            Vector3 iconPosition = new Vector3(clampedOffset.x, icon.transform.position.y, clampedOffset.y) + player.transform.position;
-            icon.transform.position = iconPosition;
-        }
-    }
+
+		// Just to keep a distance between Minimap camera and this Object (So that camera don't clip it out)
+		centerPosition.y -= 0.5f;
+
+
+		// Distance from the gameObject to Minimap
+		float Distance = Vector3.Distance(transform.position, centerPosition);
+
+
+		// If the Distance is less than MinimapSize, it is within the Minimap view and we don't need to do anything
+		// But if the Distance is greater than the MinimapSize, then do this
+		if (Distance > MinimapSize)
+		{
+			// Gameobject - Minimap
+			Vector3 fromOriginToObject = transform.position - centerPosition;
+
+
+			// Multiply by MinimapSize and Divide by Distance
+			fromOriginToObject *= MinimapSize / Distance;
+
+
+			// Minimap + above calculation
+			transform.position = centerPosition + fromOriginToObject;
+		}
+	}
+
 }

@@ -99,16 +99,23 @@ public class GroceryListManager : MonoBehaviour
 
     private void UpdateItemHighlighting()
     {
-        // Reset all items to normal style
+        // Reset all items to normal style and deselect
         foreach (var item in _itemUITexts)
         {
             item.Value.fontStyle = FontStyles.Normal;
+            if (_itemUITexts[item.Key].fontStyle != FontStyles.Bold)
+            {
+                groceryList.Find(i => i.itemName == item.Key).isSelected = false;
+            }
         }
 
         // Bold the current target item if it exists
         if (targetItem != null && _itemUITexts.ContainsKey(targetItem.itemName))
         {
             _itemUITexts[targetItem.itemName].fontStyle = FontStyles.Bold;
+
+            // Only set isSelected if the target item is bold
+            targetItem.isSelected = (_itemUITexts[targetItem.itemName].fontStyle == FontStyles.Bold);
         }
     }
 
@@ -119,9 +126,14 @@ public class GroceryListManager : MonoBehaviour
             // Ensure targetItemIndex stays within bounds
             targetItemIndex = Mathf.Clamp(targetItemIndex, 0, groceryList.Count - 1);
             targetItem = groceryList[targetItemIndex];
+            // Debug.Log("TARGET ITEM: " + targetItem.itemName);
+            // targetItem.isSelected = true;
+            // Debug.Log("TARGET ITEM SELECTED: " + targetItem.isSelected);
         }
         else
         {
+            targetItem.isSelected = false;
+            // Debug.Log("TARGET ITEM: " + targetItem.itemName +  "SELECTED: " + targetItem.isSelected);
             targetItemIndex = 0;
             targetItem = null;
         }

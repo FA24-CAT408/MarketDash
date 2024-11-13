@@ -6,6 +6,9 @@ public class Item : MonoBehaviour
 {
     public string itemName;
     public int amount;
+    public bool isSelected;
+
+    public SpriteRenderer isSelectedMinimapSprite;
 
     private GroceryListManager groceryListManager;
 
@@ -16,6 +19,8 @@ public class Item : MonoBehaviour
 
     void Update()
     {
+        isSelectedMinimapSprite.enabled = isSelected;
+
         if (amount <= 0)
         {
             // Destroy(gameObject);
