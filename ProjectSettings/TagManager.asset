@@ -9,6 +9,7 @@ TagManager:
   - SpawnPoint
   - Death
   - UI
+  - MovingPlatform
   layers:
   - Default
   - TransparentFX

@@ -81,6 +81,10 @@ public class PlayerStateMachine : MonoBehaviour
     public float BaseSpeed { get { return _baseSpeed; } set { _baseSpeed = value; } }
     public Vector2 CurrentMovementInput { get { return _currentMovementInput; } }
 
+    private Transform _currentPlatform;
+    private Vector3 _platformPreviousPosition;
+    private Vector3 _platformVelocity;
+
     void Awake()
     {
         //Singleton
@@ -140,7 +144,40 @@ public class PlayerStateMachine : MonoBehaviour
         HasPlayerStoppedMoving();
         _currentState.UpdateStates();
         _cameraRelativeMovement = ConvertToCameraSpace(_appliedMovement);
+
+        ApplyPlatformMovement();
+
         _characterController.Move(_cameraRelativeMovement * Time.deltaTime);
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.collider.CompareTag("MovingPlatform"))
+        {
+            // Attach to the platform
+            _currentPlatform = hit.collider.transform;
+            _platformPreviousPosition = _currentPlatform.position;
+        }
+        else
+        {
+            // Detach from the platform if no longer colliding
+            _currentPlatform = null;
+        }
+    }
+
+    void ApplyPlatformMovement()
+    {
+        if (_currentPlatform != null)
+        {
+            // Calculate platform delta movement
+            Vector3 platformDelta = _currentPlatform.position - _platformPreviousPosition;
+
+            // Apply platform movement to the player
+            _cameraRelativeMovement += platformDelta / Time.deltaTime;
+
+            // Update platform's previous position
+            _platformPreviousPosition = _currentPlatform.position;
+        }
     }
 
     void HasPlayerStoppedMoving()
@@ -220,6 +257,7 @@ public class PlayerStateMachine : MonoBehaviour
 
     void OnDisable()
     {
+        _currentPlatform = null;
         _playerInput.Player.Disable();
     }
 }
