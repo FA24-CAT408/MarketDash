@@ -142,7 +142,7 @@ public class CustomEditorTools : EditorWindow
             MainMenu mainMenu = FindObjectOfType<MainMenu>();
             if (mainMenu != null)
             {
-                mainMenu.SwapUI();
+                // mainMenu.SwapUI();
             }
             else
             {
@@ -171,6 +171,7 @@ public class CustomEditorTools : EditorWindow
             GroceryListManager groceryListManager = FindObjectOfType<GroceryListManager>();
             if (groceryListManager != null)
             {
+                Debug.Log("CALLED FROM TOOLS");
                 groceryListManager.GetNewOrder(1);
                 // groceryListManager.AddRandomItemToOrder();
             }
@@ -186,7 +187,7 @@ public class CustomEditorTools : EditorWindow
     {
         if (_playerSpawnPoint != null)
         {
-            _playerSpawnPoint.transform.position = new Vector3(59, -3, -21);
+            _playerSpawnPoint.transform.position = new Vector3(61.25f, -3, -4.75f);
             _playerSpawnPoint.transform.rotation = Quaternion.identity;
         }
     }

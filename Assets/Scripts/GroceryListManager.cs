@@ -21,14 +21,14 @@ public class GroceryListManager : MonoBehaviour
     public int targetItemIndex = 0;
     public Item targetItem;
 
-    // Add input buffering to prevent too rapid cycling
     private float lastInputTime = 0f;
     private float inputCooldown = 0.05f; // Adjust this value to control cycling speed
-
 
     private List<Item> groceryList = new();
     private Dictionary<string, TMP_Text> _itemUITexts = new(); // Track UI by item name
     private Dictionary<string, int> _itemQuantities = new();  // Track total counts of each item
+    
+    private bool isOrderComplete = false;
 
     private void Awake()
     {
@@ -53,10 +53,6 @@ public class GroceryListManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // _itemUITexts = new Dictionary<string, TMP_Text>();
-        // _itemQuantities = new Dictionary<string, int>();
-        // groceryList = new List<Item>();
-
         foreach (Item item in allAvailableItems)
         {
             item.gameObject.SetActive(false);
@@ -65,36 +61,36 @@ public class GroceryListManager : MonoBehaviour
         UpdateTargetItem();
     }
 
-    public List<Item> GetNewOrder(int numOfUniqueItems = 5)
+    public List<Item> GetNewOrder(int maxQuantityPerItem = 1, int maxItemsInOrder = 5)
     {
+        ResetLists();
+        
         List<Item> newOrder = new List<Item>();
+        
+        newOrder = AddRandomItemsToOrder(maxQuantityPerItem, maxItemsInOrder);
 
-        for (int i = 0; i < numOfUniqueItems; i++)
-        {
-            // int randomIndex = Random.Range(0, allAvailableItems.Count);
-            // newOrder.Add(allAvailableItems[randomIndex]);
-
-            Item item = AddRandomItemToOrder();
-            AddNewItemToUI(item);
-
-            // Broadcast a new unity event to show the new item in the UI (maybe in a UI Manager?)
-
-            // sequence.Join(AddNewItemToUI(item));
-        }
+        // for (int i = 0; i < numOfUniqueItems; i++)
+        // {
+        //     // int randomIndex = Random.Range(0, allAvailableItems.Count);
+        //     // newOrder.Add(allAvailableItems[randomIndex]);
+        //
+        //     Item item = AddRandomItemToOrder();
+        //     AddNewItemToUI(item);
+        //
+        //     // Broadcast a new unity event to show the new item in the UI (maybe in a UI Manager?)
+        //
+        //     // sequence.Join(AddNewItemToUI(item));
+        // }
 
         // sequence.Play();
 
         Debug.Log("New order created!");
         Debug.Log("Grocery List:");
         Debug.Log(string.Join(", ", groceryList));
-
+    
+        UpdateItemHighlighting();
 
         return newOrder;
-    }
-
-    void Update()
-    {
-        UpdateItemHighlighting();
     }
 
     private void UpdateItemHighlighting()
@@ -132,10 +128,12 @@ public class GroceryListManager : MonoBehaviour
         }
         else
         {
-            targetItem.isSelected = false;
+            // targetItem.isSelected = false;
             // Debug.Log("TARGET ITEM: " + targetItem.itemName +  "SELECTED: " + targetItem.isSelected);
             targetItemIndex = 0;
             targetItem = null;
+
+            UpdateItemHighlighting();
         }
     }
 
@@ -180,14 +178,42 @@ public class GroceryListManager : MonoBehaviour
         }
     }
 
-    public Item AddRandomItemToOrder()
+    public List<Item> AddRandomItemsToOrder(int maxQuantityPerItem, int maxItemsInOrder)
     {
-        int randomIndex = Random.Range(0, allAvailableItems.Count);
-        groceryList.Add(allAvailableItems[randomIndex]);
+        List<Item> newOrder = new List<Item>();
 
-        allAvailableItems[randomIndex].gameObject.SetActive(true);
+        HashSet<int> usedIndices = new HashSet<int>(); // To avoid duplicates
 
-        return allAvailableItems[randomIndex];
+        int totalItemsAdded = 0;
+
+        while (totalItemsAdded < maxItemsInOrder && usedIndices.Count < allAvailableItems.Count)
+        {
+            // Select a random index from the available items
+            int randomIndex = Random.Range(0, allAvailableItems.Count);
+
+            // Avoid duplicates
+            if (usedIndices.Contains(randomIndex)) continue;
+
+            usedIndices.Add(randomIndex);
+            Item selectedItem = allAvailableItems[randomIndex];
+
+            // Add the item up to the maximum quantity specified
+            for (int i = 0; i < maxQuantityPerItem; i++)
+            {
+                if (totalItemsAdded >= maxItemsInOrder) break;
+
+                newOrder.Add(selectedItem);
+                groceryList.Add(selectedItem);
+                selectedItem.gameObject.SetActive(true);
+
+                // Add the item to the UI
+                AddNewItemToUI(selectedItem);
+
+                totalItemsAdded++;
+            }
+        }
+
+        return newOrder;
     }
 
     void AddNewItemToUI(Item item)
@@ -204,34 +230,8 @@ public class GroceryListManager : MonoBehaviour
             _itemQuantities[item.itemName] += item.amount;
             UpdateItemText(item);
         }
-
-        // // Animate the new item text
-        // TMP_Text newItemText = _itemUITexts[item.itemName];
-        // newItemText.gameObject.SetActive(true);
-        // DOTweenTMPAnimator animator = new DOTweenTMPAnimator(newItemText);
-        // Sequence sequence = DOTween.Sequence();
-
-        // for (int i = 0; i < animator.textInfo.characterCount; ++i)
-        // {
-        //     if (!animator.textInfo.characterInfo[i].isVisible) continue;
-
-        //     Vector3 currCharOffset = animator.GetCharOffset(i);
-        //     // First, fade in and bounce the character
-        //     sequence.Append(animator
-        //         .DOOffsetChar(i, currCharOffset + new Vector3(0, 5, 0), 0.1f)
-        //         .SetEase(Ease.OutBounce) // Bounce effect
-        //         .From(new Vector3(0, -50, 0)) // Start from lower position for smooth entrance
-        //         .SetDelay(i * 0.05f) // Delay each character's appearance
-        //     );
-
-        //     // Then bring the character back to its original position
-        //     sequence.Append(animator
-        //         .DOOffsetChar(i, currCharOffset, 0.1f)
-        //         .SetEase(Ease.OutElastic)
-        //     );
-        // }
-
-        // return sequence;
+        
+        //TODO: ANIMATE TEXT GETTING ADDED TO UI
     }
 
 
@@ -254,8 +254,36 @@ public class GroceryListManager : MonoBehaviour
             if (_itemQuantities[item.itemName] == 0)
             {
                 _itemUITexts[item.itemName].color = Color.green;
+                
+                if (CheckIfOrderComplete())
+                {
+                    AddCompletionMessage();
+                    GameManager.Instance.ChangeState(GameManager.GameState.EndGame);
+                }
             }
         }
+    }
+    
+    private bool CheckIfOrderComplete()
+    {
+        foreach (var quantity in _itemQuantities.Values)
+        {
+            if (quantity > 0) return false;
+        }
+
+        isOrderComplete = true;
+        return true;
+    }
+
+    private void AddCompletionMessage()
+    {
+        GameObject completionTextObject = Instantiate(itemTextPrefab, listContainer);
+        TMP_Text textComponent = completionTextObject.GetComponent<TMP_Text>();
+        textComponent.text = "RETURN TO ENTRANCE";
+        textComponent.fontStyle = FontStyles.Bold;
+        textComponent.color = Color.yellow;
+
+        Debug.Log("All items collected! Return to the entrance.");
     }
 
     void UpdateItemText(Item item)

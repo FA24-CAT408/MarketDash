@@ -5,24 +5,25 @@ using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
-    [Header("Main Menu")]
-    public GameObject mainMenu;
+    [Header("Cameras")]
     public CinemachineVirtualCamera mainMenuCamera;
-
-    [Header("In Game UI")]
-    public GameObject inGameUI;
-    public PlayerStateMachine player;
     public CinemachineFreeLook thirdPersonCamera;
-
-    CinemachineBrain _cinemachineBrain;
-
-    public bool isGameActive;
-
+    
+    [Header("UI Elements")]
+    public GameObject mainMenuUI;
+    public GameObject inGameUI;
+    
+    private PlayerStateMachine _player;
+    
+    public void OnStartGameButton()
+    {
+        GameManager.Instance.ChangeState(GameManager.GameState.PreGame);
+    }
     // Start is called before the first frame update
     void Start()
     {
-        _cinemachineBrain = FindObjectOfType<CinemachineBrain>();
-
+        _player = FindObjectOfType<PlayerStateMachine>();
+        
         // SwapUI();
 
         // player.gameObject.SetActive(false);
@@ -30,23 +31,23 @@ public class MainMenu : MonoBehaviour
         // thirdPersonCamera.Priority = 0;
         // mainMenuCamera.Priority = 10;
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        GroceryListManager.Instance.GetNewOrder(3);
+        // Cursor.lockState = CursorLockMode.Locked;
+        // Cursor.visible = false;
+        // GroceryListManager.Instance.GetNewOrder(3);
 
         // StartGame();
 
         // isGameActive = false;
     }
 
-    public void StartGame()
-    {
-        if (!isGameActive)
-        {
-            isGameActive = true;
-            StartCoroutine(StartGameCoroutine());
-        }
-    }
+    // public void StartGame()
+    // {
+    //     if (!isGameActive)
+    //     {
+    //         isGameActive = true;
+    //         StartCoroutine(StartGameCoroutine());
+    //     }
+    // }
 
     IEnumerator StartGameCoroutine()
     {
@@ -56,7 +57,7 @@ public class MainMenu : MonoBehaviour
 
         Debug.Log("Game Started");
 
-        player.gameObject.SetActive(true);
+        _player.gameObject.SetActive(true);
         Debug.Log("Game Started");
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -66,10 +67,10 @@ public class MainMenu : MonoBehaviour
 
     public void SwapUI()
     {
-        mainMenu.GetComponent<Canvas>().enabled = !mainMenu.GetComponent<Canvas>().enabled;
+        mainMenuUI.GetComponent<Canvas>().enabled = !mainMenuUI.GetComponent<Canvas>().enabled;
         inGameUI.GetComponent<Canvas>().enabled = !inGameUI.GetComponent<Canvas>().enabled;
 
         thirdPersonCamera.Priority = inGameUI.GetComponent<Canvas>().enabled ? 10 : 0;
-        mainMenuCamera.Priority = mainMenu.GetComponent<Canvas>().enabled ? 10 : 0;
+        mainMenuCamera.Priority = mainMenuUI.GetComponent<Canvas>().enabled ? 10 : 0;
     }
 }

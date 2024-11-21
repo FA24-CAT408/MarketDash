@@ -5,17 +5,18 @@ using UnityEngine.Events;
 
 public class PlayerCollisionManager : MonoBehaviour
 {
-    public UnityEvent startTimer;
-    public UnityEvent stopTimer;
+    public UnityEvent startGame;
+    public UnityEvent stopGame;
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.name == "Start Timer")
+        if (other.gameObject.name == "Start Game")
         {
-            startTimer.Invoke();
+            Debug.Log("START GAME");
+            startGame.Invoke();
         }
-        else if (other.gameObject.name == "Stop Timer")
+        else if (other.gameObject.name == "Stop Game")
         {
-            stopTimer.Invoke();
+            stopGame.Invoke();
         }
         else if (other.gameObject.CompareTag("Item"))
         {
