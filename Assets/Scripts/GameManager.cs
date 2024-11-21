@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    public static event Action<GameState> OnStateChanged;
 
     public enum GameState
     {
@@ -14,14 +18,25 @@ public class GameManager : MonoBehaviour
         EndGame,
         GameOver
     }
+    
+    [SerializeField]
+    private GameState currentState;
 
-    public GameState CurrentState { get; private set; }
+    public GameState CurrentState
+    {
+        get => currentState;
+        private set
+        {
+            currentState = value;
+            OnStateChanged?.Invoke(currentState);
+        }
+    }
     
     // [Header("Game Components")]
-    private MainMenu mainMenu;
-    private GroceryListManager groceryListManager;
-    private TimerManager timerManager;
-    private PlayerStateMachine playerStateMachine;
+    private GroceryListManager _groceryListManager;
+    private TimerManager _timerManager;
+    private PlayerStateMachine _playerStateMachine;
+    private CinemachineFreeLook _freeLookCamera;
     
     private void Awake()
     {
@@ -40,10 +55,10 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        mainMenu = FindObjectOfType<MainMenu>();
-        groceryListManager = FindObjectOfType<GroceryListManager>();
-        timerManager = FindObjectOfType<TimerManager>();
-        playerStateMachine = FindObjectOfType<PlayerStateMachine>();
+        _groceryListManager = FindObjectOfType<GroceryListManager>();
+        _timerManager = FindObjectOfType<TimerManager>();
+        _playerStateMachine = FindObjectOfType<PlayerStateMachine>();
+        _freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
         
         ChangeState(GameState.MainMenu);
     }
@@ -80,8 +95,7 @@ public class GameManager : MonoBehaviour
     
     private void EnterMainMenu()
     {
-        mainMenu.SwapUI();
-        playerStateMachine.gameObject.SetActive(false);
+        _playerStateMachine.gameObject.SetActive(false);
         
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -91,10 +105,8 @@ public class GameManager : MonoBehaviour
     
     private void EnterPreGame()
     {
-        mainMenu.SwapUI();
-        
-        playerStateMachine.gameObject.SetActive(true);
-        timerManager.gameObject.SetActive(false);
+        _playerStateMachine.gameObject.SetActive(true);
+        _timerManager.gameObject.SetActive(false);
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -104,8 +116,7 @@ public class GameManager : MonoBehaviour
     
     private void EnterEndGame()
     {
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        //TODO: SET EXIT AS TARGET HIGHLIGHTED IN MINIMAP
 
         Debug.Log("Game Over! EndGame state triggered.");
     }
@@ -113,24 +124,28 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
-        mainMenu.gameObject.SetActive(false);
-        timerManager.gameObject.SetActive(true);
+        _playerStateMachine.enabled = true;
+        _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
+        
+        _timerManager.gameObject.SetActive(true);
         
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        groceryListManager.ResetLists();
-        groceryListManager.GetNewOrder(1, 1);
+        _groceryListManager.ResetLists();
+        _groceryListManager.GetNewOrder(1, Random.Range(1, _groceryListManager.allAvailableItems.Count + 1));
         
-        timerManager.StartTimer();
+        _timerManager.StartTimer();
 
         Debug.Log("Game Started");
     }
 
     private void StopGame()
     {
-        mainMenu.gameObject.SetActive(false);
-        timerManager.StopTimer();
+        _playerStateMachine.enabled = false;
+        _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = false;
+
+        TimerManager.Instance.StopTimer();
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -146,5 +161,43 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         ChangeState(GameState.GameOver);
+    }
+    
+    public void RespawnPlayer(Transform spawnPoint)
+    {
+        StartCoroutine(RespawnRoutine(spawnPoint));
+    }
+
+    private IEnumerator RespawnRoutine(Transform spawnPoint)
+    {
+        if (spawnPoint == null)
+        {
+            Debug.LogWarning("No valid spawn point provided for respawn.");
+            yield break;
+        }
+
+        // Disable player controls and camera
+        Debug.Log("Disabling player...");
+        _playerStateMachine.enabled = false;
+        _playerStateMachine.gameObject.SetActive(false);
+        
+        TimerManager.Instance.AddTime(5f);
+
+        _freeLookCamera.m_LookAt = spawnPoint;
+        _freeLookCamera.m_Follow = spawnPoint;
+
+        // Add a short delay
+        yield return new WaitForSeconds(1f);
+
+        // Move player to the spawn point
+        Debug.Log($"Respawning player at: {spawnPoint.position}");
+        _playerStateMachine.transform.position = spawnPoint.position;
+
+        // Re-enable player controls and camera
+        Debug.Log("Re-enabling player...");
+        _playerStateMachine.gameObject.SetActive(true);
+        _playerStateMachine.enabled = true;
+        _freeLookCamera.m_LookAt = _playerStateMachine.transform.GetChild(0);
+        _freeLookCamera.m_Follow = _playerStateMachine.transform.GetChild(0);
     }
 }

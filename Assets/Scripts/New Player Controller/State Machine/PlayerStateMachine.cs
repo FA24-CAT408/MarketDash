@@ -18,7 +18,7 @@ public class PlayerStateMachine : MonoBehaviour
     //Variables to store player input
     Vector2 _currentMovementInput;
     Vector3 _currentMovement;
-    Vector3 _currenRunMovement;
+    Vector3 _currentRunMovement;
     Vector3 _appliedMovement;
     Vector3 _cameraRelativeMovement;
     bool _isMovementPresed;
@@ -229,8 +229,8 @@ public class PlayerStateMachine : MonoBehaviour
         _currentMovementInput = ctx.ReadValue<Vector2>();
         _currentMovement.x = _currentMovementInput.x * _baseSpeed;
         _currentMovement.z = _currentMovementInput.y * _baseSpeed;
-        _currenRunMovement.x = _currentMovementInput.x * _baseSpeed * _runMultiplier;
-        _currenRunMovement.z = _currentMovementInput.y * _baseSpeed * _runMultiplier;
+        _currentRunMovement.x = _currentMovementInput.x * _baseSpeed * _runMultiplier;
+        _currentRunMovement.z = _currentMovementInput.y * _baseSpeed * _runMultiplier;
         _isMovementPresed = _currentMovementInput.x != 0 || _currentMovementInput.y != 0;
     }
 

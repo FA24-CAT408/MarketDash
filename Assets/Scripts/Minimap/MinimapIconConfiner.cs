@@ -17,7 +17,7 @@ public class MinimapIconConfiner : MonoBehaviour
 	void Update()
 	{
 		TempV3 = transform.parent.transform.position;
-		TempV3.y = transform.position.y;
+		TempV3.y = transform.position.y-5;
 		transform.position = TempV3;
 	}
 

@@ -69,21 +69,6 @@ public class GroceryListManager : MonoBehaviour
         
         newOrder = AddRandomItemsToOrder(maxQuantityPerItem, maxItemsInOrder);
 
-        // for (int i = 0; i < numOfUniqueItems; i++)
-        // {
-        //     // int randomIndex = Random.Range(0, allAvailableItems.Count);
-        //     // newOrder.Add(allAvailableItems[randomIndex]);
-        //
-        //     Item item = AddRandomItemToOrder();
-        //     AddNewItemToUI(item);
-        //
-        //     // Broadcast a new unity event to show the new item in the UI (maybe in a UI Manager?)
-        //
-        //     // sequence.Join(AddNewItemToUI(item));
-        // }
-
-        // sequence.Play();
-
         Debug.Log("New order created!");
         Debug.Log("Grocery List:");
         Debug.Log(string.Join(", ", groceryList));
@@ -95,23 +80,13 @@ public class GroceryListManager : MonoBehaviour
 
     private void UpdateItemHighlighting()
     {
-        // Reset all items to normal style and deselect
-        foreach (var item in _itemUITexts)
+        foreach (var item in groceryList)
         {
-            item.Value.fontStyle = FontStyles.Normal;
-            if (_itemUITexts[item.Key].fontStyle != FontStyles.Bold)
+            if (_itemUITexts.TryGetValue(item.itemName, out TMP_Text text))
             {
-                groceryList.Find(i => i.itemName == item.Key).isSelected = false;
+                // Set bold style only for the selected item
+                text.fontStyle = item.isSelected ? FontStyles.Bold : FontStyles.Normal;
             }
-        }
-
-        // Bold the current target item if it exists
-        if (targetItem != null && _itemUITexts.ContainsKey(targetItem.itemName))
-        {
-            _itemUITexts[targetItem.itemName].fontStyle = FontStyles.Bold;
-
-            // Only set isSelected if the target item is bold
-            targetItem.isSelected = (_itemUITexts[targetItem.itemName].fontStyle == FontStyles.Bold);
         }
     }
 
@@ -121,20 +96,28 @@ public class GroceryListManager : MonoBehaviour
         {
             // Ensure targetItemIndex stays within bounds
             targetItemIndex = Mathf.Clamp(targetItemIndex, 0, groceryList.Count - 1);
+
+            // Deselect all items
+            foreach (var item in groceryList)
+            {
+                item.isSelected = false;
+            }
+
+            // Set the target item
             targetItem = groceryList[targetItemIndex];
-            // Debug.Log("TARGET ITEM: " + targetItem.itemName);
-            // targetItem.isSelected = true;
-            // Debug.Log("TARGET ITEM SELECTED: " + targetItem.isSelected);
+            targetItem.isSelected = true;
+
+            Debug.Log($"Target Item Updated: {targetItem.itemName} | IsSelected: {targetItem.isSelected}");
         }
         else
         {
-            // targetItem.isSelected = false;
-            // Debug.Log("TARGET ITEM: " + targetItem.itemName +  "SELECTED: " + targetItem.isSelected);
+            // If the grocery list is empty, clear the target
             targetItemIndex = 0;
             targetItem = null;
-
-            UpdateItemHighlighting();
         }
+
+        // Update UI highlighting to reflect the change
+        UpdateItemHighlighting();
     }
 
     void OnSwapItemInput(InputAction.CallbackContext ctx)
@@ -250,10 +233,10 @@ public class GroceryListManager : MonoBehaviour
             _itemQuantities[item.itemName]--;
             UpdateItemText(item);
 
-            // If item count reaches 0, mark it as completed (turn the text green)
+            // If item count reaches 0, mark it as completed (turn the text dark green)
             if (_itemQuantities[item.itemName] == 0)
             {
-                _itemUITexts[item.itemName].color = Color.green;
+                _itemUITexts[item.itemName].color = new Color(0f, 0.588f, 0.17f, 1);
                 
                 if (CheckIfOrderComplete())
                 {
@@ -279,9 +262,9 @@ public class GroceryListManager : MonoBehaviour
     {
         GameObject completionTextObject = Instantiate(itemTextPrefab, listContainer);
         TMP_Text textComponent = completionTextObject.GetComponent<TMP_Text>();
-        textComponent.text = "RETURN TO ENTRANCE";
+        textComponent.text = "PROCEED TO EXIT";
         textComponent.fontStyle = FontStyles.Bold;
-        textComponent.color = Color.yellow;
+        textComponent.color = Color.red;
 
         Debug.Log("All items collected! Return to the entrance.");
     }

@@ -139,8 +139,8 @@ public class CustomEditorTools : EditorWindow
 
         if (GUILayout.Button("Swap Between Main Menu and In-Game UI"))
         {
-            MainMenu mainMenu = FindObjectOfType<MainMenu>();
-            if (mainMenu != null)
+            UIManager uiManager = FindObjectOfType<UIManager>();
+            if (uiManager != null)
             {
                 // mainMenu.SwapUI();
             }

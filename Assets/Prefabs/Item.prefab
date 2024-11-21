@@ -54,8 +54,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.5600001, y: 0.46, z: 0.2}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.3226204, y: 1.2833176, z: 1.2728119}
+  m_Center: {x: 0.0036334991, y: -0.047403336, z: 0.032432556}
 --- !u!114 &5341379224331649345
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71,6 +71,8 @@ MonoBehaviour:
   itemName: Bread
   amount: 1
   isSelected: 0
+  iconSelectedScaleMultiplier: 1.4
+  minimapSprite: {fileID: 3602901809311370290}
   isSelectedMinimapSprite: {fileID: 4250828804863504045}
 --- !u!1 &2379646179015956441
 GameObject:
@@ -342,7 +344,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b,
     type: 3}
   m_Color: {r: 0.32066575, g: 1, b: 0.2971698, a: 1}
