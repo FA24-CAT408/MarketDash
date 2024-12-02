@@ -545,7 +545,6 @@ GameObject:
   - component: {fileID: 3557841605018935344}
   - component: {fileID: 4303911246713941358}
   - component: {fileID: 238855230168118826}
-  - component: {fileID: 1566206308172963218}
   - component: {fileID: 6114743032335817140}
   m_Layer: 0
   m_Name: Player
@@ -678,19 +677,6 @@ MonoBehaviour:
   _godMode: 0
   _maxJumpHeight: 2.5
   _maxJumpTime: 0.75
---- !u!114 &1566206308172963218
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1584399431719241299}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b8797d7affec19458bf2e54bd5b8cc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowConsole: 0
 --- !u!114 &6114743032335817140
 MonoBehaviour:
   m_ObjectHideFlags: 0

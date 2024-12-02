@@ -12,9 +12,9 @@ public class UIManager : MonoBehaviour
     public CinemachineVirtualCameraBase thirdPersonCamera;
     
     [Header("UI Elements")]
-    public Canvas mainMenuUI;
-    public Canvas inGameUI;
-    public Canvas gameOverUI;
+    public GameObject mainMenuUI;
+    public GameObject inGameUI;
+    public GameObject gameOverUI;
 
     [Header("Main Menu UI Elements")] 
     public TMP_Text mainMenuBestTimeText;
@@ -23,12 +23,12 @@ public class UIManager : MonoBehaviour
     public TMP_Text gameOverTimeText;
     public TMP_Text bestTimeText;
     
-    private Dictionary<GameManager.GameState, Canvas> stateToCanvas;
+    private Dictionary<GameManager.GameState, GameObject> stateToCanvas;
     
     private void Awake()
     {
         // Map states to their respective UIs
-        stateToCanvas = new Dictionary<GameManager.GameState, Canvas>
+        stateToCanvas = new Dictionary<GameManager.GameState, GameObject>
         {
             { GameManager.GameState.MainMenu, mainMenuUI },
             { GameManager.GameState.PreGame, inGameUI },
@@ -49,7 +49,7 @@ public class UIManager : MonoBehaviour
         foreach (var canvas in stateToCanvas.Values)
         {
             // Enable the canvas if it matches the state, disable otherwise
-            canvas.enabled = stateToCanvas[state] == canvas;
+            canvas.SetActive(stateToCanvas[state] == canvas);
         }
         
         switch (state)
@@ -128,6 +128,9 @@ public class UIManager : MonoBehaviour
     
     public void GameOverMainMenuBtn()
     {
+        Debug.Log("GAME OVER Main Menu BTN PRESSED");
+        Debug.Log("RELOADING THE SCENE");
+        
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     

@@ -13,7 +13,6 @@ public class PlayerStateMachine : MonoBehaviour
     //reference variables
     PlayerControls _playerInput;
     CharacterController _characterController;
-    DebugController _debugController;
 
     //Variables to store player input
     Vector2 _currentMovementInput;
@@ -99,7 +98,6 @@ public class PlayerStateMachine : MonoBehaviour
 
         _playerInput = new PlayerControls();
         _characterController = GetComponent<CharacterController>();
-        _debugController = GetComponent<DebugController>();
 
         // setup state
         _states = new PlayerStateFactory(this);
@@ -138,7 +136,7 @@ public class PlayerStateMachine : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (_debugController.ShowConsole) return;
+        if (DebugController.Instance.ShowConsole) return;
 
         HandleRotation();
         HasPlayerStoppedMoving();

@@ -55,6 +55,8 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("GAME MANAGER START METHOD");
+        
         _groceryListManager = FindObjectOfType<GroceryListManager>();
         _timerManager = FindObjectOfType<TimerManager>();
         _playerStateMachine = FindObjectOfType<PlayerStateMachine>();
@@ -72,6 +74,8 @@ public class GameManager : MonoBehaviour
     public void ChangeState(GameState newState)
     {
         CurrentState = newState;
+
+        Debug.Log("CHANGING TO STATE: " + newState);
 
         switch (newState)
         {

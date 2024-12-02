@@ -147,7 +147,6 @@ GameObject:
   - component: {fileID: 7926572755247936514}
   - component: {fileID: 3752619765401884066}
   - component: {fileID: 3869883205514187605}
-  - component: {fileID: 3569716646384100214}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Player
@@ -259,19 +258,6 @@ CharacterController:
   m_SkinWidth: 0.09
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1.15, z: 0}
---- !u!114 &3569716646384100214
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6674158368892985626}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b8797d7affec19458bf2e54bd5b8cc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowConsole: 0
 --- !u!1 &7030776103645795329
 GameObject:
   m_ObjectHideFlags: 0

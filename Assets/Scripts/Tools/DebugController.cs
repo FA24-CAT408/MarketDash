@@ -1,10 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class DebugController : MonoBehaviour
 {
+    public static DebugController Instance { get; private set; }
+    
+    [SerializeField] private CinemachineInputProvider playerCameraInputProvider;
+    
     enum DebugCommandTag
     {
         NONE,
@@ -31,6 +36,15 @@ public class DebugController : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
+        
         HELP = new DebugCommand("help", "Show list of commands", "help", () =>
         {
             outputLog.Clear();
@@ -89,6 +103,7 @@ public class DebugController : MonoBehaviour
         ShowConsole = !ShowConsole;
         Cursor.lockState = ShowConsole ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = ShowConsole;
+        playerCameraInputProvider.enabled = !ShowConsole;
         _input = "";
     }
 

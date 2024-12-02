@@ -11,7 +11,7 @@ public class MinimapIconConfiner : MonoBehaviour
 	void Start()
 	{
 		MinimapCam = GameObject.Find("Minimap Cam").transform;
-		MinimapSize = MinimapCam.GetComponent<Camera>().orthographicSize - 1;
+		MinimapSize = MinimapCam.GetComponent<Camera>().orthographicSize;
 	}
 
 	void Update()
