@@ -13,11 +13,15 @@ public class PlayerStateMachine : MonoBehaviour
     //reference variables
     PlayerControls _playerInput;
     CharacterController _characterController;
+    Animator _animator;
+
+    int _isRunningHash;
+    int _isJumpingHash;
 
     //Variables to store player input
     Vector2 _currentMovementInput;
     Vector3 _currentMovement;
-    Vector3 _currentRunMovement;
+    // Vector3 _currentRunMovement;
     Vector3 _appliedMovement;
     Vector3 _cameraRelativeMovement;
     bool _isMovementPresed;
@@ -61,12 +65,15 @@ public class PlayerStateMachine : MonoBehaviour
     }
 
     public CharacterController CharacterController { get { return _characterController; } }
+    public Animator Animator { get { return _animator; } }
+    public int IsJumpingHash { get { return _isJumpingHash; } }
+    public int IsRunningHash { get { return _isRunningHash; } }
     public bool GodMode { get { return _godMode; } set { _godMode = value; } }
     public float InitialJumpVelocity { get { return _initialJumpVelocity; } }
     public float Gravity { get { return _gravity; } }
     public bool IsJumpPressed { get { return _isJumpPressed; } }
     public bool IsMovementPressed { get { return _isMovementPresed; } }
-    public bool IsRunPressed { get { return _isRunPressed; } }
+    // public bool IsRunPressed { get { return _isRunPressed; } }
     public bool IsCrouchPressed { get { return _isCrouchPressed; } }
     public bool IsJumping { set { _isJumping = value; } }
     public bool IsFlying { set { _isFlying = value; } }
@@ -76,7 +83,7 @@ public class PlayerStateMachine : MonoBehaviour
     public float AppliedMovementX { get { return _appliedMovement.x; } set { _appliedMovement.x = value; } }
     public float AppliedMovementZ { get { return _appliedMovement.z; } set { _appliedMovement.z = value; } }
     public bool HasStoppedMoving { get { return _hasStoppedMoving; } }
-    public float RunMultiplier { get { return _runMultiplier; } }
+    // public float RunMultiplier { get { return _runMultiplier; } }
     public float BaseSpeed { get { return _baseSpeed; } set { _baseSpeed = value; } }
     public Vector2 CurrentMovementInput { get { return _currentMovementInput; } }
 
@@ -98,6 +105,10 @@ public class PlayerStateMachine : MonoBehaviour
 
         _playerInput = new PlayerControls();
         _characterController = GetComponent<CharacterController>();
+        _animator = GetComponent<Animator>();   
+        
+        _isRunningHash = Animator.StringToHash("isRunning");
+        _isJumpingHash = Animator.StringToHash("isJumping");
 
         // setup state
         _states = new PlayerStateFactory(this);
@@ -107,9 +118,6 @@ public class PlayerStateMachine : MonoBehaviour
         _playerInput.Player.Move.started += OnMovementInput;
         _playerInput.Player.Move.canceled += OnMovementInput;
         _playerInput.Player.Move.performed += OnMovementInput;
-
-        _playerInput.Player.Sprint.started += OnRun;
-        _playerInput.Player.Sprint.canceled += OnRun;
 
         _playerInput.Player.Jump.started += OnJump;
         _playerInput.Player.Jump.canceled += OnJump;
@@ -139,6 +147,7 @@ public class PlayerStateMachine : MonoBehaviour
         if (DebugController.Instance.ShowConsole) return;
 
         HandleRotation();
+        // HandleAnimation();
         HasPlayerStoppedMoving();
         _currentState.UpdateStates();
         _cameraRelativeMovement = ConvertToCameraSpace(_appliedMovement);
@@ -222,13 +231,26 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
 
+    // void HandleAnimation()
+    // {
+    //     bool isRunning = _animator.GetBool(_isRunningHash);
+    //
+    //     if (_isMovementPresed)
+    //     {
+    //         _animator.SetBool(_isRunningHash, true);
+    //     } else if (!_isMovementPresed)
+    //     {
+    //         _animator.SetBool(_isRunningHash, false);
+    //     }
+    // }
+
     void OnMovementInput(InputAction.CallbackContext ctx)
     {
         _currentMovementInput = ctx.ReadValue<Vector2>();
         _currentMovement.x = _currentMovementInput.x * _baseSpeed;
         _currentMovement.z = _currentMovementInput.y * _baseSpeed;
-        _currentRunMovement.x = _currentMovementInput.x * _baseSpeed * _runMultiplier;
-        _currentRunMovement.z = _currentMovementInput.y * _baseSpeed * _runMultiplier;
+        // _currentRunMovement.x = _currentMovementInput.x * _baseSpeed * _runMultiplier;
+        // _currentRunMovement.z = _currentMovementInput.y * _baseSpeed * _runMultiplier;
         _isMovementPresed = _currentMovementInput.x != 0 || _currentMovementInput.y != 0;
     }
 
@@ -236,11 +258,6 @@ public class PlayerStateMachine : MonoBehaviour
     {
         _isJumpPressed = ctx.ReadValueAsButton();
         _requireNewJumpPress = false;
-    }
-
-    void OnRun(InputAction.CallbackContext ctx)
-    {
-        _isRunPressed = ctx.ReadValueAsButton() || ctx.ReadValue<float>() > 0;
     }
 
     void OnCrouch(InputAction.CallbackContext ctx)

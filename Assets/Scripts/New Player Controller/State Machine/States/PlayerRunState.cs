@@ -5,7 +5,11 @@ using UnityEngine;
 public class PlayerRunState : PlayerBaseState
 {
     public PlayerRunState(PlayerStateMachine currentContext, PlayerStateFactory playerStateFactory) : base(currentContext, playerStateFactory) { }
-    public override void EnterState() { }
+
+    public override void EnterState()
+    {
+        Debug.LogWarning("WE SHOULD NOT BE IN THIS STATE, ERROR HAS OCCURED!");
+    }
 
     public override void UpdateState()
     {
@@ -14,8 +18,8 @@ public class PlayerRunState : PlayerBaseState
         if (Ctx.IsMovementPressed)
         {
             // Apply movement based on input
-            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
-            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            // Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            // Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
         }
         else
         {
@@ -29,8 +33,8 @@ public class PlayerRunState : PlayerBaseState
             {
                 Debug.Log("SLOWING DOWN - RUN STATE");
 
-                Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
-                Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
+                // Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
+                // Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.01f);
             }
         }
 
@@ -43,13 +47,14 @@ public class PlayerRunState : PlayerBaseState
 
     public override void CheckSwitchStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
-        {
-            SwitchState(Factory.Idle());
-        }
-        else if (Ctx.IsMovementPressed && !Ctx.IsRunPressed)
-        {
-            SwitchState(Factory.Walk());
-        }
+        
+        // if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
+        // {
+        //     SwitchState(Factory.Idle());
+        // }
+        // else if (Ctx.IsMovementPressed && !Ctx.IsRunPressed)
+        // {
+        //     SwitchState(Factory.Walk());
+        // }
     }
 }

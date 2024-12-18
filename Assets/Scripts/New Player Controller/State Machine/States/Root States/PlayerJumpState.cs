@@ -26,6 +26,8 @@ public class PlayerJumpState : PlayerBaseState, IRootState
 
     public override void ExitState()
     {
+        Ctx.Animator.SetBool(Ctx.IsJumpingHash, false);
+        
         if (Ctx.IsJumpPressed)
         {
             Ctx.RequireNewJumpPress = true;
@@ -34,18 +36,18 @@ public class PlayerJumpState : PlayerBaseState, IRootState
 
     public override void InitializeSubStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed && Ctx.HasStoppedMoving)
+        if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
         {
             SetSubState(Factory.Idle());
         }
-        else if (Ctx.IsMovementPressed && !Ctx.IsRunPressed)
+        else if (Ctx.IsMovementPressed)
         {
             SetSubState(Factory.Walk());
         }
-        else
-        {
-            SetSubState(Factory.Run());
-        }
+        // else
+        // {
+        //     SetSubState(Factory.Run());
+        // }
     }
 
     public override void CheckSwitchStates()
@@ -66,6 +68,7 @@ public class PlayerJumpState : PlayerBaseState, IRootState
     void HandleJump()
     {
         Ctx.IsJumping = true;
+        Ctx.Animator.SetBool(Ctx.IsJumpingHash, true);
         Ctx.CurrentMovementY = Ctx.InitialJumpVelocity;
         Ctx.AppliedMovementY = Ctx.InitialJumpVelocity;
         Ctx.RequireNewJumpPress = true;
@@ -95,8 +98,8 @@ public class PlayerJumpState : PlayerBaseState, IRootState
         if (Ctx.IsMovementPressed)
         {
             // Continue using player input for movement if available
-            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
-            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed, 0.1f);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed, 0.1f);
         }
         else
         {

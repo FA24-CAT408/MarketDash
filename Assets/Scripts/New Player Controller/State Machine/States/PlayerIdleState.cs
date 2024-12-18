@@ -9,6 +9,8 @@ public class PlayerIdleState : PlayerBaseState
     {
         Ctx.AppliedMovementX = 0;
         Ctx.AppliedMovementZ = 0;
+        
+        
     }
 
     public override void UpdateState()
@@ -22,11 +24,16 @@ public class PlayerIdleState : PlayerBaseState
 
     public override void CheckSwitchStates()
     {
-        if (Ctx.IsMovementPressed && Ctx.IsRunPressed && !Ctx.HasStoppedMoving)
-        {
-            SwitchState(Factory.Run());
-        }
-        else if (Ctx.IsMovementPressed)
+        // if (Ctx.IsMovementPressed && Ctx.IsRunPressed && !Ctx.HasStoppedMoving)
+        // {
+        //     SwitchState(Factory.Run());
+        // }
+        // else if (Ctx.IsMovementPressed)
+        // {
+        //     SwitchState(Factory.Walk());
+        // }
+        
+        if (Ctx.IsMovementPressed)
         {
             SwitchState(Factory.Walk());
         }

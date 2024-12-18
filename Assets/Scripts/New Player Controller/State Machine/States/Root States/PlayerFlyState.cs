@@ -47,18 +47,18 @@ public class PlayerFlyState : PlayerBaseState, IRootState
 
     public override void InitializeSubStates()
     {
-        if (!Ctx.IsMovementPressed && Ctx.IsRunPressed && Ctx.HasStoppedMoving)
+        if (!Ctx.IsMovementPressed && Ctx.HasStoppedMoving)
         {
             SetSubState(Factory.Idle());
         }
-        else if (Ctx.IsMovementPressed && !Ctx.IsRunPressed)
+        else if (Ctx.IsMovementPressed)
         {
             SetSubState(Factory.Walk());
         }
-        else
-        {
-            SetSubState(Factory.Run());
-        }
+        // else
+        // {
+        //     SetSubState(Factory.Run());
+        // }
     }
 
     public void HandleVerticalMovement()
@@ -88,8 +88,8 @@ public class PlayerFlyState : PlayerBaseState, IRootState
         if (Ctx.IsMovementPressed)
         {
             // Use normal movement controls for horizontal movement while flying
-            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
-            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed * Ctx.RunMultiplier, 0.1f);
+            Ctx.AppliedMovementX = Mathf.Lerp(Ctx.AppliedMovementX, Ctx.CurrentMovementInput.x * Ctx.BaseSpeed, 0.1f);
+            Ctx.AppliedMovementZ = Mathf.Lerp(Ctx.AppliedMovementZ, Ctx.CurrentMovementInput.y * Ctx.BaseSpeed, 0.1f);
         }
         else
         {

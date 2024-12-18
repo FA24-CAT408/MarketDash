@@ -272,11 +272,6 @@ ModelImporter:
       position: {x: 0, y: 0, z: 0}
       rotation: {x: 0, y: 0, z: 0, w: 1}
       scale: {x: 1, y: 1, z: 1}
-    - name: RightArm.001
-      parentName: Blobby_Rigging_ONLY_BLOBBY_NO_CAP(Clone)
-      position: {x: -0, y: 0, z: 0}
-      rotation: {x: -0.00000003774895, y: 0, z: -0, w: 1}
-      scale: {x: 100, y: 100, z: 100}
     - name: Blobby
       parentName: Blobby_Rigging_ONLY_BLOBBY_NO_CAP(Clone)
       position: {x: -0, y: 0, z: 0}
@@ -365,7 +360,7 @@ ModelImporter:
     - name: hand.R
       parentName: forearm.R
       position: {x: -0.0000000016018747, y: 0.016533047, z: 0.0000000010058283}
-      rotation: {x: 0.22749218, y: 0.34056517, z: 0.043275826, w: 0.91125727}
+      rotation: {x: 0.2274922, y: 0.3405652, z: 0.04327583, w: 0.9112573}
       scale: {x: 1, y: 1, z: 1}
     - name: hand.R_end
       parentName: hand.R
@@ -482,6 +477,11 @@ ModelImporter:
       position: {x: -0, y: 0.002481469, z: 0}
       rotation: {x: 0, y: -0, z: -0, w: 1}
       scale: {x: 1, y: 1, z: 1}
+    - name: RightArm.001
+      parentName: Blobby_Rigging_ONLY_BLOBBY_NO_CAP(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.00000003774895, y: 0, z: -0, w: 1}
+      scale: {x: 100, y: 100, z: 100}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5
@@ -495,7 +495,7 @@ ModelImporter:
     hasExtraRoot: 1
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
-  autoGenerateAvatarMappingIfUnspecified: 1
+  autoGenerateAvatarMappingIfUnspecified: 0
   animationType: 3
   humanoidOversampling: 1
   avatarSetup: 1
