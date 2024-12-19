@@ -45,7 +45,7 @@ public class MinimapIconConfiner : MonoBehaviour
 
 
 			// Multiply by MinimapSize and Divide by Distance
-			fromOriginToObject *= MinimapSize / Distance;
+			fromOriginToObject *= MinimapSize / (Distance + 7);
 
 
 			// Minimap + above calculation

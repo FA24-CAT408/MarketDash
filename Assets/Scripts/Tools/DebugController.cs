@@ -9,6 +9,7 @@ public class DebugController : MonoBehaviour
     public static DebugController Instance { get; private set; }
     
     [SerializeField] private CinemachineInputProvider playerCameraInputProvider;
+    [SerializeField] private CinemachineFreeLook playerFreeLookCamera;
     
     enum DebugCommandTag
     {
@@ -31,6 +32,7 @@ public class DebugController : MonoBehaviour
     public static DebugCommand CLEAR;
     public static DebugCommand<int> SET_BASE_SPEED;
     public static DebugCommand<bool> SET_GOD_MODE;
+    public static DebugCommand INVERT_CAMERA_MODE;
     public List<object> commandList;
     private Dictionary<string, DebugCommandTag> outputLog;
 
@@ -79,11 +81,19 @@ public class DebugController : MonoBehaviour
             LogCommandOutput("God mode set to " + x, DebugCommandTag.GOOD);
         });
 
+        INVERT_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera",() =>
+        {
+            Debug.Log("Inverting camera y");
+            playerFreeLookCamera.m_YAxis.m_InvertInput = !playerFreeLookCamera.m_YAxis.m_InvertInput;
+            LogCommandOutput("Inverting camera y", DebugCommandTag.GOOD);
+        });
+
         commandList = new List<object> {
             HELP,
             CLEAR,
             SET_BASE_SPEED,
-            SET_GOD_MODE
+            SET_GOD_MODE,
+            INVERT_CAMERA_MODE,
         };
 
         outputLog = new Dictionary<string, DebugCommandTag>();
