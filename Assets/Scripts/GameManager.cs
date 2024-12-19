@@ -138,7 +138,7 @@ public class GameManager : MonoBehaviour
 
         _groceryListManager.ResetLists();
         
-        int maxItemsInOrder = Random.Range(1, 6);
+        int maxItemsInOrder = Random.Range(1, 3);
 
         Debug.Log("MAX ITEMS IN ORDER: " + maxItemsInOrder);
         

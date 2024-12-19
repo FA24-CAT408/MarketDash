@@ -15,6 +15,7 @@ public class PlayerFallState : PlayerBaseState, IRootState
     public override void EnterState()
     {
         InitializeSubStates();
+        Ctx.Animator.SetBool(Ctx.IsJumpingHash, true);
         _coyoteTimeCounter = 0f; // Reset coyote time on enter state
     }
     public override void UpdateState()
@@ -42,6 +43,8 @@ public class PlayerFallState : PlayerBaseState, IRootState
     public override void ExitState()
     {
         _coyoteTimeCounter = _coyoteTimeDuration + 1f; // Set coyote time to be greater than duration on exit
+        
+        Ctx.Animator.SetBool(Ctx.IsJumpingHash, false);
     }
 
     public void HandleGravity()

@@ -4,14 +4,14 @@ using UnityEngine.AI;
 public class NPCController : MonoBehaviour
 {
     public float wanderRadius = 10f; // Radius to wander around
-    public float wanderDelay = 3f;  // Delay between wander movements
+    public float maxWanderDelay = 3f;  // Delay between wander movements
     private NavMeshAgent agent;
     private float wanderTimer;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        wanderTimer = wanderDelay;
+        wanderTimer = Random.Range(0f, maxWanderDelay);
     }
 
     void Update()
@@ -25,7 +25,8 @@ public class NPCController : MonoBehaviour
             {
                 agent.SetDestination(randomDestination);
             }
-            wanderTimer = wanderDelay;
+            
+            wanderTimer = Random.Range(0f, maxWanderDelay);
         }
     }
 

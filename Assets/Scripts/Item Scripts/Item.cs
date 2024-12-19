@@ -14,10 +14,13 @@ public class Item : MonoBehaviour
 
     private GroceryListManager groceryListManager;
     private Vector3 _orignalIconScale;
+    private AudioSource _audioSource;
 
     public void Start()
     {
         groceryListManager = FindObjectOfType<GroceryListManager>();
+        
+        _audioSource = GetComponent<AudioSource>();
         
         _orignalIconScale = minimapSprite.transform.localScale;
     }
@@ -46,6 +49,7 @@ public class Item : MonoBehaviour
         if (amount > 0)
         {
             amount--;
+            _audioSource.Play();
             groceryListManager.RemoveItem(this);
         }
     }
