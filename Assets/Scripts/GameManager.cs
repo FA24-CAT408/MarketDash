@@ -21,6 +21,9 @@ public class GameManager : MonoBehaviour
     
     [SerializeField]
     private GameState currentState;
+    
+    [SerializeField]
+    private bool setCursorVisible = true;
 
     public GameState CurrentState
     {
@@ -62,7 +65,7 @@ public class GameManager : MonoBehaviour
         _playerStateMachine = FindObjectOfType<PlayerStateMachine>();
         _freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
         
-        ChangeState(GameState.MainMenu);
+        ChangeState(currentState);
     }
 
     // Update is called once per frame
@@ -101,8 +104,8 @@ public class GameManager : MonoBehaviour
     {
         _playerStateMachine.gameObject.SetActive(false);
         
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
+        Cursor.visible = setCursorVisible;
 
         Debug.Log("Entered Main Menu");
     }
@@ -112,8 +115,8 @@ public class GameManager : MonoBehaviour
         _playerStateMachine.gameObject.SetActive(true);
         _timerManager.gameObject.SetActive(false);
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
+        Cursor.visible = setCursorVisible;
 
         Debug.Log("Entered PreGame");
     }
