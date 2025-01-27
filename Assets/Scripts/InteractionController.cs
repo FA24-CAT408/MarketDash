@@ -25,7 +25,7 @@ public class InteractionController : MonoBehaviour
         interactColliders = Physics.OverlapSphere(interactCheck.position, interactRadius, interactLayer);
     }
 
-    void Interact()
+    public void Interact()
     {
         Collider closestCollider = interactColliders.OrderBy(x => Vector3.Distance(interactCheck.position, x.transform.position)).FirstOrDefault();
 

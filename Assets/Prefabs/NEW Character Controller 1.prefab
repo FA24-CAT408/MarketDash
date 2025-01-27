@@ -546,6 +546,7 @@ GameObject:
   - component: {fileID: 4303911246713941358}
   - component: {fileID: 238855230168118826}
   - component: {fileID: 6114743032335817140}
+  - component: {fileID: 7272803376864273961}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -696,6 +697,25 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   spawnPointRadius: 10
+--- !u!114 &7272803376864273961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1584399431719241299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 665e11555f5a14003a19664014c6c230, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactCheck: {fileID: 7428887707796155648}
+  interactLayer:
+    serializedVersion: 2
+    m_Bits: 576
+  interactRadius: 1.26
+  interactGizmos: 1
+  interactColliders: []
 --- !u!1 &1707720585296774622
 GameObject:
   m_ObjectHideFlags: 0

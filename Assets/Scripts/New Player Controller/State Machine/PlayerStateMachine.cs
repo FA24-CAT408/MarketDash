@@ -13,6 +13,7 @@ public class PlayerStateMachine : MonoBehaviour
     //reference variables
     PlayerControls _playerInput;
     CharacterController _characterController;
+    InteractionController _interactionController;
     Animator _animator;
 
     int _isRunningHash;
@@ -40,6 +41,7 @@ public class PlayerStateMachine : MonoBehaviour
     [SerializeField] bool _godMode = false;
     bool _isJumpPressed = false;
     bool _isCrouchPressed = false;
+    bool _isInteractPressed = false;
     float _initialJumpVelocity;
     [SerializeField] float _maxJumpHeight = 3.0f;
     [SerializeField] float _maxJumpTime = 0.75f;
@@ -73,6 +75,7 @@ public class PlayerStateMachine : MonoBehaviour
     public float Gravity { get { return _gravity; } }
     public bool IsJumpPressed { get { return _isJumpPressed; } }
     public bool IsMovementPressed { get { return _isMovementPresed; } }
+    public bool IsInteractPressed { get { return _isInteractPressed; } }
     // public bool IsRunPressed { get { return _isRunPressed; } }
     public bool IsCrouchPressed { get { return _isCrouchPressed; } }
     public bool IsJumping { set { _isJumping = value; } }
@@ -105,6 +108,7 @@ public class PlayerStateMachine : MonoBehaviour
 
         _playerInput = new PlayerControls();
         _characterController = GetComponent<CharacterController>();
+        _interactionController = GetComponent<InteractionController>();
         _animator = GetComponent<Animator>();   
         
         _isRunningHash = Animator.StringToHash("isRunning");
@@ -124,6 +128,9 @@ public class PlayerStateMachine : MonoBehaviour
 
         _playerInput.Player.Crouch.started += OnCrouch;
         _playerInput.Player.Crouch.canceled += OnCrouch;
+
+        _playerInput.Player.Interact.started += OnInteract;
+        _playerInput.Player.Interact.canceled += OnInteract;
 
         SetupJumpVariables();
     }
@@ -263,6 +270,16 @@ public class PlayerStateMachine : MonoBehaviour
     void OnCrouch(InputAction.CallbackContext ctx)
     {
         _isCrouchPressed = ctx.ReadValueAsButton();
+    }
+
+    void OnInteract(InputAction.CallbackContext ctx)
+    {
+        _isInteractPressed = ctx.ReadValueAsButton();
+
+        if (_isInteractPressed)
+        {
+            _interactionController.Interact();
+        }
     }
 
     void OnEnable()
