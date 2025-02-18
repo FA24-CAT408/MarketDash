@@ -23,7 +23,7 @@ public class PlayerCollisionManager : MonoBehaviour
 
     void Update()
     {
-        UpdateClosestSpawnPoint();
+        // UpdateClosestSpawnPoint();
     }
 
     private void OnTriggerEnter(Collider other)
