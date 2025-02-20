@@ -56,6 +56,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     [Header("Jumping")] 
     // public bool AllowJumpingWhenSliding = false;
+    public bool _requireNewJumpPress = false;
     public float JumpUpSpeed = 10f;
     public float JumpScalableForwardSpeed = 10f;
     public float JumpPreGroundingGraceTime = 0f;
@@ -65,6 +66,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     public BonusOrientationMethod BonusOrientationMethod = BonusOrientationMethod.None;
     public float BonusOrientationSharpness = 10f;
     public Vector3 Gravity = new Vector3(0, -30f, 0);
+    public float IncreasedGravityMultiplier = 2f;
     public Transform MeshRoot;
 
     public CharacterState CurrentCharacterState { get; private set; }
@@ -169,7 +171,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
         }
 
         // Jumping input
-        if (_isJumpPressed)
+        if (_isJumpPressed && !_requireNewJumpPress)
         {
             Debug.Log("JUMP PRESSED");
             _timeSinceJumpRequested = 0f;
@@ -185,6 +187,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     void HandleJumpInput()
     {
         _isJumpPressed = true;
+        _requireNewJumpPress = false;
     }
 
     void HandleJumpCancelledInput()
@@ -389,7 +392,14 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                     }
 
                     // Gravity
-                    currentVelocity += Gravity * deltaTime;
+                    if (currentVelocity.y < 0) // Only increase gravity when falling
+                    {
+                        currentVelocity += Gravity * IncreasedGravityMultiplier * deltaTime;
+                    }
+                    else
+                    {
+                        currentVelocity += Gravity * deltaTime; // Normal gravity when ascending
+                    }
 
                     // Drag
                     currentVelocity *= (1f / (1f + (Drag * deltaTime)));
@@ -401,9 +411,9 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                 if (_jumpRequested)
                 {
                     // See if we actually are allowed to jump
-                    if (!_jumpConsumed &&
-                        Motor.GroundingStatus.IsStableOnGround ||
-                         _timeSinceLastAbleToJump <= JumpPostGroundingGraceTime)
+                    if (!_jumpConsumed && !_requireNewJumpPress &&
+                        (Motor.GroundingStatus.IsStableOnGround ||
+                         _timeSinceLastAbleToJump <= JumpPostGroundingGraceTime))
                     {
                         // Calculate jump direction before ungrounding
                         Vector3 jumpDirection = Motor.CharacterUp;
@@ -423,8 +433,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                         _jumpRequested = false;
                         _jumpConsumed = true;
                         _jumpedThisFrame = true;
-                        
-                        
+                        _requireNewJumpPress = true;
                     }
                 }
 
