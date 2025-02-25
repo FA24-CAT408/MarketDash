@@ -9,12 +9,12 @@ public class TimerManager : MonoBehaviour
     
     public TMP_Text timerText;
 
-    [Header("Timers")]
-    public GameObject startTimerObj;
-    public GameObject stopTimerObj;
+    // [Header("Timers")]
+    // public GameObject startTimerObj;
+    // public GameObject stopTimerObj;
 
-    public GameObject startWall;
-    public GameObject stopWall;
+    // public GameObject startWall;
+    // public GameObject stopWall;
 
     private float _timer;
     private bool _timerActive;
@@ -49,11 +49,11 @@ public class TimerManager : MonoBehaviour
         _timer = 0;
 
         _timerActive = true;
-        startTimerObj.SetActive(false);
-        stopTimerObj.SetActive(true);
+        // startTimerObj.SetActive(false);
+        // stopTimerObj.SetActive(true);
 
-        startWall.SetActive(true);
-        stopWall.SetActive(false);
+        // startWall.SetActive(true);
+        // stopWall.SetActive(false);
 
         StartCoroutine(TimerCoroutine());
     }
@@ -61,11 +61,11 @@ public class TimerManager : MonoBehaviour
     public void StopTimer()
     {
         _timerActive = false;
-        stopTimerObj.SetActive(false);
-        startTimerObj.SetActive(true);
+        // stopTimerObj.SetActive(false);
+        // startTimerObj.SetActive(true);
 
-        startWall.SetActive(false);
-        stopWall.SetActive(true);
+        // startWall.SetActive(false);
+        // stopWall.SetActive(true);
 
         timerText.text = GetFormattedTime(_timer);
         StopCoroutine(TimerCoroutine());

@@ -5,17 +5,11 @@ using UnityEngine.Events;
 
 public class PlayerCollisionManager : MonoBehaviour
 {
-    public UnityEvent startGame;
-    public UnityEvent stopGame;
-    
-    private PlayerStateMachine _playerStateMachine;
     private Transform currentSpawnPoint;
     private Vector3 _startingPosition;
     public float spawnPointRadius = 10f;
     void Start()
     {
-        _playerStateMachine = GetComponent<PlayerStateMachine>();
-        
         _startingPosition = transform.position;
         
         currentSpawnPoint = null;
@@ -28,18 +22,10 @@ public class PlayerCollisionManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.name == "Start Game")
-        {
-            Debug.Log("START GAME");
-            startGame.Invoke();
-        }
-        else if (other.gameObject.name == "Stop Game")
-        {
-            stopGame.Invoke();
-        }
-        else if (other.gameObject.CompareTag("Item"))
+        if (other.gameObject.CompareTag("Item"))
         {
             other.GetComponent<Item>().Interact();
+            
         } else if (other.gameObject.CompareTag("Death"))
         {
             GameManager.Instance.RespawnPlayer(currentSpawnPoint);

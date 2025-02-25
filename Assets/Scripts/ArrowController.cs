@@ -36,11 +36,11 @@ public class ArrowController : MonoBehaviour
 
     void LateUpdate()
     {
-        if (GroceryListManager.Instance.targetItem != null)
-        {
-            _targetTransform = GroceryListManager.Instance.targetItem.transform;
-            UpdateArrowRotation();
-        }
+        // if (GroceryListManager.Instance.targetItem != null)
+        // {
+        //     _targetTransform = GroceryListManager.Instance.targetItem.transform;
+        //     UpdateArrowRotation();
+        // }
     }
 
     void UpdateArrowRotation()

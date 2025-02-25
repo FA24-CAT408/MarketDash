@@ -3,13 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
-using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance { get; private set; }
-    public static event Action<GameState> OnStateChanged;
-
     public enum GameState
     {
         MainMenu,
@@ -18,6 +14,8 @@ public class GameManager : MonoBehaviour
         EndGame,
         GameOver
     }
+    public static GameManager Instance { get; private set; }
+    public static event Action<GameState> OnStateChanged;
     
     [SerializeField]
     private GameState currentState;
@@ -38,7 +36,7 @@ public class GameManager : MonoBehaviour
     // [Header("Game Components")]
     private GroceryListManager _groceryListManager;
     private TimerManager _timerManager;
-    private PlayerStateMachine _playerStateMachine;
+    private KCCPlayerController _player;
     private CinemachineFreeLook _freeLookCamera;
     
     private void Awake()
@@ -62,8 +60,8 @@ public class GameManager : MonoBehaviour
         
         _groceryListManager = FindObjectOfType<GroceryListManager>();
         _timerManager = FindObjectOfType<TimerManager>();
-        _playerStateMachine = FindObjectOfType<PlayerStateMachine>();
-        _freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
+        _player = FindObjectOfType<KCCPlayerController>();
+        // _freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
         
         ChangeState(currentState);
     }
@@ -102,7 +100,7 @@ public class GameManager : MonoBehaviour
     
     private void EnterMainMenu()
     {
-        _playerStateMachine.gameObject.SetActive(false);
+        _player.gameObject.SetActive(false);
         
         Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
         Cursor.visible = setCursorVisible;
@@ -112,40 +110,32 @@ public class GameManager : MonoBehaviour
     
     private void EnterPreGame()
     {
-        _playerStateMachine.gameObject.SetActive(true);
+        _player.gameObject.SetActive(true);
         _timerManager.gameObject.SetActive(false);
 
-        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
-        Cursor.visible = setCursorVisible;
+        // Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
+        // Cursor.visible = setCursorVisible;
 
         Debug.Log("Entered PreGame");
     }
     
     private void EnterEndGame()
     {
-        //TODO: SET EXIT AS TARGET HIGHLIGHTED IN MINIMAP
-
         Debug.Log("Game Over! EndGame state triggered.");
     }
 
 
-    private void StartGame()
+    public void StartGame()
     {
-        _playerStateMachine.enabled = true;
-        _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
+        _player.gameObject.SetActive(true);
+        // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
         
         _timerManager.gameObject.SetActive(true);
         
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Cursor.lockState = CursorLockMode.Locked;
+        // Cursor.visible = false;
 
-        _groceryListManager.ResetLists();
-        
-        int maxItemsInOrder = Random.Range(1, 3);
-
-        Debug.Log("MAX ITEMS IN ORDER: " + maxItemsInOrder);
-        
-        _groceryListManager.GetNewOrder(1, maxItemsInOrder);
+        _groceryListManager.CreateAndShowList();
         
         _timerManager.StartTimer();
 
@@ -154,15 +144,15 @@ public class GameManager : MonoBehaviour
 
     private void StopGame()
     {
-        _playerStateMachine.enabled = false;
-        _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = false;
+        _player.gameObject.SetActive(false);
+        // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = false;
 
         TimerManager.Instance.StopTimer();
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        // Cursor.lockState = CursorLockMode.None;
+        // Cursor.visible = true;
 
-        Debug.Log("Game Over");
+        Debug.Log("Level Beat");
     }
 
     public void GameStart()
@@ -190,8 +180,8 @@ public class GameManager : MonoBehaviour
 
         // Disable player controls and camera
         Debug.Log("Disabling player...");
-        _playerStateMachine.enabled = false;
-        _playerStateMachine.gameObject.SetActive(false);
+        _player.enabled = false;
+        _player.gameObject.SetActive(false);
         
         TimerManager.Instance.AddTime(5f);
 
@@ -203,13 +193,13 @@ public class GameManager : MonoBehaviour
 
         // Move player to the spawn point
         Debug.Log($"Respawning player at: {spawnPoint.position}");
-        _playerStateMachine.transform.position = spawnPoint.position;
+        _player.transform.position = spawnPoint.position;
 
         // Re-enable player controls and camera
         Debug.Log("Re-enabling player...");
-        _playerStateMachine.gameObject.SetActive(true);
-        _playerStateMachine.enabled = true;
-        _freeLookCamera.m_LookAt = _playerStateMachine.transform.GetChild(0);
-        _freeLookCamera.m_Follow = _playerStateMachine.transform.GetChild(0);
+        _player.gameObject.SetActive(true);
+        _player.enabled = true;
+        _freeLookCamera.m_LookAt = _player.transform.GetChild(0);
+        _freeLookCamera.m_Follow = _player.transform.GetChild(0);
     }
 }

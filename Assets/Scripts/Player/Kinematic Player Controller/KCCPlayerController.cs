@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using KinematicCharacterController;
 using UnityEngine;
@@ -41,6 +39,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     public float JumpScalableForwardSpeed = 10f;
     public float JumpPreGroundingGraceTime = 0f;
     public float JumpPostGroundingGraceTime = 0f;
+    public float CoyoteTimeDuration = 0.2f;
     public bool _requireNewJumpPress = false;
 
     [Header("Misc")]
@@ -58,11 +57,12 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     private int _jumpCount = 0;
     private bool _jumpRequested = false;
-    private bool _jumpConsumed = false;
     private bool _jumpedThisFrame = false;
     private float _timeSinceJumpRequested = Mathf.Infinity;
     private float _timeSinceLastAbleToJump = 0f;
     private Vector3 _internalVelocityAdd = Vector3.zero;
+    
+    private float _coyoteTimeCounter = 0f;
 
     private Vector3 _moveInputVector;
     private Vector3 _lookInputVector;
@@ -85,12 +85,6 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     void Update()
     {
-        // PlayerCharacterInputs characterInputs = new PlayerCharacterInputs();
-        //
-        // Build the CharacterInputs struct
-        // characterInputs.MoveAxisForward = Input.GetAxisRaw("Vertical");
-        // characterInputs.MoveAxisRight = Input.GetAxisRaw("Horizontal");
-        // characterInputs.JumpDown = Input.GetKeyDown(KeyCode.Space);
         
         SetInputs();
     }
@@ -121,6 +115,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                 break;
             case CharacterState.Jumping:
                 _animator.SetBool(_isJumpingHash, true);
+                _jumpCount++;
                 break;
         }
     }
@@ -270,8 +265,11 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
         // Handle jumping logic
         if (_jumpRequested)
         {
-            if (!_jumpConsumed && !_requireNewJumpPress &&
-                (Motor.GroundingStatus.IsStableOnGround || _timeSinceLastAbleToJump <= JumpPostGroundingGraceTime))
+            bool canJump = !_requireNewJumpPress && 
+                           ((Motor.GroundingStatus.IsStableOnGround || _coyoteTimeCounter > 0) || 
+                            (_jumpCount < MaxJumpCount));
+            
+            if (canJump)
             {
                 // Calculate jump direction before ungrounding
                 Vector3 jumpDirection = Motor.CharacterUp;
@@ -287,9 +285,9 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                 currentVelocity += (jumpDirection * JumpUpSpeed) - Vector3.Project(currentVelocity, Motor.CharacterUp);
                 currentVelocity += (_moveInputVector * JumpScalableForwardSpeed);
                 _jumpRequested = false;
-                _jumpConsumed = true;
                 _jumpedThisFrame = true;
                 _requireNewJumpPress = true;
+                _coyoteTimeCounter = 0f;
 
                 // Transition to the Jumping state
                 TransitionToState(CharacterState.Jumping);
@@ -333,6 +331,8 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     private void HandleAirMovement(ref Vector3 currentVelocity, float deltaTime)
     {
+        _coyoteTimeCounter -= deltaTime;
+        
         // Air movement logic
         _animator.SetBool(_isJumpingHash, true);
 
@@ -406,11 +406,6 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
         if (Motor.GroundingStatus.IsStableOnGround)
         {
-            // If we're on a ground surface, reset jumping values
-            if (!_jumpedThisFrame)
-            {
-                _jumpConsumed = false;
-            }
 
             _timeSinceLastAbleToJump = 0f;
         }
@@ -470,6 +465,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     protected void OnLeaveStableGround()
     {
+        _coyoteTimeCounter = CoyoteTimeDuration;
     }
 
     public void OnDiscreteCollisionDetected(Collider hitCollider)
