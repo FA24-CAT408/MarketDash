@@ -87,7 +87,7 @@ MonoBehaviour:
   MaxStepHeight: 0.5
   AllowSteppingWithoutStableGrounding: 0
   MinRequiredStepDepth: 0.1
-  LedgeAndDenivelationHandling: 1
+  LedgeAndDenivelationHandling: 0
   MaxStableDistanceFromLedge: 0.16
   MaxVelocityForLedgeSnap: 0
   MaxStableDenivelationAngle: 180
@@ -116,21 +116,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Motor: {fileID: 7108713038688862767}
   _animator: {fileID: 4227054882705831058}
+  _input: {fileID: 0}
   MaxStableMoveSpeed: 10
-  StableMovementSharpness: 15
-  OrientationSharpness: 10
   MaxAirMoveSpeed: 15
   AirAccelerationSpeed: 15
   Drag: 0.1
+  StableMovementSharpness: 15
+  OrientationSharpness: 10
+  MaxJumpCount: 2
   JumpUpSpeed: 10
   JumpScalableForwardSpeed: 5
   JumpPreGroundingGraceTime: 0
   JumpPostGroundingGraceTime: 0
+  CoyoteTimeDuration: 0.2
+  _requireNewJumpPress: 0
   IgnoredColliders: []
   BonusOrientationMethod: 0
   BonusOrientationSharpness: 10
   Gravity: {x: 0, y: -30, z: 0}
-  MeshRoot: {fileID: 0}
+  IncreasedGravityMultiplier: 2
 --- !u!54 &7370521166888030895
 Rigidbody:
   m_ObjectHideFlags: 0
