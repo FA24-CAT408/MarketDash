@@ -1,14 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Cinemachine;
+using DG.Tweening;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public enum GameState
     {
-        MainMenu,
+        LoadingIn,
         PreGame,
         InProgress,
         EndGame,
@@ -80,9 +83,6 @@ public class GameManager : MonoBehaviour
 
         switch (newState)
         {
-            case GameState.MainMenu:
-                EnterMainMenu();
-                break;
             case GameState.PreGame:
                 EnterPreGame();
                 break;
@@ -102,8 +102,8 @@ public class GameManager : MonoBehaviour
     {
         _player.gameObject.SetActive(false);
         
-        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
-        Cursor.visible = setCursorVisible;
+        // Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
+        // Cursor.visible = setCursorVisible;
 
         Debug.Log("Entered Main Menu");
     }

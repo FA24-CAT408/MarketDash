@@ -36,7 +36,6 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     [Header("Jump Settings")]
     public int MaxJumpCount = 2;
     public float JumpUpSpeed = 10f;
-    public float JumpScalableForwardSpeed = 10f;
     public float JumpPreGroundingGraceTime = 0f;
     public float JumpPostGroundingGraceTime = 0f;
     public float CoyoteTimeDuration = 0.2f;
@@ -283,7 +282,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
                 // Add to the return velocity and reset jump state
                 currentVelocity += (jumpDirection * JumpUpSpeed) - Vector3.Project(currentVelocity, Motor.CharacterUp);
-                currentVelocity += (_moveInputVector * JumpScalableForwardSpeed);
+                
                 _jumpRequested = false;
                 _jumpedThisFrame = true;
                 _requireNewJumpPress = true;
