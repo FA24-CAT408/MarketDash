@@ -5,8 +5,6 @@ using TMPro;
 
 public class GroceryListManager : MonoBehaviour
 {
-    public static GroceryListManager Instance { get; private set; }
-
     public Transform listContainer; // Parent container for all item texts
     public GameObject itemTextPrefab;
 
@@ -16,19 +14,17 @@ public class GroceryListManager : MonoBehaviour
     private Dictionary<Item, TMP_Text> itemUIElements  = new(); // Track UI by item name
     
     private bool isOrderComplete = false;
-
-    private void Awake()
+    
+    private void OnEnable()
     {
-        // Check if an instance already exists and destroy this one if it does
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
+        // Subscribe to the item collected event
+        Item.OnItemCollected += HandleItemCollected;
+    }
+    
+    private void OnDisable()
+    {
+        // Unsubscribe when this object is disabled to prevent memory leaks
+        Item.OnItemCollected -= HandleItemCollected;
     }
 
     // Start is called before the first frame update
@@ -36,12 +32,26 @@ public class GroceryListManager : MonoBehaviour
     {
     }
     
+    private void HandleItemCollected(Item item)
+    {
+        if (groceryList.Contains(item) && !collectedItems[item])
+        {
+            Debug.Log($"Item collected: {item.itemName}");
+            
+            // Mark the item as collected
+            MarkItemCollected(item);
+        }
+    }
+    
     public void CreateAndShowList()
     {
         ClearUIElements();
+
+        Debug.Log("CREATING AND SHOWING LIST!");
         
         // Initialize collection status for all items
         collectedItems.Clear();
+        
         foreach (Item item in groceryList)
         {
             collectedItems[item] = false;

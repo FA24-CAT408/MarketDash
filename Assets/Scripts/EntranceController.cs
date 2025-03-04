@@ -3,10 +3,12 @@ using UnityEngine.Events;
 
 public class EntranceController : MonoBehaviour
 {
+    private GroceryListManager groceryListManager;
+    
     // Start is called before the first frame update
     void Start()
     {
-        
+        groceryListManager = FindObjectOfType<GroceryListManager>();
     }
 
     // Update is called once per frame
@@ -25,7 +27,7 @@ public class EntranceController : MonoBehaviour
                     GameManager.Instance.ChangeState(GameManager.GameState.InProgress);
                     break;
                 case GameManager.GameState.InProgress:
-                    if (GroceryListManager.Instance.IsOrderComplete())
+                    if (groceryListManager.IsOrderComplete())
                     {
                         GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
                     }

@@ -22,14 +22,10 @@ public class PlayerCollisionManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Item"))
-        {
-            other.GetComponent<Item>().Interact();
-            
-        } else if (other.gameObject.CompareTag("Death"))
-        {
+       if (other.gameObject.CompareTag("Death"))
+       {
             GameManager.Instance.RespawnPlayer(currentSpawnPoint);
-        }
+       }
     }
     
     private void UpdateClosestSpawnPoint()

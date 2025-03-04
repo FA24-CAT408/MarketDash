@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,8 +6,10 @@ using UnityEngine;
 public class Item : MonoBehaviour
 {
     public string itemName;
+    public static event Action<Item> OnItemCollected;
+    
     private AudioSource _audioSource;
-
+    
     public void Start()
     {
         _audioSource = GetComponent<AudioSource>();
@@ -16,10 +19,18 @@ public class Item : MonoBehaviour
     {
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            Interact();
+        }
+    }
+
     public void Interact()
     {
         _audioSource.Play();
-        GroceryListManager.Instance.MarkItemCollected(this);
+        OnItemCollected?.Invoke(this);
         gameObject.SetActive(false);
     }
 }
