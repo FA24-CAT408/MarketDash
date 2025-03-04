@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Cinemachine;
 using DG.Tweening;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -25,6 +26,11 @@ public class GameManager : MonoBehaviour
     
     [SerializeField]
     private bool setCursorVisible = true;
+    
+    [Header("Game Events")]
+    public UnityEvent OnGameStart;
+    public UnityEvent OnGameOver;
+    public UnityEvent<float> OnLevelComplete;
 
     public GameState CurrentState
     {
@@ -39,8 +45,7 @@ public class GameManager : MonoBehaviour
     // [Header("Game Components")]
     private GroceryListManager _groceryListManager;
     private TimerManager _timerManager;
-    private KCCPlayerController _player;
-    private CinemachineFreeLook _freeLookCamera;
+    private UIManager _uiManager;
     
     private void Awake()
     {
@@ -54,6 +59,24 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+        
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+    
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+    
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Find references to scene-specific components
+        _groceryListManager = FindObjectOfType<GroceryListManager>();
+        _timerManager = FindObjectOfType<TimerManager>();
+        _uiManager = FindObjectOfType<UIManager>();
+        
+        // Initialize the scene based on current state
+        ChangeState(GameState.LoadingIn);
     }
     
     // Start is called before the first frame update
@@ -63,10 +86,9 @@ public class GameManager : MonoBehaviour
         
         _groceryListManager = FindObjectOfType<GroceryListManager>();
         _timerManager = FindObjectOfType<TimerManager>();
-        _player = FindObjectOfType<KCCPlayerController>();
-        // _freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
+        _uiManager = FindObjectOfType<UIManager>();
         
-        ChangeState(currentState);
+        ChangeState(GameState.LoadingIn);
     }
 
     // Update is called once per frame
@@ -77,12 +99,17 @@ public class GameManager : MonoBehaviour
     
     public void ChangeState(GameState newState)
     {
+        if (currentState == newState) return;
+        
         CurrentState = newState;
 
         Debug.Log("CHANGING TO STATE: " + newState);
 
         switch (newState)
         {
+            case GameState.LoadingIn:
+                EnterLoadingIn();
+                break;
             case GameState.PreGame:
                 EnterPreGame();
                 break;
@@ -96,30 +123,53 @@ public class GameManager : MonoBehaviour
                 StopGame();
                 break;
         }
-    }
-    
-    private void EnterMainMenu()
-    {
-        _player.gameObject.SetActive(false);
         
-        // Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
-        // Cursor.visible = setCursorVisible;
-
-        Debug.Log("Entered Main Menu");
+        UpdateUIForState(newState);
     }
     
-    private void EnterPreGame()
+    private void UpdateUIForState(GameState state)
     {
-        _player.gameObject.SetActive(true);
-        _timerManager.gameObject.SetActive(false);
-
-        // Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Confined;
-        // Cursor.visible = setCursorVisible;
+        if (_uiManager == null) return;
+        
+        // switch (state)
+        // {
+        //     case GameState.LoadingIn:
+        //     case GameState.PreGame:
+        //         _uiManager.ShowInGameUI(false);
+        //         _uiManager.ShowLevelBeatUI(false);
+        //         break;
+        //         
+        //     case GameState.InProgress:
+        //         _uiManager.ShowInGameUI(true);
+        //         _uiManager.ShowLevelBeatUI(false);
+        //         break;
+        //         
+        //     case GameState.EndGame:
+        //     case GameState.GameOver:
+        //         _uiManager.ShowInGameUI(false);
+        //         _uiManager.ShowLevelBeatUI(true);
+        //         _uiManager.UpdateLevelBeatUI();
+        //         break;
+        // }
+    }
+    
+    public void EnterLoadingIn()
+    {
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = false;
+    }
+    
+    public void EnterPreGame()
+    {
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = true;
 
         Debug.Log("Entered PreGame");
     }
     
-    private void EnterEndGame()
+    public void EnterEndGame()
     {
         Debug.Log("Game Over! EndGame state triggered.");
     }
@@ -127,31 +177,38 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        _player.gameObject.SetActive(true);
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = true;
         // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
-        
-        _timerManager.gameObject.SetActive(true);
         
         // Cursor.lockState = CursorLockMode.Locked;
         // Cursor.visible = false;
 
         _groceryListManager.CreateAndShowList();
         
-        _timerManager.StartTimer();
+        if (_timerManager != null)
+            _timerManager.StartTimer();
+        
+        OnGameStart?.Invoke();
 
         Debug.Log("Game Started");
     }
 
     private void StopGame()
     {
-        _player.gameObject.SetActive(false);
-        // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = false;
-
-        TimerManager.Instance.StopTimer();
-
-        // Cursor.lockState = CursorLockMode.None;
-        // Cursor.visible = true;
-
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = false;
+            
+        if (_timerManager != null)
+            _timerManager.StopTimer();
+        
+        // Get the final time and pass it to the event
+        float finalTime = _timerManager != null ? _timerManager.GetCurrentTime() : 0f;
+        OnGameOver?.Invoke();
+        OnLevelComplete?.Invoke(finalTime);
+        
         Debug.Log("Level Beat");
     }
 
@@ -165,6 +222,50 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.GameOver);
     }
     
+    public void ResetToLoadingState()
+    {
+        ChangeState(GameState.LoadingIn);
+    }
+    
+    // Add this method to GameManager
+    public void LoadScene(string sceneName)
+    {
+        // Set state to LoadingIn before loading the scene
+        ChangeState(GameState.LoadingIn);
+    
+        // Load the scene
+        SceneManager.LoadScene(sceneName);
+    }
+
+    public void LoadNextScene()
+    {
+        // Set state to LoadingIn
+        ChangeState(GameState.LoadingIn);
+    
+        // Get the next scene index
+        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+    
+        // Check if there is a next scene
+        if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(nextSceneIndex);
+        }
+        else
+        {
+            // If there's no next level, go back to main menu
+            SceneManager.LoadScene("Main Menu");
+        }
+    }
+
+    public void RestartCurrentScene()
+    {
+        // Set state to LoadingIn
+        ChangeState(GameState.LoadingIn);
+    
+        // Reload the current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    
     public void RespawnPlayer(Transform spawnPoint)
     {
         StartCoroutine(RespawnRoutine(spawnPoint));
@@ -172,6 +273,8 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator RespawnRoutine(Transform spawnPoint)
     {
+        KCCPlayerController player = FindObjectOfType<KCCPlayerController>();
+        
         if (spawnPoint == null)
         {
             Debug.LogWarning("No valid spawn point provided for respawn.");
@@ -180,26 +283,26 @@ public class GameManager : MonoBehaviour
 
         // Disable player controls and camera
         Debug.Log("Disabling player...");
-        _player.enabled = false;
-        _player.gameObject.SetActive(false);
+        player.enabled = false;
+        player.gameObject.SetActive(false);
         
         TimerManager.Instance.AddTime(5f);
 
-        _freeLookCamera.m_LookAt = spawnPoint;
-        _freeLookCamera.m_Follow = spawnPoint;
+        // _freeLookCamera.m_LookAt = spawnPoint;
+        // _freeLookCamera.m_Follow = spawnPoint;
 
         // Add a short delay
         yield return new WaitForSeconds(1f);
 
         // Move player to the spawn point
         Debug.Log($"Respawning player at: {spawnPoint.position}");
-        _player.transform.position = spawnPoint.position;
+        player.transform.position = spawnPoint.position;
 
         // Re-enable player controls and camera
         Debug.Log("Re-enabling player...");
-        _player.gameObject.SetActive(true);
-        _player.enabled = true;
-        _freeLookCamera.m_LookAt = _player.transform.GetChild(0);
-        _freeLookCamera.m_Follow = _player.transform.GetChild(0);
+        player.gameObject.SetActive(true);
+        player.enabled = true;
+        // _freeLookCamera.m_LookAt = player.transform.GetChild(0);
+        // _freeLookCamera.m_Follow = player.transform.GetChild(0);
     }
 }

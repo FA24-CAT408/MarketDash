@@ -4,6 +4,7 @@ using UnityEngine;
 
 public enum CharacterState
 {
+    Idle,
     Grounded,
     Airborne,
     Jumping,
@@ -26,6 +27,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     private bool _isJumpPressed;
 
     [Header("Movement Settings")]
+    public bool canMove = true;
     public float MaxStableMoveSpeed = 10f;
     public float MaxAirMoveSpeed = 15f;
     public float AirAccelerationSpeed = 15f;
@@ -84,6 +86,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
 
     void Update()
     {
+        if(!canMove) return;
         
         SetInputs();
     }
@@ -140,6 +143,14 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     /// </summary>
     public void SetInputs()
     {
+        if (!canMove)
+        {
+            _moveInputVector = Vector3.zero;
+            _lookInputVector = Vector3.zero;
+            _animator.SetBool(_isRunningHash, false);
+            return;
+        }
+        
         Vector3 moveInputVector = Vector3.ClampMagnitude(new Vector3(_movementDirection.x, 0f, _movementDirection.y), 1f);
         _moveInputVector = ConvertToCameraSpace(moveInputVector);
         _lookInputVector = _moveInputVector;
@@ -162,11 +173,18 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     
     void HandleMovementInput(Vector2 movementInput)
     {
+        if (!canMove) 
+        {
+            _movementDirection = Vector2.zero;
+            return;
+        }
+        
         _movementDirection = movementInput;
     }
 
     void HandleJumpInput()
     {
+        if (!canMove) return;
         _isJumpPressed = true;
         _requireNewJumpPress = false;
     }
@@ -246,7 +264,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     /// </summary>
     public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
     {
-       // Reset jump state and handle jump requests
+        // Reset jump state and handle jump requests
         _jumpedThisFrame = false;
         _timeSinceJumpRequested += deltaTime;
 
@@ -259,6 +277,28 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
             case CharacterState.Jumping:
                 HandleAirMovement(ref currentVelocity, deltaTime);
                 break;
+        }
+        
+        if (!canMove)
+        {
+            // Only zero out horizontal velocity, keep vertical for gravity
+            currentVelocity.x = 0;
+            currentVelocity.z = 0;
+        
+            // Apply gravity so player falls to ground
+            currentVelocity += Gravity * deltaTime;
+        
+            // Apply drag
+            currentVelocity *= (1f / (1f + (Drag * deltaTime)));
+        
+            // Check if grounded to transition to Grounded state
+            if (Motor.GroundingStatus.IsStableOnGround)
+            {
+                TransitionToState(CharacterState.Grounded);
+                _animator.SetBool(_isRunningHash, false);
+            }
+        
+            return;
         }
 
         // Handle jumping logic

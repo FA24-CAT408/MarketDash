@@ -7,14 +7,7 @@ public class TimerManager : MonoBehaviour
 {
     public static TimerManager Instance { get; private set; } 
     
-    public TMP_Text timerText;
-
-    // [Header("Timers")]
-    // public GameObject startTimerObj;
-    // public GameObject stopTimerObj;
-
-    // public GameObject startWall;
-    // public GameObject stopWall;
+    public static event Action<float> OnTimerUpdated;
 
     private float _timer;
     private bool _timerActive;
@@ -49,11 +42,6 @@ public class TimerManager : MonoBehaviour
         _timer = 0;
 
         _timerActive = true;
-        // startTimerObj.SetActive(false);
-        // stopTimerObj.SetActive(true);
-
-        // startWall.SetActive(true);
-        // stopWall.SetActive(false);
 
         StartCoroutine(TimerCoroutine());
     }
@@ -61,30 +49,31 @@ public class TimerManager : MonoBehaviour
     public void StopTimer()
     {
         _timerActive = false;
-        // stopTimerObj.SetActive(false);
-        // startTimerObj.SetActive(true);
-
-        // startWall.SetActive(false);
-        // stopWall.SetActive(true);
-
-        timerText.text = GetFormattedTime(_timer);
+        
         StopCoroutine(TimerCoroutine());
+    }
+
+    public float GetCurrentTime()
+    {
+        return _timer;
     }
     
     public void AddTime(float time)
     {
         _timer += time;
+        OnTimerUpdated?.Invoke(_timer);
     }
 
     public void SubtractTime(float time)
     {
         _timer -= time;
+        OnTimerUpdated?.Invoke(_timer);
     }
     
     public void ResetTimer()
     {
         _timer = 0;
-        timerText.text = GetFormattedTime(_timer);
+        OnTimerUpdated?.Invoke(_timer);
     }
 
     IEnumerator TimerCoroutine()
@@ -92,7 +81,7 @@ public class TimerManager : MonoBehaviour
         while (_timerActive)
         {
             _timer += Time.deltaTime;
-            timerText.text = GetFormattedTime(_timer);
+            OnTimerUpdated?.Invoke(_timer);
             yield return null;
         }
     }
