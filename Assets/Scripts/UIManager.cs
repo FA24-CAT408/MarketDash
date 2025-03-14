@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
 using DG.Tweening;
+using Obvious.Soap;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -25,7 +26,11 @@ public class UIManager : MonoBehaviour
     public CanvasGroup fadePanel;
     public float fadeDuration = 1.5f;
     
+    [Header("Save Data")]
+    [SerializeField] private GameSaveManager _gameSave;
+    
     private Tween _currentFadeTween;
+    private TimerManager _timerManager;
     
     private void Awake()
     {
@@ -43,6 +48,8 @@ public class UIManager : MonoBehaviour
     
     private void Start()
     {
+        _timerManager = FindObjectOfType<TimerManager>();
+        
         // Initialize UI state based on current game state
         if (GameManager.Instance != null)
         {
@@ -64,9 +71,9 @@ public class UIManager : MonoBehaviour
     
     private void UpdateTimerDisplay(float time)
     {
-        if (timerText != null && TimerManager.Instance != null)
+        if (timerText != null && _timerManager != null)
         {
-            timerText.text = TimerManager.Instance.GetFormattedTime(time);
+            timerText.text = _timerManager.GetFormattedTime(time);
         }
     }
     
@@ -187,17 +194,17 @@ public class UIManager : MonoBehaviour
         // Update best time display
         if (bestTimeText != null)
         {
-            float bestTime = timerManager.GetBestTime();
+            float currentTime = timerManager.GetCurrentTime();
             
-            // Check if this is a new best time
-            if (timerManager.GetCurrentTime() < bestTime)
+            // Check if this is the first completion or a new best time
+            if (!_gameSave.IsLevelCompleted(GameManager.Instance.currentLevel) || 
+                currentTime < _gameSave.GetLevelTime(GameManager.Instance.currentLevel))
             {
-                timerManager.SetBestTime();
-                bestTime = timerManager.GetCurrentTime();
-                bestTimeText.text = $"New Best Time: {timerManager.GetFormattedTime(bestTime)}";
+                bestTimeText.text = $"New Best Time: {timerManager.GetFormattedTime(currentTime)}";
             }
-            else if (bestTime < float.MaxValue)
+            else if (_gameSave.IsLevelCompleted(GameManager.Instance.currentLevel))
             {
+                float bestTime = _gameSave.GetLevelTime(GameManager.Instance.currentLevel);
                 bestTimeText.text = $"Best Time: {timerManager.GetFormattedTime(bestTime)}";
             }
             else
@@ -212,14 +219,9 @@ public class UIManager : MonoBehaviour
         Debug.Log("GAME OVER Main Menu BTN PRESSED");
     
         PerformFadeOut(() => {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.LoadScene("Main Menu");
-            }
-            else
-            {
-                SceneManager.LoadScene("Main Menu");
-            }
+            SceneManager.LoadScene("Main Menu");
+
+            FindObjectOfType<GameManager>().currentLevel = 0;
         });
     }
 
@@ -227,15 +229,10 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("Restart Level BTN PRESSED");
     
-        PerformFadeOut(() => {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.RestartCurrentScene();
-            }
-            else
-            {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-            }
+        PerformFadeOut(() =>
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            FindObjectOfType<GameManager>().currentLevel -= 1;
         });
     }
 

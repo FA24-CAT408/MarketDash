@@ -12,21 +12,27 @@ public class CameraTrigger : MonoBehaviour
     
     // Store the previous camera when player enters
     private CinemachineVirtualCamera previousCamera;
-    
+    private CameraSystem cameraSystem;
+
+    private void Start()
+    {
+        cameraSystem = FindObjectOfType<CameraSystem>();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            previousCamera = CameraSystem.Instance.currentCamera;
+            previousCamera = cameraSystem.currentCamera;
             
             // Activate the target camera
             if (targetCamera != null)
             {
-                CameraSystem.Instance.SetNewCamera(targetCamera);
+                cameraSystem.SetNewCamera(targetCamera);
             }
             else if (cameraIndex >= 0)
             {
-                CameraSystem.Instance.SetCameraByIndex(cameraIndex);
+                cameraSystem.SetCameraByIndex(cameraIndex);
             }
             else
             {

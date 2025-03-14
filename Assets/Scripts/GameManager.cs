@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Cinemachine;
 using DG.Tweening;
+using Obvious.Soap;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
@@ -20,6 +21,10 @@ public class GameManager : MonoBehaviour
     }
     public static GameManager Instance { get; private set; }
     public static event Action<GameState> OnStateChanged;
+    
+    public int currentLevel = 0;
+    
+    [SerializeField] private GameSaveManager _gameSave;
     
     [SerializeField]
     private GameState currentState;
@@ -59,7 +64,7 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        
+
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
     
@@ -85,7 +90,6 @@ public class GameManager : MonoBehaviour
         Debug.Log("GAME MANAGER START METHOD");
         
         _groceryListManager = FindObjectOfType<GroceryListManager>();
-        _timerManager = FindObjectOfType<TimerManager>();
         _uiManager = FindObjectOfType<UIManager>();
         
         ChangeState(GameState.LoadingIn);
@@ -206,8 +210,13 @@ public class GameManager : MonoBehaviour
         
         // Get the final time and pass it to the event
         float finalTime = _timerManager != null ? _timerManager.GetCurrentTime() : 0f;
+        
         OnGameOver?.Invoke();
         OnLevelComplete?.Invoke(finalTime);
+        
+        _gameSave.SetLevelTime(currentLevel, finalTime);
+
+        currentLevel += 1;
         
         Debug.Log("Level Beat");
     }
@@ -286,7 +295,7 @@ public class GameManager : MonoBehaviour
         player.enabled = false;
         player.gameObject.SetActive(false);
         
-        TimerManager.Instance.AddTime(5f);
+        // TimerManager.Instance.AddTime(5f);
 
         // _freeLookCamera.m_LookAt = spawnPoint;
         // _freeLookCamera.m_Follow = spawnPoint;

@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class TimerManager : MonoBehaviour
 {
-    public static TimerManager Instance { get; private set; } 
-    
     public static event Action<float> OnTimerUpdated;
+    
+    [SerializeField] private GameSaveManager _gameSave;
 
     private float _timer;
     private bool _timerActive;
@@ -22,19 +22,6 @@ public class TimerManager : MonoBehaviour
     {
         get => _timerActive;
         set => _timerActive = value;
-    }
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
     }
 
     public void StartTimer()
@@ -88,34 +75,37 @@ public class TimerManager : MonoBehaviour
     
     public float GetBestTime()
     {
-        if(PlayerPrefs.HasKey("BestTime"))
+        if(_gameSave != null && _gameSave.IsLevelCompleted(GameManager.Instance.currentLevel))
         {
-            Debug.Log("Has Best Time: " + PlayerPrefs.GetFloat("BestTime"));
-            return PlayerPrefs.GetFloat("BestTime");
+            return _gameSave.GetLevelTime(GameManager.Instance.currentLevel);
         }
         else
         {
-            Debug.Log("No Best Time");
+            Debug.Log($"No best time for level {GameManager.Instance.currentLevel}");
             return float.MaxValue;
         }
     }
     
     public void SetBestTime()
     {
-        Debug.Log("setting best time");
+        if (_gameSave == null)
+        {
+            Debug.LogError("GameSaveManager reference is missing!");
+            return;
+        }
         
-        var bestTime = GetBestTime();
+        Debug.Log($"Setting best time for level {GameManager.Instance.currentLevel}");
         
-        Debug.Log("Best Time: " + bestTime);
+        float bestTime = GetBestTime();
         
         if (_timer < bestTime)
         {
-            Debug.Log($"New Best Time: {_timer}");
-            PlayerPrefs.SetFloat("BestTime", _timer);
+            Debug.Log($"New best time: {_timer}");
+            _gameSave.SetLevelTime(GameManager.Instance.currentLevel, _timer);
         }
         else
         {
-            Debug.Log($"No update: Current Time: {_timer} | Best Time: {bestTime}");
+            Debug.Log($"No update: Current time: {_timer} | Best time: {bestTime}");
         }
     }
     

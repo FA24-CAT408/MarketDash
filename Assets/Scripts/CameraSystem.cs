@@ -5,25 +5,12 @@ using UnityEngine;
 
 public class CameraSystem : MonoBehaviour
 {
-    public static CameraSystem Instance { get; private set; }
-    
     public CinemachineVirtualCamera currentCamera;
     
     public List<CinemachineVirtualCamera> virtualCameras;
     
     private void Awake()
     {
-        // Check if an instance already exists and destroy this one if it does
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        
         if (virtualCameras.Count > 0 && currentCamera == null)
         {
             currentCamera = virtualCameras[0];
