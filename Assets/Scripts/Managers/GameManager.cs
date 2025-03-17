@@ -98,7 +98,7 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (SceneManager.GetActiveScene().name == "Main Menu") currentLevel = 0;
     }
     
     public void ChangeState(GameState newState)
