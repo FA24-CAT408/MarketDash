@@ -13,7 +13,6 @@ public class UIManager : MonoBehaviour
     [Header("UI Elements")]
     public Canvas inGameUI;
     public Canvas levelBeatUI;
-    public Canvas transitionCanvas;
     
     [Header("In Game UI Elements")]
     public TMP_Text timerText;
