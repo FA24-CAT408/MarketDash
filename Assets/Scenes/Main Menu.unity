@@ -382,6 +382,11 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1494900557}
+    - target: {fileID: 1650324857830981380, guid: b880b93369337494698c6a51e53f7097,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1784893054834106890, guid: b880b93369337494698c6a51e53f7097,
         type: 3}
       propertyPath: m_Mesh
@@ -467,11 +472,21 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1798285252}
+    - target: {fileID: 6475626553800995412, guid: b880b93369337494698c6a51e53f7097,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7221789518576671739, guid: b880b93369337494698c6a51e53f7097,
         type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 209378622}
+    - target: {fileID: 7308860050698322495, guid: b880b93369337494698c6a51e53f7097,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7330411325817499593, guid: b880b93369337494698c6a51e53f7097,
         type: 3}
       propertyPath: m_Mesh
@@ -507,6 +522,11 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1787917149}
+    - target: {fileID: 8333278004025066059, guid: b880b93369337494698c6a51e53f7097,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8499676356532876537, guid: b880b93369337494698c6a51e53f7097,
         type: 3}
       propertyPath: m_Mesh
@@ -2191,13 +2211,13 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -2720,7 +2740,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
