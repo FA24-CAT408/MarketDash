@@ -49,6 +49,8 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 3ae8557254587ce4a9731f1388f8387a, type: 2}
   - {fileID: 2100000, guid: 297835da6083efa4c9a9360eac241658, type: 2}
   - {fileID: 2100000, guid: dea5f7b744154824c90a9a25d1b943b1, type: 2}
+  - {fileID: 2100000, guid: 361ea7c01fc42304dbc7fd5e5d0a52f5, type: 2}
+  - {fileID: 2100000, guid: 3d238a900f6fd0b4fafd8dd76b95b00f, type: 2}
   autoReferenceMaterials: 1
 --- !u!114 &-6088551604455195741
 MonoBehaviour:

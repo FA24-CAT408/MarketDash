@@ -25,8 +25,6 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - DR_OUTLINE_ON
-  - _BASEMAP_PREMULTIPLY
   - _CELPRIMARYMODE_SINGLE
   - _DETAILMAPBLENDINGMODE_MULTIPLY
   - _GRADIENTSPACE_WORLD
@@ -37,8 +35,9 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses:
   - SRPDEFAULTUNLIT
   m_LockedProperties: 
@@ -46,7 +45,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: b40dd7e72d398a141b64fea6ada78555, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -117,7 +116,7 @@ Material:
     m_Floats:
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _BaseMapPremultiply: 1
+    - _BaseMapPremultiply: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -136,11 +135,11 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
-    - _FlatRimEdgeSmoothness: 0.5
+    - _FlatRimEdgeSmoothness: 0.798
     - _FlatRimLightAlign: 0
-    - _FlatRimSize: 0.5
+    - _FlatRimSize: 0
     - _FlatSpecularEdgeSmoothness: 0
-    - _FlatSpecularSize: 0.1
+    - _FlatSpecularSize: 0.133
     - _Flatness: 0
     - _FlatnessExtra: 1
     - _GlossMapScale: 0
@@ -159,16 +158,16 @@ Material:
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _OutlineDepthOffset: 0
-    - _OutlineEnabled: 1
+    - _OutlineEnabled: 0
     - _OutlineScale: 1
     - _OutlineSpace: 0
-    - _OutlineWidth: 1
+    - _OutlineWidth: 0.17
     - _OverrideLightmapDir: 0
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RimEnabled: 0
-    - _SelfShadingSize: 0.687
+    - _SelfShadingSize: 0.705
     - _SelfShadingSizeExtra: 0.6
     - _ShadowEdgeSize: 0.5
     - _ShadowEdgeSizeExtra: 0.05
@@ -190,17 +189,17 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.9339623, g: 0.24230155, b: 0.26910913, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ColorDim: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorDim: {r: 0.3679245, g: 0, b: 0.04581635, a: 1}
     - _ColorDimCurve: {r: 0.85023, g: 0.85034, b: 0.8504499, a: 0.85056}
     - _ColorDimExtra: {r: 0.85023, g: 0.85034, b: 0.8504499, a: 0.85056}
     - _ColorDimSteps: {r: 0.85023, g: 0.85034, b: 0.8504499, a: 0.85056}
     - _ColorGradient: {r: 0.85023, g: 0.85034, b: 0.85045, a: 0.85056}
     - _DetailMapColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FlatRimColor: {r: 0.85023, g: 0.85034, b: 0.85045, a: 0.85056}
-    - _FlatSpecularColor: {r: 0.85023, g: 0.85034, b: 0.85045, a: 0.85056}
+    - _FlatRimColor: {r: 0.9339623, g: 0.24230152, b: 0.2691091, a: 1}
+    - _FlatSpecularColor: {r: 0.9339623, g: 0.24230152, b: 0.2691091, a: 1}
     - _LightmapDirection: {r: 0, g: 1, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

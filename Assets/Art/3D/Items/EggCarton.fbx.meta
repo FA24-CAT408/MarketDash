@@ -1,9 +1,24 @@
 fileFormatVersion: 2
-guid: 13565cd503f8568489f6774aadae6ee7
+guid: 58fc7a9c0110f439cb60220c3216765c
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eggShells
+    second: {fileID: 2100000, guid: e296de33638be49d0885d137aade2e66, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eggYolk
+    second: {fileID: 2100000, guid: 59525255fc2ed40ba8cf985f4c97fa03, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: standardSurface1
+    second: {fileID: 2100000, guid: b70d5e977e1c543a6920ea9170b0bb1c, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -32,7 +47,7 @@ ModelImporter:
     extraExposedTransformPaths: []
     extraUserProperties: []
     clipAnimations: []
-    isReadable: 1
+    isReadable: 0
   meshes:
     lODScreenPercentages: []
     globalScale: 1

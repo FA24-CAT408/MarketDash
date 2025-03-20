@@ -1,9 +1,24 @@
 fileFormatVersion: 2
-guid: 13565cd503f8568489f6774aadae6ee7
+guid: c48d58c60d0374e5c9609cc31c84c4c2
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bottleCap
+    second: {fileID: 2100000, guid: 393eb57ce3c0d4611a970529438ae134, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: milk
+    second: {fileID: 2100000, guid: 6d25f4a3f50104147b8980243cd6e9c5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: standardSurface1
+    second: {fileID: 2100000, guid: 5e63895c5da054f1fbcb8ba399e5d902, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
