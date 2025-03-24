@@ -26,7 +26,7 @@ public class EntranceController : MonoBehaviour
                 case GameManager.GameState.PreGame:
                     GameManager.Instance.ChangeState(GameManager.GameState.InProgress);
                     break;
-                case GameManager.GameState.InProgress:
+                case GameManager.GameState.EndGame:
                     if (groceryListManager.IsOrderComplete())
                     {
                         GameManager.Instance.ChangeState(GameManager.GameState.GameOver);

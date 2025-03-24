@@ -69,7 +69,7 @@ public class GroceryListManager : MonoBehaviour
             if (IsOrderComplete())
             {
                 AddCompletionMessage();
-                // GameManager.Instance.ChangeState(GameManager.GameState.EndGame);
+                GameManager.Instance.ChangeState(GameManager.GameState.EndGame);
             }
         }
     }

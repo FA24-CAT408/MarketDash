@@ -32,7 +32,8 @@ public class DebugController : MonoBehaviour
     public static DebugCommand CLEAR;
     public static DebugCommand<int> SET_BASE_SPEED;
     public static DebugCommand<bool> SET_GOD_MODE;
-    public static DebugCommand INVERT_CAMERA_MODE;
+    public static DebugCommand<bool> SET_DEBUG_CAMERA;
+    public static DebugCommand INVERT_DEBUG_CAMERA_MODE;
     public List<object> commandList;
     private Dictionary<string, DebugCommandTag> outputLog;
 
@@ -68,7 +69,7 @@ public class DebugController : MonoBehaviour
         SET_BASE_SPEED = new DebugCommand<int>("set_base_speed", "Set the base speed of the player", "set_base_speed <speed>", (x) =>
         {
             Debug.Log("Setting base speed");
-            PlayerStateMachine.Instance.BaseSpeed = x;
+            // PlayerStateMachine.Instance.BaseSpeed = x;
             // outputLog.Add("Base speed set to " + x, DebugCommandTag.GOOD);
             LogCommandOutput("Base speed set to " + x, DebugCommandTag.GOOD);
         });
@@ -76,12 +77,12 @@ public class DebugController : MonoBehaviour
         SET_GOD_MODE = new DebugCommand<bool>("set_god_mode", "Set god mode for the player", "set_god_mode <true/false>", (x) =>
         {
             Debug.Log("Setting god mode");
-            PlayerStateMachine.Instance.GodMode = x;
+            // PlayerStateMachine.Instance.GodMode = x;
             // outputLog.Add("God mode set to " + x, DebugCommandTag.GOOD);
             LogCommandOutput("God mode set to " + x, DebugCommandTag.GOOD);
         });
 
-        INVERT_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera",() =>
+        INVERT_DEBUG_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera",() =>
         {
             Debug.Log("Inverting camera y");
             playerFreeLookCamera.m_YAxis.m_InvertInput = !playerFreeLookCamera.m_YAxis.m_InvertInput;
@@ -93,7 +94,8 @@ public class DebugController : MonoBehaviour
             CLEAR,
             SET_BASE_SPEED,
             SET_GOD_MODE,
-            INVERT_CAMERA_MODE,
+            SET_DEBUG_CAMERA,
+            INVERT_DEBUG_CAMERA_MODE,
         };
 
         outputLog = new Dictionary<string, DebugCommandTag>();

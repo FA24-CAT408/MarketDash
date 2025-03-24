@@ -176,6 +176,9 @@ public class GameManager : MonoBehaviour
     public void EnterEndGame()
     {
         Debug.Log("Game Over! EndGame state triggered.");
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.MaxStableMoveSpeed *= 2f;
     }
 
 

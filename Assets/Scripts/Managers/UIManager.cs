@@ -96,7 +96,7 @@ public class UIManager : MonoBehaviour
                 ShowLevelBeatUI(false);
                 break;
                 
-            case GameManager.GameState.EndGame:
+            // case GameManager.GameState.EndGame:
             case GameManager.GameState.GameOver:
                 ShowInGameUI(false);
                 ShowLevelBeatUI(true);

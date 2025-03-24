@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 576f949be0794f548b825c9ce6f556db, type: 3}
   m_Name: Flat Kit Per Object Outline
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   settings:
-    passTag: RenderObjectsFeature
+    passTag: Flat Kit Per Object Outline
     Event: 300
     filterSettings:
       RenderQueueType: 0
@@ -43,15 +43,8 @@ MonoBehaviour:
       restoreCamera: 1
       offset: {x: 0, y: 0, z: 0, w: 0}
       cameraFieldOfView: 60
-  materials:
-  - {fileID: 2100000, guid: 8f12e92faf6117d46b863c1a50361c35, type: 2}
-  - {fileID: 2100000, guid: 859d1aca650cdf24dac2c6ce7c694f6d, type: 2}
-  - {fileID: 2100000, guid: 3ae8557254587ce4a9731f1388f8387a, type: 2}
-  - {fileID: 2100000, guid: 297835da6083efa4c9a9360eac241658, type: 2}
-  - {fileID: 2100000, guid: dea5f7b744154824c90a9a25d1b943b1, type: 2}
-  - {fileID: 2100000, guid: 361ea7c01fc42304dbc7fd5e5d0a52f5, type: 2}
-  - {fileID: 2100000, guid: 3d238a900f6fd0b4fafd8dd76b95b00f, type: 2}
-  autoReferenceMaterials: 1
+  materials: []
+  autoReferenceMaterials: 0
 --- !u!114 &-6088551604455195741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,7 +238,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   settings:
-    passTag: RenderObjectsFeature
+    passTag: Flat Kit Per Object Outline
     Event: 300
     filterSettings:
       RenderQueueType: 0
