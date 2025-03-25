@@ -13,7 +13,6 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - DR_CEL_EXTRA_ON
-  - DR_ENABLE_LIGHTMAP_DIR
   - DR_OUTLINE_ON
   - DR_OUTLINE_SMOOTH_NORMALS
   - _CELPRIMARYMODE_CURVE
@@ -44,7 +43,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _CelCurveTexture:
-        m_Texture: {fileID: 2800000, guid: 817ba2a712291410fba0b852211aa67d, type: 3}
+        m_Texture: {fileID: 2800000, guid: 0bfd695aad7d66e469ef0e7e0901b528, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _CelStepTexture:
