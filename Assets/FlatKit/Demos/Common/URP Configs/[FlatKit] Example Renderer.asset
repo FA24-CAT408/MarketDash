@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 576f949be0794f548b825c9ce6f556db, type: 3}
   m_Name: Flat Kit Per Object Outline
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   settings:
     passTag: Flat Kit Per Object Outline
     Event: 300
@@ -44,7 +44,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0, w: 0}
       cameraFieldOfView: 60
   materials: []
-  autoReferenceMaterials: 0
+  autoReferenceMaterials: 1
 --- !u!114 &-6088551604455195741
 MonoBehaviour:
   m_ObjectHideFlags: 0

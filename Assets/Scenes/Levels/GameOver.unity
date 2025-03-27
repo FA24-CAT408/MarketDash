@@ -5348,6 +5348,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Completion Time
       objectReference: {fileID: 0}
+    - target: {fileID: 5326488551313327634, guid: 8e0cc024f75c0024686ca099bd0df944,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5506162048524979804, guid: 8e0cc024f75c0024686ca099bd0df944,
         type: 3}
       propertyPath: m_Pivot.x

@@ -8,6 +8,8 @@ public class CameraTrigger : MonoBehaviour
 {
     public CinemachineVirtualCamera targetCamera;
     
+    public bool updateTargetOnExit = false;
+    
     public int cameraIndex = -1;
     
     // Store the previous camera when player enters
@@ -43,7 +45,7 @@ public class CameraTrigger : MonoBehaviour
     
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && updateTargetOnExit)
         {
             // Update the target camera to be the previous camera
             // This way, if the player re-enters this trigger, it will switch back
