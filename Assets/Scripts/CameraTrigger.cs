@@ -6,14 +6,14 @@ using UnityEngine;
 
 public class CameraTrigger : MonoBehaviour
 {
-    public CinemachineVirtualCamera targetCamera;
+    public CinemachineVirtualCameraBase targetCamera;
     
     public bool updateTargetOnExit = false;
     
     public int cameraIndex = -1;
     
     // Store the previous camera when player enters
-    private CinemachineVirtualCamera previousCamera;
+    private CinemachineVirtualCameraBase previousCamera;
     private CameraSystem cameraSystem;
 
     private void Start()

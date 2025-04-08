@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class CameraSystem : MonoBehaviour
 {
-    public CinemachineVirtualCamera currentCamera;
+    public CinemachineVirtualCameraBase currentCamera;
     
-    public List<CinemachineVirtualCamera> virtualCameras;
+    public List<CinemachineVirtualCameraBase> virtualCameras;
     
     private void Awake()
     {
@@ -18,7 +18,7 @@ public class CameraSystem : MonoBehaviour
         }
     }
 
-    public void SetNewCamera(CinemachineVirtualCamera newCamera)
+    public void SetNewCamera(CinemachineVirtualCameraBase newCamera)
     {
         if (newCamera == currentCamera) return;
         
