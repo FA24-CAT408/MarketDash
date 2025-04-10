@@ -36,6 +36,7 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
     public float OrientationSharpness = 10f;
 
     [Header("Jump Settings")]
+    public ParticleSystem JumpParticles;
     public int MaxJumpCount = 2;
     public float JumpUpSpeed = 10f;
     public float JumpPreGroundingGraceTime = 0f;
@@ -310,6 +311,12 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
             
             if (canJump)
             {
+                // Play Jump Particles
+                ParticleSystem newJumpParticles = 
+                    Instantiate(JumpParticles, new Vector3(transform.position.x, transform.position.y, transform.position.z), Quaternion.identity);
+                
+                newJumpParticles.Play();
+                
                 // Calculate jump direction before ungrounding
                 Vector3 jumpDirection = Motor.CharacterUp;
                 if (Motor.GroundingStatus.FoundAnyGround && !Motor.GroundingStatus.IsStableOnGround)
@@ -328,6 +335,8 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
                 _requireNewJumpPress = true;
                 _coyoteTimeCounter = 0f;
 
+                Destroy(newJumpParticles, 1f);
+                
                 // Transition to the Jumping state
                 TransitionToState(CharacterState.Jumping);
             }

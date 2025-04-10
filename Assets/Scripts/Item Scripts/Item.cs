@@ -31,6 +31,6 @@ public class Item : MonoBehaviour
     {
         OnItemCollected?.Invoke(this);
         gameObject.SetActive(false);
-        _audioSource.Play();
+        // _audioSource.Play();
     }
 }
