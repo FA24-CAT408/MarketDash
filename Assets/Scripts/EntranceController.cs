@@ -3,12 +3,9 @@ using UnityEngine.Events;
 
 public class EntranceController : MonoBehaviour
 {
-    private GroceryListManager groceryListManager;
-    
     // Start is called before the first frame update
     void Start()
     {
-        groceryListManager = FindObjectOfType<GroceryListManager>();
     }
 
     // Update is called once per frame
@@ -19,20 +16,22 @@ public class EntranceController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && GameManager.Instance.CurrentState == GameManager.GameState.PreGame)
         {
-            switch (GameManager.Instance.CurrentState)
-            {
-                case GameManager.GameState.PreGame:
-                    GameManager.Instance.ChangeState(GameManager.GameState.InProgress);
-                    break;
-                case GameManager.GameState.EndGame:
-                    if (groceryListManager.IsOrderComplete())
-                    {
-                        GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
-                    }
-                    break;
-            }
+            GameManager.Instance.ChangeState(GameManager.GameState.InProgress);
+            
+            // switch (GameManager.Instance.CurrentState)
+            // {
+            //     case GameManager.GameState.PreGame:
+            //         GameManager.Instance.ChangeState(GameManager.GameState.InProgress);
+            //         break;
+            //     case GameManager.GameState.EndGame:
+            //         if (groceryListManager.IsOrderComplete())
+            //         {
+            //             GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
+            //         }
+            //         break;
+            // }
         }
     }
 }

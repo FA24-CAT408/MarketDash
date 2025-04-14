@@ -18,30 +18,44 @@ public class GameSaveManager : ScriptableSave<GameSaveData>
         
         if (entry == null)
         {
-            // Create a new entry with default values
             entry = new LevelTimeEntry(levelId);
+            entry.CompletionTime = time;
+            entry.BestCompletionTime = time; // First completion is also best time
+            entry.IsCompleted = true;
             _saveData.LevelEntries.Add(entry);
+            
+            // First completion, add to total time
+            _saveData.TotalTime += time;
         }
-
-        // Only update if it's a better time or first completion
-        if (!entry.IsCompleted || time < entry.CompletionTime)
+        else
         {
-            // If already completed, subtract old time and add new time
+            // Level was already completed before
             if (entry.IsCompleted)
             {
+                // Update total time by removing old time and adding new time
                 _saveData.TotalTime -= entry.CompletionTime;
                 _saveData.TotalTime += time;
+
+                // Update completion time
+                entry.CompletionTime = time;
+
+                // Update best time if this run was better
+                if (time < entry.BestCompletionTime)
+                {
+                    entry.BestCompletionTime = time;
+                }
             }
             else
             {
-                // First completion, just add the time
+                // First completion of this level
+                entry.CompletionTime = time;
+                entry.BestCompletionTime = time; // First completion is also best time
+                entry.IsCompleted = true;
                 _saveData.TotalTime += time;
             }
-
-            entry.CompletionTime = time;
-            entry.IsCompleted = true;
-            Save();
         }
+        
+        Save();
     }
 
     public float GetLevelTime(int levelId)
@@ -91,7 +105,7 @@ public class GameSaveManager : ScriptableSave<GameSaveData>
             if (entry.IsCompleted)
             {
                 completedLevels++;
-                sb.AppendLine($"Level {levelId}: {FormatTime(entry.CompletionTime)}");
+                sb.AppendLine($"Level {levelId}: Current: {FormatTime(entry.CompletionTime)} | Best: {FormatTime(entry.BestCompletionTime)}");
             }
             else
             {
@@ -135,17 +149,5 @@ public class GameSaveManager : ScriptableSave<GameSaveData>
     protected override bool NeedsUpgrade(GameSaveData saveData)
     {
         return saveData.SaveDataVersion < _saveData.SaveDataVersion;
-    }
-    
-    public Dictionary<int, LevelTimeEntry> GetLevelTimesAsDictionary()
-    {
-        Dictionary<int, LevelTimeEntry> result = new Dictionary<int, LevelTimeEntry>();
-        
-        foreach (var entry in _saveData.LevelEntries)
-        {
-            result[entry.LevelId] = entry;
-        }
-        
-        return result;
     }
 }

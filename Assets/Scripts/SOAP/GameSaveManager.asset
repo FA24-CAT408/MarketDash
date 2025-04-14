@@ -20,14 +20,5 @@ MonoBehaviour:
   _secondsBetweenSave: 120
   _saveData:
     SaveDataVersion: 1
-    LevelEntries:
-    - LevelId: 0
-      CompletionTime: 5.24
-      IsCompleted: 1
-    - LevelId: 1
-      CompletionTime: 7.32
-      IsCompleted: 1
-    - LevelId: 2
-      CompletionTime: 28.21
-      IsCompleted: 1
-    TotalTime: 40.77
+    LevelEntries: []
+    TotalTime: 0

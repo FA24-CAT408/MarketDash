@@ -31,11 +31,6 @@ public class GameManager : MonoBehaviour
     
     [SerializeField]
     private bool setCursorVisible = true;
-    
-    [Header("Game Events")]
-    public UnityEvent OnGameStart;
-    public UnityEvent OnGameOver;
-    public UnityEvent<float> OnLevelComplete;
 
     public GameState CurrentState
     {
@@ -50,7 +45,7 @@ public class GameManager : MonoBehaviour
     // [Header("Game Components")]
     private GroceryListManager _groceryListManager;
     private TimerManager _timerManager;
-    private UIManager _uiManager;
+    private SceneEventManager _sceneEventManager;
     
     private void Awake()
     {
@@ -78,7 +73,7 @@ public class GameManager : MonoBehaviour
         // Find references to scene-specific components
         _groceryListManager = FindObjectOfType<GroceryListManager>();
         _timerManager = FindObjectOfType<TimerManager>();
-        _uiManager = FindObjectOfType<UIManager>();
+        _sceneEventManager = FindObjectOfType<SceneEventManager>();
         
         // Initialize the scene based on current state
         ChangeState(GameState.LoadingIn);
@@ -89,15 +84,15 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("GAME MANAGER START METHOD");
         
-        _groceryListManager = FindObjectOfType<GroceryListManager>();
-        _uiManager = FindObjectOfType<UIManager>();
-        
         ChangeState(GameState.LoadingIn);
     }
 
     // Update is called once per frame
     void Update()
     {
+        Cursor.visible = setCursorVisible;
+        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
+        
         if (SceneManager.GetActiveScene().name == "Main Menu") currentLevel = 0;
     }
     
@@ -127,34 +122,6 @@ public class GameManager : MonoBehaviour
                 StopGame();
                 break;
         }
-        
-        UpdateUIForState(newState);
-    }
-    
-    private void UpdateUIForState(GameState state)
-    {
-        if (_uiManager == null) return;
-        
-        // switch (state)
-        // {
-        //     case GameState.LoadingIn:
-        //     case GameState.PreGame:
-        //         _uiManager.ShowInGameUI(false);
-        //         _uiManager.ShowLevelBeatUI(false);
-        //         break;
-        //         
-        //     case GameState.InProgress:
-        //         _uiManager.ShowInGameUI(true);
-        //         _uiManager.ShowLevelBeatUI(false);
-        //         break;
-        //         
-        //     case GameState.EndGame:
-        //     case GameState.GameOver:
-        //         _uiManager.ShowInGameUI(false);
-        //         _uiManager.ShowLevelBeatUI(true);
-        //         _uiManager.UpdateLevelBeatUI();
-        //         break;
-        // }
     }
     
     public void EnterLoadingIn()
@@ -179,6 +146,9 @@ public class GameManager : MonoBehaviour
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
             player.MaxStableMoveSpeed *= 2f;
+        
+        if (_sceneEventManager != null)
+            _sceneEventManager.OnEndGame?.Invoke();
     }
 
 
@@ -187,6 +157,9 @@ public class GameManager : MonoBehaviour
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
             player.canMove = true;
+        
+        UpdateCursorVisible(false);
+        
         // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
         
         // Cursor.lockState = CursorLockMode.Locked;
@@ -197,13 +170,16 @@ public class GameManager : MonoBehaviour
         if (_timerManager != null)
             _timerManager.StartTimer();
         
-        OnGameStart?.Invoke();
+        if (_sceneEventManager != null)
+            _sceneEventManager.OnGameStart?.Invoke();
 
         Debug.Log("Game Started");
     }
 
     private void StopGame()
     {
+        UpdateCursorVisible(true);
+        
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
             player.canMove = false;
@@ -214,8 +190,11 @@ public class GameManager : MonoBehaviour
         // Get the final time and pass it to the event
         float finalTime = _timerManager != null ? _timerManager.GetCurrentTime() : 0f;
         
-        OnGameOver?.Invoke();
-        OnLevelComplete?.Invoke(finalTime);
+        if (_sceneEventManager != null)
+        {
+            _sceneEventManager.OnGameOver?.Invoke();
+            _sceneEventManager.OnLevelComplete?.Invoke(finalTime);
+        }
         
         _gameSave.SetLevelTime(currentLevel, finalTime);
 
@@ -268,19 +247,25 @@ public class GameManager : MonoBehaviour
             SceneManager.LoadScene("Main Menu");
         }
     }
-
-    public void RestartCurrentScene()
-    {
-        // Set state to LoadingIn
-        ChangeState(GameState.LoadingIn);
-    
-        // Reload the current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
     
     public void RespawnPlayer(Transform spawnPoint)
     {
         StartCoroutine(RespawnRoutine(spawnPoint));
+    }
+    
+    public void RegisterSceneEvents(SceneEventManager manager)
+    {
+        _sceneEventManager = manager;
+    }
+
+    public void UnregisterSceneEvents()
+    {
+        _sceneEventManager = null;
+    }
+
+    public void UpdateCursorVisible(bool visible)
+    {
+        setCursorVisible = visible;
     }
 
     private IEnumerator RespawnRoutine(Transform spawnPoint)

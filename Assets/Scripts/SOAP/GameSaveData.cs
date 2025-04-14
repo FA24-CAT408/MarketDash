@@ -21,7 +21,7 @@ public class GameSaveData
         return null;
     }
     
-    public void SetLevelEntry(int levelId, float completionTime, bool isCompleted)
+    public void SetLevelEntry(int levelId, float completionTime, float bestCompletionTime, bool isCompleted)
     {
         for (int i = 0; i < LevelEntries.Count; i++)
         {
@@ -29,12 +29,18 @@ public class GameSaveData
             {
                 LevelEntries[i].CompletionTime = completionTime;
                 LevelEntries[i].IsCompleted = isCompleted;
+                
+                // Update best time if this is better than previous best
+                if (completionTime < LevelEntries[i].BestCompletionTime || LevelEntries[i].BestCompletionTime == 0f)
+                {
+                    LevelEntries[i].BestCompletionTime = completionTime;
+                }
                 return;
             }
         }
         
         // If not found, add new entry
-        LevelEntries.Add(new LevelTimeEntry(levelId, completionTime, isCompleted));
+        LevelEntries.Add(new LevelTimeEntry(levelId, completionTime, bestCompletionTime, isCompleted));
     }
     
     public bool ContainsLevel(int levelId)
