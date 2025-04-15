@@ -6,6 +6,7 @@ using UnityEngine.Events;
 public class SceneEventManager : MonoBehaviour
 {
     [Header("Scene-Specific Events")]
+    public UnityEvent OnPreGame;
     public UnityEvent OnGameStart;
     public UnityEvent OnGameOver;
     public UnityEvent OnEndGame;

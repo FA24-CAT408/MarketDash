@@ -133,9 +133,8 @@ public class GameManager : MonoBehaviour
     
     public void EnterPreGame()
     {
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.canMove = true;
+        if (_sceneEventManager != null) 
+            _sceneEventManager.OnPreGame?.Invoke();
 
         Debug.Log("Entered PreGame");
     }
@@ -154,16 +153,11 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.canMove = true;
+        // var player = FindObjectOfType<KCCPlayerController>();
+        // if (player != null)
+        //     player.canMove = true;
         
         UpdateCursorVisible(false);
-        
-        // _freeLookCamera.GetComponent<CinemachineInputProvider>().enabled = true;
-        
-        // Cursor.lockState = CursorLockMode.Locked;
-        // Cursor.visible = false;
 
         _groceryListManager.CreateAndShowList();
         

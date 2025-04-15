@@ -531,6 +531,11 @@ public class KCCPlayerController : MonoBehaviour, ICharacterController
             transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, OrientationSharpness * Time.deltaTime);
         }
     }
+
+    public void TogglePlayerCanMove()
+    {
+        canMove = !canMove;
+    }
     
     Vector3 ConvertToCameraSpace(Vector3 vectorToRotate)
     {
