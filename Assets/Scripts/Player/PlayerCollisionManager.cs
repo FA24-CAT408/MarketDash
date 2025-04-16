@@ -8,8 +8,12 @@ public class PlayerCollisionManager : MonoBehaviour
     private Transform currentSpawnPoint;
     private Vector3 _startingPosition;
     public float spawnPointRadius = 10f;
+    
+    private RespawnComponent _respawnComponent;
     void Start()
     {
+        _respawnComponent = GetComponent<RespawnComponent>();
+        
         _startingPosition = transform.position;
         
         currentSpawnPoint = null;
@@ -24,7 +28,7 @@ public class PlayerCollisionManager : MonoBehaviour
     {
        if (other.gameObject.CompareTag("Death"))
        {
-            GameManager.Instance.RespawnPlayer(currentSpawnPoint);
+           _respawnComponent.Respawn();
        }
     }
     

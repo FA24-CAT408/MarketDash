@@ -114,8 +114,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1022874162919331245}
+  - component: {fileID: 123262751366753790}
   m_Layer: 0
-  m_Name: Orientation
+  m_Name: Spline
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -136,6 +137,208 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7926572755247936514}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &123262751366753790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4057455883701679126}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dab5c7d4c32e743048dfca98e2d5914f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Spline:
+    m_EditModeType: 1
+    m_Knots: []
+    m_MetaData: []
+    m_Closed: 0
+    m_IntData:
+      m_Data: []
+    m_FloatData:
+      m_Data: []
+    m_Float4Data:
+      m_Data: []
+    m_ObjectData:
+      m_Data: []
+  m_Splines:
+  - m_EditModeType: 1
+    m_Knots:
+    - Position:
+        x: 0
+        y: 0
+        z: 0
+      TangentIn:
+        x: 0
+        y: 0
+        z: 0
+      TangentOut:
+        x: 0
+        y: 0
+        z: 0
+      Rotation:
+        value:
+          x: 0
+          y: 0
+          z: 0
+          w: 1
+    - Position:
+        x: 0
+        y: 0
+        z: 11.779662
+      TangentIn:
+        x: 0
+        y: 0
+        z: 0
+      TangentOut:
+        x: 0
+        y: 0
+        z: 0
+      Rotation:
+        value:
+          x: 0
+          y: 0
+          z: 0
+          w: 1
+    m_MetaData:
+    - Mode: 1
+      Tension: 0.5
+      m_DistanceToInterpolation:
+      - Distance: 0
+        T: 0
+      - Distance: 0.04105422
+        T: 0.03448276
+      - Distance: 0.16035295
+        T: 0.06896552
+      - Distance: 0.3521003
+        T: 0.10344828
+      - Distance: 0.61050034
+        T: 0.13793103
+      - Distance: 0.9297573
+        T: 0.1724138
+      - Distance: 1.3040751
+        T: 0.20689656
+      - Distance: 1.7276579
+        T: 0.2413793
+      - Distance: 2.19471
+        T: 0.27586207
+      - Distance: 2.699435
+        T: 0.31034482
+      - Distance: 3.2360382
+        T: 0.3448276
+      - Distance: 3.7987223
+        T: 0.37931034
+      - Distance: 4.381693
+        T: 0.41379312
+      - Distance: 4.9791517
+        T: 0.44827586
+      - Distance: 5.5853047
+        T: 0.4827586
+      - Distance: 6.194357
+        T: 0.51724136
+      - Distance: 6.80051
+        T: 0.55172414
+      - Distance: 7.39797
+        T: 0.5862069
+      - Distance: 7.980939
+        T: 0.62068963
+      - Distance: 8.543625
+        T: 0.6551724
+      - Distance: 9.080227
+        T: 0.6896552
+      - Distance: 9.584951
+        T: 0.7241379
+      - Distance: 10.052004
+        T: 0.7586207
+      - Distance: 10.475588
+        T: 0.79310346
+      - Distance: 10.849905
+        T: 0.82758623
+      - Distance: 11.169161
+        T: 0.86206895
+      - Distance: 11.427562
+        T: 0.8965517
+      - Distance: 11.619308
+        T: 0.9310345
+      - Distance: 11.738608
+        T: 0.9655172
+      - Distance: 11.779662
+        T: 1
+    - Mode: 1
+      Tension: 0.5
+      m_DistanceToInterpolation:
+      - Distance: -1
+        T: -1
+      - Distance: 0.041054726
+        T: 0.03448276
+      - Distance: 0.16035366
+        T: 0.06896552
+      - Distance: 0.35209942
+        T: 0.10344828
+      - Distance: 0.61050034
+        T: 0.13793103
+      - Distance: 0.9297571
+        T: 0.1724138
+      - Distance: 1.3040743
+        T: 0.20689656
+      - Distance: 1.7276583
+        T: 0.2413793
+      - Distance: 2.1947107
+        T: 0.27586207
+      - Distance: 2.6994352
+        T: 0.31034482
+      - Distance: 3.2360373
+        T: 0.3448276
+      - Distance: 3.7987223
+        T: 0.37931034
+      - Distance: 4.381693
+        T: 0.41379312
+      - Distance: 4.979152
+        T: 0.44827586
+      - Distance: 5.585305
+        T: 0.4827586
+      - Distance: 6.1943564
+        T: 0.51724136
+      - Distance: 6.80051
+        T: 0.55172414
+      - Distance: 7.39797
+        T: 0.5862069
+      - Distance: 7.980939
+        T: 0.62068963
+      - Distance: 8.543624
+        T: 0.6551724
+      - Distance: 9.080227
+        T: 0.6896552
+      - Distance: 9.584951
+        T: 0.7241379
+      - Distance: 10.052004
+        T: 0.7586207
+      - Distance: 10.475588
+        T: 0.79310346
+      - Distance: 10.849906
+        T: 0.82758623
+      - Distance: 11.169161
+        T: 0.86206895
+      - Distance: 11.427562
+        T: 0.8965517
+      - Distance: 11.619308
+        T: 0.9310345
+      - Distance: 11.738608
+        T: 0.9655172
+      - Distance: 11.779662
+        T: 1
+    m_Closed: 0
+    m_IntData:
+      m_Data: []
+    m_FloatData:
+      m_Data: []
+    m_Float4Data:
+      m_Data: []
+    m_ObjectData:
+      m_Data: []
+  m_Knots:
+    m_KnotsLink: []
 --- !u!1 &6674158368892985626
 GameObject:
   m_ObjectHideFlags: 0
@@ -145,6 +348,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7926572755247936514}
+  - component: {fileID: 5271011178707531287}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Player
@@ -161,7 +365,7 @@ Transform:
   m_GameObject: {fileID: 6674158368892985626}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 60.5, y: -4.75, z: 14}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 4.72, y: 4.72, z: 4.72}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -170,6 +374,23 @@ Transform:
   - {fileID: 5788689757657870128}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5271011178707531287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6674158368892985626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bab598265283a44f58ef0d6649cd29df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _spline: {fileID: 123262751366753790}
+  _model: {fileID: 8756423109323833977}
+  duration: 5
+  turnEase: 4
+  testT: 0
 --- !u!1 &7030776103645795329
 GameObject:
   m_ObjectHideFlags: 0
@@ -198,7 +419,7 @@ Transform:
   m_GameObject: {fileID: 7030776103645795329}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.15, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
