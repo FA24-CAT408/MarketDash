@@ -20791,7 +20791,7 @@ PrefabInstance:
     - target: {fileID: 6352363005988370800, guid: 8356e6acd92f6954698d557cac43f2fb,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.10368135
+      value: 0.10368134
       objectReference: {fileID: 0}
     - target: {fileID: 6352363005988370800, guid: 8356e6acd92f6954698d557cac43f2fb,
         type: 3}
@@ -20801,7 +20801,7 @@ PrefabInstance:
     - target: {fileID: 6352363005988370800, guid: 8356e6acd92f6954698d557cac43f2fb,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.10368135
+      value: 0.10368134
       objectReference: {fileID: 0}
     - target: {fileID: 8115484288798080809, guid: 8356e6acd92f6954698d557cac43f2fb,
         type: 3}
@@ -20922,7 +20922,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7308860049917747328}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.4303543, y: 0.43974438, z: -0.25353917, w: 0.74641675}
+  m_LocalRotation: {x: 0.43035427, y: 0.4397444, z: -0.25353912, w: 0.7464168}
   m_LocalPosition: {x: 9.703918, y: 3.581328, z: -4.188736}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -22587,6 +22587,12 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1495842004}
+    - target: {fileID: 4806554535255891771, guid: 6504222dabc82b64db3133ba0b2bd8ca,
+        type: 3}
+      propertyPath: m_text
+      value: The Goal is to Find & Grab the Items as Fast As Possible and Bring Them
+        to the Shelf in the Entrance!
+      objectReference: {fileID: 0}
     - target: {fileID: 4848621791799600317, guid: 6504222dabc82b64db3133ba0b2bd8ca,
         type: 3}
       propertyPath: m_Mesh
@@ -22627,6 +22633,14 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 184187984}
+    - target: {fileID: 6569079268214050078, guid: 6504222dabc82b64db3133ba0b2bd8ca,
+        type: 3}
+      propertyPath: m_text
+      value: "<align=\"center\">Welcome To The Market Dash!</align>\n\n<b>Controls:</b>
+        \n\n<b>Movement</b> - Left Stick or WASD \n<b>Jump</b> - A/Circle or Spacebar\n<b>Double
+        Jump</b> - (In Air) A/Circle or Spacebar\n<b>Move Camera</b> - Right Stick
+        or Mouse"
+      objectReference: {fileID: 0}
     - target: {fileID: 6590907320047990730, guid: 6504222dabc82b64db3133ba0b2bd8ca,
         type: 3}
       propertyPath: m_Mesh

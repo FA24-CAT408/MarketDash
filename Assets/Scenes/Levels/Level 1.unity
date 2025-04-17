@@ -72312,6 +72312,12 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1495842004}
+    - target: {fileID: 4806554535255891771, guid: 6504222dabc82b64db3133ba0b2bd8ca,
+        type: 3}
+      propertyPath: m_text
+      value: The Goal is to Find & Grab the Items as Fast As Possible and Bring Them
+        to the Shelf in the Entrance!
+      objectReference: {fileID: 0}
     - target: {fileID: 4848621791799600317, guid: 6504222dabc82b64db3133ba0b2bd8ca,
         type: 3}
       propertyPath: m_Mesh
@@ -72357,6 +72363,13 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 184187984}
+    - target: {fileID: 6569079268214050078, guid: 6504222dabc82b64db3133ba0b2bd8ca,
+        type: 3}
+      propertyPath: m_text
+      value: "<align=\"center\">Welcome To The Market Dash!</align>\n\n<b>Controls:</b>
+        \n\n<b>Movement</b> - Left Stick or WASD \n<b>Jump</b> - A/Circle or Spacebar\n<b>Double
+        Jump</b> - (In Air) A/Circle or Spacebar"
+      objectReference: {fileID: 0}
     - target: {fileID: 6590907320047990730, guid: 6504222dabc82b64db3133ba0b2bd8ca,
         type: 3}
       propertyPath: m_Mesh
