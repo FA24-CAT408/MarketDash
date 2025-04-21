@@ -17,7 +17,8 @@ public class GameManager : MonoBehaviour
         PreGame,
         InProgress,
         EndGame,
-        GameOver
+        GameOver,
+        Pause
     }
     public static GameManager Instance { get; private set; }
     public static event Action<GameState> OnStateChanged;
@@ -25,9 +26,12 @@ public class GameManager : MonoBehaviour
     public int currentLevel = 0;
     
     [SerializeField] private GameSaveManager _gameSave;
+    [SerializeField] private GameSettingsData _gameSettingsData;
+    [SerializeField] private CinemachineFreeLook _playerFreeLook;
     
     [SerializeField]
     private GameState currentState;
+    private GameState previousState;
     
     [SerializeField]
     private bool setCursorVisible = true;
@@ -85,6 +89,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("GAME MANAGER START METHOD");
         
         ChangeState(GameState.LoadingIn);
+
+        AssignSaveData();
     }
 
     // Update is called once per frame
@@ -100,6 +106,9 @@ public class GameManager : MonoBehaviour
     {
         if (currentState == newState) return;
         
+        if (newState == GameState.Pause && currentState != GameState.Pause)
+            previousState = currentState;
+        
         CurrentState = newState;
 
         Debug.Log("CHANGING TO STATE: " + newState);
@@ -107,39 +116,46 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.LoadingIn:
-                EnterLoadingIn();
+                EnterLoadingInState();
                 break;
             case GameState.PreGame:
-                EnterPreGame();
+                EnterPreGameState();
                 break;
             case GameState.InProgress:
-                StartGame();
+                EnterInProgressGameState();
                 break;
             case GameState.EndGame:
-                EnterEndGame();
+                EnterEndGameState();
                 break;
             case GameState.GameOver:
-                StopGame();
+                EnterStopGameState();
+                break;
+            case GameState.Pause:
+                EnterPauseGameState();
                 break;
         }
     }
     
-    public void EnterLoadingIn()
+    public void EnterLoadingInState()
     {
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
             player.canMove = false;
     }
     
-    public void EnterPreGame()
+    public void EnterPreGameState()
     {
         if (_sceneEventManager != null) 
             _sceneEventManager.OnPreGame?.Invoke();
+        
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = true;
 
         Debug.Log("Entered PreGame");
     }
     
-    public void EnterEndGame()
+    public void EnterEndGameState()
     {
         Debug.Log("Game Over! EndGame state triggered.");
         var player = FindObjectOfType<KCCPlayerController>();
@@ -151,12 +167,8 @@ public class GameManager : MonoBehaviour
     }
 
 
-    public void StartGame()
+    public void EnterInProgressGameState()
     {
-        // var player = FindObjectOfType<KCCPlayerController>();
-        // if (player != null)
-        //     player.canMove = true;
-        
         UpdateCursorVisible(false);
 
         _groceryListManager.CreateAndShowList();
@@ -165,12 +177,12 @@ public class GameManager : MonoBehaviour
             _timerManager.StartTimer();
         
         if (_sceneEventManager != null)
-            _sceneEventManager.OnGameStart?.Invoke();
+            _sceneEventManager.OnGameInProgress?.Invoke();
 
         Debug.Log("Game Started");
     }
 
-    private void StopGame()
+    private void EnterStopGameState()
     {
         UpdateCursorVisible(true);
         
@@ -197,6 +209,18 @@ public class GameManager : MonoBehaviour
         Debug.Log("Level Beat");
     }
 
+    private void EnterPauseGameState()
+    {
+        UpdateCursorVisible(true);
+        
+        var player = FindObjectOfType<KCCPlayerController>();
+        if (player != null)
+            player.canMove = false;
+        
+        if (_timerManager != null)
+            _timerManager.StopTimer();
+    }
+
     public void GameStart()
     {
         ChangeState(GameState.InProgress);
@@ -205,6 +229,29 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         ChangeState(GameState.GameOver);
+    }
+
+    public void PauseGame()
+    {
+        if (currentState is GameState.InProgress or GameState.PreGame or GameState.EndGame)
+            ChangeState(GameState.Pause);
+    }
+
+    public void UnpauseGame()
+    {
+        Debug.Log("UNPAUSING GAME");
+        
+        if (currentState == GameState.Pause && previousState != GameState.Pause && previousState != GameState.LoadingIn)
+        {
+            var player = FindObjectOfType<KCCPlayerController>();
+            
+            if (player != null)
+                player.canMove = true;
+            
+            UpdateCursorVisible(false);
+            
+            ChangeState(previousState);
+        }
     }
     
     public void ResetToLoadingState()
@@ -242,11 +289,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    public void RespawnPlayer(Transform spawnPoint)
-    {
-        StartCoroutine(RespawnRoutine(spawnPoint));
-    }
-    
     public void RegisterSceneEvents(SceneEventManager manager)
     {
         _sceneEventManager = manager;
@@ -262,38 +304,16 @@ public class GameManager : MonoBehaviour
         setCursorVisible = visible;
     }
 
-    private IEnumerator RespawnRoutine(Transform spawnPoint)
+    void AssignSaveData()
     {
-        KCCPlayerController player = FindObjectOfType<KCCPlayerController>();
+        //Sensitivity
+        _playerFreeLook.m_XAxis.m_MaxSpeed = 120f * _gameSettingsData.Sensitivity;
+        _playerFreeLook.m_YAxis.m_MaxSpeed = 1f * _gameSettingsData.Sensitivity;
         
-        if (spawnPoint == null)
-        {
-            Debug.LogWarning("No valid spawn point provided for respawn.");
-            yield break;
-        }
-
-        // Disable player controls and camera
-        Debug.Log("Disabling player...");
-        player.enabled = false;
-        player.gameObject.SetActive(false);
+        //Invert
+        _playerFreeLook.m_YAxis.m_InvertInput = _gameSettingsData.InvertCamera;
         
-        // TimerManager.Instance.AddTime(5f);
-
-        // _freeLookCamera.m_LookAt = spawnPoint;
-        // _freeLookCamera.m_Follow = spawnPoint;
-
-        // Add a short delay
-        yield return new WaitForSeconds(1f);
-
-        // Move player to the spawn point
-        Debug.Log($"Respawning player at: {spawnPoint.position}");
-        player.transform.position = spawnPoint.position;
-
-        // Re-enable player controls and camera
-        Debug.Log("Re-enabling player...");
-        player.gameObject.SetActive(true);
-        player.enabled = true;
-        // _freeLookCamera.m_LookAt = player.transform.GetChild(0);
-        // _freeLookCamera.m_Follow = player.transform.GetChild(0);
+        //Volume
+        //TODO: ASSIGN VOLUME
     }
 }

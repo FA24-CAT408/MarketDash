@@ -35,7 +35,9 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
     
     public event Action InteractEvent;
     
+    public event Action PauseEvent;
     public event Action ToggleDebugModeEvent;
+    public event Action SubmitEvent;
     
 
     public void OnMove(InputAction.CallbackContext context)
@@ -78,8 +80,20 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
         ToggleDebugModeEvent?.Invoke();
     }
 
+    public void OnPause(InputAction.CallbackContext context)
+    {
+        if (context.phase == InputActionPhase.Performed)
+        {
+            PauseEvent?.Invoke();
+        }
+    }
+
     public void OnSubmit(InputAction.CallbackContext context)
     {
+        if (context.phase == InputActionPhase.Performed)
+        {
+            SubmitEvent?.Invoke();
+        }
     }
 
     public void OnCrouch(InputAction.CallbackContext context)

@@ -2,14 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 public class SceneEventManager : MonoBehaviour
 {
     [Header("Scene-Specific Events")]
     public UnityEvent OnPreGame;
-    public UnityEvent OnGameStart;
+    public UnityEvent OnGameInProgress;
     public UnityEvent OnGameOver;
     public UnityEvent OnEndGame;
+    public UnityEvent OnGamePause;
     public UnityEvent<float> OnLevelComplete;
 
     private void Awake()

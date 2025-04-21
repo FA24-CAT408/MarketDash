@@ -6,6 +6,7 @@ using Obvious.Soap;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
@@ -13,6 +14,7 @@ public class UIManager : MonoBehaviour
     [Header("UI Elements")]
     public Canvas inGameUI;
     public Canvas levelBeatUI;
+    public Canvas pauseUI;
     
     [Header("In Game UI Elements")]
     public TMP_Text timerText;
@@ -21,15 +23,29 @@ public class UIManager : MonoBehaviour
     public TMP_Text levelBeatTimeText;
     public TMP_Text bestTimeText;
     
+    [Header("Pause UI Elements")]
+    public Slider sensitivitySlider;
+    public TMP_Text sensitivityText;
+    public Slider musicVolumeSlider;
+    public TMP_Text musicVolumeText;
+    public Toggle invertCameraToggle;
+    
     [Header("Transition Canvas")]
     public CanvasGroup fadePanel;
     public float fadeDuration = 1.5f;
     
     [Header("Save Data")]
     [SerializeField] private GameSaveManager _gameSave;
+    [SerializeField] private GameSettingsManager _gameSettingsManager;
+    
+    [Header("Player")]
+    [SerializeField] private InputReader _inputReader;
+    [SerializeField] private CinemachineFreeLook playerFreeLook;
     
     private Tween _currentFadeTween;
     private TimerManager _timerManager;
+
+    public bool uiIsPaused;
     
     private void Awake()
     {
@@ -54,6 +70,22 @@ public class UIManager : MonoBehaviour
         {
             HandleGameStateChanged(GameManager.Instance.CurrentState);
         }
+        
+        // --- SETTINGS UI HOOKUP ---
+        if (_gameSettingsManager != null)
+        {
+            // Set UI values from saved settings
+            sensitivitySlider.value = _gameSettingsManager.Sensitivity;
+            musicVolumeSlider.value = _gameSettingsManager.Volume;
+            invertCameraToggle.isOn = _gameSettingsManager.InvertCamera;
+        }
+
+        // Add listeners to update settings when UI changes
+        sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
+        musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+        invertCameraToggle.onValueChanged.AddListener(OnInvertCameraChanged);
+
+        _inputReader.PauseEvent += HandlePauseUI;
     }
     
     private void OnDestroy()
@@ -62,9 +94,45 @@ public class UIManager : MonoBehaviour
         GameManager.OnStateChanged -= HandleGameStateChanged;
         TimerManager.OnTimerUpdated -= UpdateTimerDisplay;
         
+        _inputReader.PauseEvent -= HandlePauseUI;
+        
         if (_currentFadeTween != null)
         {
             _currentFadeTween.Kill();
+        }
+    }
+
+    void HandlePauseUI()
+    {
+        if(DebugController.Instance.ShowConsole)  return;
+        
+        uiIsPaused = !uiIsPaused;
+
+        ShowPauseUI(uiIsPaused);
+
+        if (GameManager.Instance != null)
+        {
+            if (uiIsPaused)
+                GameManager.Instance.PauseGame();
+            else
+                GameManager.Instance.UnpauseGame();
+        }
+        
+        if (sensitivityText != null)
+        {
+            sensitivityText.text = sensitivitySlider.value.ToString("F2");
+        }
+        
+        if (musicVolumeText != null)
+        {
+            musicVolumeText.text = musicVolumeSlider.value.ToString("F2");
+        }
+        
+        CinemachineInputProvider cinemachineInputProvider = playerFreeLook.transform.GetComponent<CinemachineInputProvider>();
+
+        if (cinemachineInputProvider != null)
+        {
+            cinemachineInputProvider.enabled = !uiIsPaused;
         }
     }
     
@@ -96,7 +164,6 @@ public class UIManager : MonoBehaviour
                 ShowLevelBeatUI(false);
                 break;
                 
-            // case GameManager.GameState.EndGame:
             case GameManager.GameState.GameOver:
                 ShowInGameUI(false);
                 ShowLevelBeatUI(true);
@@ -212,8 +279,26 @@ public class UIManager : MonoBehaviour
             }
         }
     }
+
+    public void ShowPauseUI(bool show)
+    {
+        if(pauseUI != null)
+            pauseUI.gameObject.SetActive(show);
+        
+        if (show && _gameSettingsManager != null)
+        {
+            sensitivitySlider.value = _gameSettingsManager.Sensitivity;
+            musicVolumeSlider.value = _gameSettingsManager.Volume;
+            invertCameraToggle.isOn = _gameSettingsManager.InvertCamera;
+        }
+    }
+
+    public void PauseBtn()
+    {
+        HandlePauseUI();
+    }
     
-    public void LevelBeatMainMenuBtn()
+    public void MainMenuBtn()
     {
         Debug.Log("GAME OVER Main Menu BTN PRESSED");
     
@@ -260,12 +345,45 @@ public class UIManager : MonoBehaviour
             }
         });
     }
-
-    private void SetCameraPriority(CinemachineVirtualCameraBase camera, int priority)
+    
+    private void OnSensitivityChanged(float value)
     {
-        if (camera != null)
+        if (_gameSettingsManager != null)
+            _gameSettingsManager.Sensitivity = value;
+        
+        if (playerFreeLook != null)
         {
-            camera.Priority = priority;
+            playerFreeLook.m_XAxis.m_MaxSpeed = 120f * value;
+            playerFreeLook.m_YAxis.m_MaxSpeed = 1f * value;
+        }
+
+        if (sensitivityText != null)
+        {
+            sensitivityText.text = value.ToString("F2");
         }
     }
+
+    private void OnMusicVolumeChanged(float value)
+    {
+        if (_gameSettingsManager != null)
+            _gameSettingsManager.Volume = value;
+        // Optionally, update your audio system here
+        
+        if (musicVolumeText != null)
+        {
+            musicVolumeText.text = value.ToString("F2");
+        }
+    }
+
+    private void OnInvertCameraChanged(bool value)
+    {
+        if (_gameSettingsManager != null)
+            _gameSettingsManager.InvertCamera = value;
+        
+        if (playerFreeLook != null)
+        {
+            playerFreeLook.m_YAxis.m_InvertInput = value;
+        }
+    }
+
 }

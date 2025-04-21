@@ -1,16 +1,18 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class DebugController : MonoBehaviour
 {
     public static DebugController Instance { get; private set; }
-    
+
     [SerializeField] private CinemachineInputProvider playerCameraInputProvider;
     [SerializeField] private CinemachineFreeLook playerFreeLookCamera;
-    
+    [SerializeField] private InputReader _input;
+
     enum DebugCommandTag
     {
         NONE,
@@ -19,10 +21,9 @@ public class DebugController : MonoBehaviour
         WARNING
     }
 
-
     public bool ShowConsole;
 
-    string _input;
+    string _inputText;
     GUIStyle _textStyle;
     GUIStyle _inputStyle;
     GUIStyle _errorStyle;
@@ -30,12 +31,28 @@ public class DebugController : MonoBehaviour
 
     public static DebugCommand HELP;
     public static DebugCommand CLEAR;
+
+    // Player Commands
     public static DebugCommand<int> SET_BASE_SPEED;
-    public static DebugCommand<bool> SET_GOD_MODE;
-    public static DebugCommand<bool> SET_DEBUG_CAMERA;
+
+    // Camera Commands
     public static DebugCommand INVERT_DEBUG_CAMERA_MODE;
+    public static DebugCommand<float> SET_X_SENSITIVITY;
+    public static DebugCommand<float> SET_Y_SENSITIVITY;
+    public static DebugCommand<float> ADD_X_SENSITIVITY;
+    public static DebugCommand<float> ADD_Y_SENSITIVITY;
+    public static DebugCommand RESET_SENSITIVITY;
+
+    // Scene Commands
+    public static DebugCommand GO_TO_MAIN_MENU;
+
     public List<object> commandList;
     private Dictionary<string, DebugCommandTag> outputLog;
+
+    private const string DebugInputControlName = "DebugConsoleInput";
+    private bool shouldFocusInput = false;
+    
+    private UIManager uiManager;
 
     private void Awake()
     {
@@ -48,6 +65,11 @@ public class DebugController : MonoBehaviour
             Instance = this;
         }
         
+        uiManager = FindObjectOfType<UIManager>();
+
+        _input.ToggleDebugModeEvent += HandleToggleDebug;
+        _input.SubmitEvent += HandleSubmit;
+
         HELP = new DebugCommand("help", "Show list of commands", "help", () =>
         {
             outputLog.Clear();
@@ -55,9 +77,8 @@ public class DebugController : MonoBehaviour
 
             foreach (var command in commandList)
             {
-                DebugCommandBase cmd = command as DebugCommandBase;
-                // outputLog.Add($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
-                LogCommandOutput($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
+                if (command is DebugCommandBase cmd)
+                    LogCommandOutput($"{cmd.commandFormat} - {cmd.commandDescription}", DebugCommandTag.NONE);
             }
         });
 
@@ -68,55 +89,190 @@ public class DebugController : MonoBehaviour
 
         SET_BASE_SPEED = new DebugCommand<int>("set_base_speed", "Set the base speed of the player", "set_base_speed <speed>", (x) =>
         {
-            Debug.Log("Setting base speed");
-            // PlayerStateMachine.Instance.BaseSpeed = x;
-            // outputLog.Add("Base speed set to " + x, DebugCommandTag.GOOD);
-            LogCommandOutput("Base speed set to " + x, DebugCommandTag.GOOD);
+            var player = FindObjectOfType<KCCPlayerController>();
+            if (player != null)
+            {
+                player.MaxStableMoveSpeed = x;
+                LogCommandOutput("Base speed set to " + x, DebugCommandTag.GOOD);
+            }
+            else
+            {
+                LogCommandOutput("Player not found", DebugCommandTag.ERROR);
+            }
         });
 
-        SET_GOD_MODE = new DebugCommand<bool>("set_god_mode", "Set god mode for the player", "set_god_mode <true/false>", (x) =>
+        INVERT_DEBUG_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera", () =>
         {
-            Debug.Log("Setting god mode");
-            // PlayerStateMachine.Instance.GodMode = x;
-            // outputLog.Add("God mode set to " + x, DebugCommandTag.GOOD);
-            LogCommandOutput("God mode set to " + x, DebugCommandTag.GOOD);
+            if (playerFreeLookCamera != null)
+            {
+                playerFreeLookCamera.m_YAxis.m_InvertInput = !playerFreeLookCamera.m_YAxis.m_InvertInput;
+                LogCommandOutput("Inverting camera y", DebugCommandTag.GOOD);
+            }
+            else
+            {
+                LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+            }
         });
 
-        INVERT_DEBUG_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera",() =>
-        {
-            Debug.Log("Inverting camera y");
-            playerFreeLookCamera.m_YAxis.m_InvertInput = !playerFreeLookCamera.m_YAxis.m_InvertInput;
-            LogCommandOutput("Inverting camera y", DebugCommandTag.GOOD);
-        });
+        SET_X_SENSITIVITY = new DebugCommand<float>(
+            "set_x_sensitivity",
+            "Set X axis camera sensitivity",
+            "set_x_sensitivity <value>",
+            (x) =>
+            {
+                if (playerFreeLookCamera != null)
+                {
+                    playerFreeLookCamera.m_XAxis.m_MaxSpeed = x;
+                    LogCommandOutput("X sensitivity set to " + x, DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                }
+            }
+        );
+
+        SET_Y_SENSITIVITY = new DebugCommand<float>(
+            "set_y_sensitivity",
+            "Set Y axis camera sensitivity",
+            "set_y_sensitivity <value>",
+            (y) =>
+            {
+                if (playerFreeLookCamera != null)
+                {
+                    playerFreeLookCamera.m_YAxis.m_MaxSpeed = y;
+                    LogCommandOutput("Y sensitivity set to " + y, DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                }
+            }
+        );
+
+        ADD_X_SENSITIVITY = new DebugCommand<float>(
+            "add_x_sensitivity",
+            "Add to X axis camera sensitivity",
+            "add_x_sensitivity <value>",
+            (x) =>
+            {
+                if (playerFreeLookCamera != null)
+                {
+                    playerFreeLookCamera.m_XAxis.m_MaxSpeed += x;
+                    LogCommandOutput("X sensitivity increased by " + x, DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                }
+            }
+        );
+
+        ADD_Y_SENSITIVITY = new DebugCommand<float>(
+            "add_y_sensitivity",
+            "Add to Y axis camera sensitivity",
+            "add_y_sensitivity <value>",
+            (y) =>
+            {
+                if (playerFreeLookCamera != null)
+                {
+                    playerFreeLookCamera.m_YAxis.m_MaxSpeed += y;
+                    LogCommandOutput("Y sensitivity increased by " + y, DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                }
+            }
+        );
+
+        RESET_SENSITIVITY = new DebugCommand(
+            "reset_sensitivity",
+            "Reset camera sensitivity to default",
+            "reset_sensitivity",
+            () =>
+            {
+                if (playerFreeLookCamera != null)
+                {
+                    playerFreeLookCamera.m_XAxis.m_MaxSpeed = 120f; // Set your default value
+                    playerFreeLookCamera.m_YAxis.m_MaxSpeed = 1f;   // Set your default value
+                    LogCommandOutput("Camera sensitivity reset to default", DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                }
+            }
+        );
+
+        GO_TO_MAIN_MENU = new DebugCommand(
+            "main_menu",
+            "Go to Main Menu",
+            "main_menu",
+            () =>
+            {
+                var uiManager = FindObjectOfType<UIManager>();
+                if (uiManager != null)
+                {
+                    LogCommandOutput("Going To Main Menu Scene", DebugCommandTag.GOOD);
+                    uiManager.PerformFadeOut(() =>
+                    {
+                        var gm = FindObjectOfType<GameManager>();
+                        if (gm != null)
+                            gm.currentLevel = 0;
+                        SceneManager.LoadScene("Main Menu");
+                    });
+                }
+                else
+                {
+                    LogCommandOutput("UIManager not found", DebugCommandTag.ERROR);
+                }
+            });
 
         commandList = new List<object> {
             HELP,
             CLEAR,
             SET_BASE_SPEED,
-            SET_GOD_MODE,
-            SET_DEBUG_CAMERA,
             INVERT_DEBUG_CAMERA_MODE,
+            SET_X_SENSITIVITY,
+            SET_Y_SENSITIVITY,
+            ADD_X_SENSITIVITY,
+            ADD_Y_SENSITIVITY,
+            RESET_SENSITIVITY,
+            GO_TO_MAIN_MENU
         };
 
         outputLog = new Dictionary<string, DebugCommandTag>();
     }
 
-    public void OnSubmit(InputValue value)
+    public void HandleSubmit()
     {
         if (ShowConsole)
         {
             HandleInput();
-            _input = "";
+            _inputText = "/";
         }
     }
 
-    public void OnToggleDebug(InputValue value)
+    public void HandleToggleDebug()
     {
+        if ((GameManager.Instance.CurrentState is GameManager.GameState.GameOver or GameManager.GameState.LoadingIn) || uiManager.uiIsPaused)
+            return;
+
         ShowConsole = !ShowConsole;
-        Cursor.lockState = ShowConsole ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = ShowConsole;
+
+        if (ShowConsole)
+        {
+            GameManager.Instance.PauseGame();
+            shouldFocusInput = true;
+            _inputText = "/";
+        }
+        else
+        {
+            GameManager.Instance.UnpauseGame();
+        }
+
         playerCameraInputProvider.enabled = !ShowConsole;
-        _input = "";
     }
 
     Vector2 scroll;
@@ -151,20 +307,16 @@ public class DebugController : MonoBehaviour
 
             Rect outputRect = new Rect(5, 20 * index, viewport.width, 50 * (index + 1));
 
-            // Have the output box grow in height based on the number of lines
-            // viewport.height = 20 * (index + 1);
-
-            // Use different styles based on the command tag (GOOD, ERROR, WARNING)
             switch (tag)
             {
                 case DebugCommandTag.ERROR:
-                    GUI.Label(outputRect, output, _errorStyle); // Render error in red
+                    GUI.Label(outputRect, output, _errorStyle);
                     break;
                 case DebugCommandTag.GOOD:
-                    GUI.Label(outputRect, output, _goodStyle); // Render good output in green
+                    GUI.Label(outputRect, output, _goodStyle);
                     break;
                 default:
-                    GUI.Label(outputRect, output, _textStyle); // Render normal output
+                    GUI.Label(outputRect, output, _textStyle);
                     break;
             }
 
@@ -173,101 +325,132 @@ public class DebugController : MonoBehaviour
 
         GUI.EndScrollView();
 
-
         GUI.Box(new Rect(0, y, Screen.width / 2, 40), "");
         GUI.backgroundColor = new Color(0, 0, 0, 0);
-        _input = GUI.TextField(new Rect(10f, y, (Screen.width / 2) - 10f, 40f), _input, _inputStyle);
+        GUI.SetNextControlName(DebugInputControlName);
+        _inputText = GUI.TextField(new Rect(10f, y, (Screen.width / 2) - 10f, 40f), _inputText, _inputStyle);
+
+        if (shouldFocusInput)
+        {
+            GUI.FocusControl(DebugInputControlName);
+            shouldFocusInput = false;
+        }
     }
 
     private void SetupTextStyles()
     {
         _textStyle = new GUIStyle(GUI.skin.label);
-        _textStyle.fontSize = 16; // Set font size for text labels
+        _textStyle.fontSize = 16;
 
         _inputStyle = new GUIStyle(GUI.skin.textField);
-        _inputStyle.fontSize = 16; // Set font size for the input text field
-        _inputStyle.alignment = TextAnchor.MiddleLeft; // Align text to the left
+        _inputStyle.fontSize = 16;
+        _inputStyle.alignment = TextAnchor.MiddleLeft;
 
         _errorStyle = new GUIStyle(GUI.skin.label);
-        _errorStyle.fontSize = 16; // Set font size for error text
+        _errorStyle.fontSize = 16;
         _errorStyle.fontStyle = FontStyle.Bold;
-        _errorStyle.normal.textColor = Color.red; // Set red text color for errors
-        _errorStyle.hover.textColor = Color.red; // Set red text color for errors
+        _errorStyle.normal.textColor = Color.red;
+        _errorStyle.hover.textColor = Color.red;
 
         _goodStyle = new GUIStyle(GUI.skin.label);
-        _goodStyle.fontSize = 16; // Set font size for error text
+        _goodStyle.fontSize = 16;
         _goodStyle.fontStyle = FontStyle.Italic;
-        _goodStyle.normal.textColor = Color.green; // Set red text color for errors
-        _goodStyle.hover.textColor = Color.green; // Set red text color for errors
+        _goodStyle.normal.textColor = Color.green;
+        _goodStyle.hover.textColor = Color.green;
     }
 
     private void HandleInput()
     {
-        string[] properties = _input.Split(' ');
+        // Require commands to start with '/' and not be just '/'
+        if (string.IsNullOrWhiteSpace(_inputText) || !_inputText.StartsWith("/") || _inputText.Length == 1)
+        {
+            LogCommandOutput("Commands must start with '/' and include a command", DebugCommandTag.ERROR);
+            return;
+        }
+        
+        outputLog.Clear();
+
+        string commandText = _inputText.Substring(1);
+        string[] properties = commandText.Split(' ');
+        string inputCommand = properties[0].ToLower();
         bool commandFound = false;
 
         for (int i = 0; i < commandList.Count; i++)
         {
-            DebugCommandBase command = commandList[i] as DebugCommandBase;
-
-            if (_input.Contains(command.commandId))
+            if (commandList[i] is DebugCommandBase command && inputCommand == command.commandId.ToLower())
             {
                 commandFound = true;
-
-                if (commandList[i] as DebugCommand != null)
+                try
                 {
-                    (commandList[i] as DebugCommand).Invoke();
+                    if (commandList[i] as DebugCommand != null)
+                    {
+                        (commandList[i] as DebugCommand)?.Invoke();
+                    }
+                    else if (commandList[i] as DebugCommand<int> != null)
+                    {
+                        if (properties.Length > 1 && int.TryParse(properties[1], out int parsedValue))
+                        {
+                            (commandList[i] as DebugCommand<int>)?.Invoke(parsedValue);
+                        }
+                        else
+                        {
+                            LogCommandOutput("Invalid or missing argument for command", DebugCommandTag.ERROR);
+                        }
+                    }
+                    else if (commandList[i] as DebugCommand<float> != null)
+                    {
+                        if (properties.Length > 1 && float.TryParse(properties[1], out float parsedValue))
+                        {
+                            (commandList[i] as DebugCommand<float>)?.Invoke(parsedValue);
+                        }
+                        else
+                        {
+                            LogCommandOutput("Invalid or missing argument for command", DebugCommandTag.ERROR);
+                        }
+                    }
+                    else if (commandList[i] as DebugCommand<bool> != null)
+                    {
+                        if (properties.Length > 1 && bool.TryParse(properties[1], out bool parsedValue))
+                        {
+                            (commandList[i] as DebugCommand<bool>)?.Invoke(parsedValue);
+                        }
+                        else
+                        {
+                            LogCommandOutput("Invalid or missing argument for command", DebugCommandTag.ERROR);
+                        }
+                    }
                 }
-                else if (commandList[i] as DebugCommand<int> != null)
+                catch (Exception ex)
                 {
-                    if (int.TryParse(properties[1], out int parsedValue))
-                    {
-                        (commandList[i] as DebugCommand<int>).Invoke(parsedValue);
-                    }
-                    else
-                    {
-                        // outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
-                        LogCommandOutput("Invalid argument for command", DebugCommandTag.ERROR);
-                    }
+                    LogCommandOutput("Command error: " + ex.Message, DebugCommandTag.ERROR);
                 }
-                else if (commandList[i] as DebugCommand<bool> != null)
-                {
-                    if (bool.TryParse(properties[1], out bool parsedValue))
-                    {
-                        (commandList[i] as DebugCommand<bool>).Invoke(parsedValue);
-                    }
-                    else
-                    {
-                        // outputLog.Add("Invalid argument for command", DebugCommandTag.ERROR);
-                        LogCommandOutput("Invalid argument for command", DebugCommandTag.ERROR);
-                    }
-                }
-
                 break;
             }
         }
 
-        // If the command wasn't found, add it as an error
         if (!commandFound)
         {
-            outputLog.Add("Command not found", DebugCommandTag.ERROR);
+            LogCommandOutput("Command not found", DebugCommandTag.ERROR);
         }
     }
 
     private void LogCommandOutput(string output, DebugCommandTag tag)
     {
-        // Ensure the key is unique before adding it to the dictionary
         string outputKey = output;
         int duplicateCount = 1;
 
-        // If the key already exists, append a unique count to avoid duplication
         while (outputLog.ContainsKey(outputKey))
         {
             outputKey = $"{output} ({duplicateCount})";
             duplicateCount++;
         }
 
-        // Add the unique key to the outputLog
         outputLog.Add(outputKey, tag);
+    }
+
+    private void OnDestroy()
+    {
+        _input.ToggleDebugModeEvent -= HandleToggleDebug;
+        _input.SubmitEvent -= HandleSubmit;
     }
 }

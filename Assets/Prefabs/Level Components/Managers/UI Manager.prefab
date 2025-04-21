@@ -46,10 +46,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inGameUI: {fileID: 0}
   levelBeatUI: {fileID: 0}
-  transitionCanvas: {fileID: 0}
+  pauseUI: {fileID: 0}
   timerText: {fileID: 0}
   levelBeatTimeText: {fileID: 0}
   bestTimeText: {fileID: 0}
+  sensitivitySlider: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  invertCameraToggle: {fileID: 0}
   fadePanel: {fileID: 0}
   fadeDuration: 1
   _gameSave: {fileID: 11400000, guid: 0f7aa85281773b0489e7034bb991daf4, type: 2}
+  _gameSettingsManager: {fileID: 11400000, guid: 94f123b4bce179649ab8417d4148eb2a,
+    type: 2}
+  _inputReader: {fileID: 11400000, guid: 32312b96db6f93a49809e5e09471e80e, type: 2}
+  playerFreeLook: {fileID: 0}

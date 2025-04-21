@@ -11,6 +11,7 @@ public class TimerManager : MonoBehaviour
 
     private float _timer;
     private bool _timerActive;
+    private Coroutine _timerCoroutine;
     
     public float Timer
     {
@@ -26,18 +27,19 @@ public class TimerManager : MonoBehaviour
 
     public void StartTimer()
     {
-        _timer = 0;
-
+        if (_timerActive) return;
         _timerActive = true;
-
-        StartCoroutine(TimerCoroutine());
+        _timerCoroutine ??= StartCoroutine(TimerCoroutine());
     }
 
     public void StopTimer()
     {
         _timerActive = false;
         
-        StopCoroutine(TimerCoroutine());
+        if (_timerCoroutine == null) return;
+        
+        StopCoroutine(_timerCoroutine);
+        _timerCoroutine = null;
     }
 
     public float GetCurrentTime()

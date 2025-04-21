@@ -99,9 +99,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<align=\"center\">Welcome To The Crazy Market!</align>\n\n<b>Controls:</b>
-    \n\n<b>Movement</b> - Left Stick or WASD \n<b>Jump (Hold to Jump Higher)</b>
-    - South Button or Spacebar"
+  m_text: "<align=\"center\">Welcome To The Market Dash!</align>\n\n<b>Controls:</b>
+    \n\n<b>Movement</b> - Left Stick or WASD \n<b>Jump</b> - A/Circle or Spacebar\n<b>Double
+    Jump</b> - (In Air) A/Circle or Spacebar\n<b>Move Camera</b> - Right Stick or
+    Mouse"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7b6203d38e0aca641aaf542edea6feab, type: 2}
   m_sharedMaterial: {fileID: -5150451404701539560, guid: 7b6203d38e0aca641aaf542edea6feab,
