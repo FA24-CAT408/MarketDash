@@ -366,7 +366,7 @@ public class UIManager : MonoBehaviour
     private void OnMusicVolumeChanged(float value)
     {
         if (_gameSettingsManager != null)
-            _gameSettingsManager.Volume = value;
+            _gameSettingsManager.SetVolume(value);
         // Optionally, update your audio system here
         
         if (musicVolumeText != null)

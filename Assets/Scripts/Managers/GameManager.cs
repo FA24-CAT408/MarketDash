@@ -314,6 +314,7 @@ public class GameManager : MonoBehaviour
         _playerFreeLook.m_YAxis.m_InvertInput = _gameSettingsData.InvertCamera;
         
         //Volume
-        //TODO: ASSIGN VOLUME
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetMusicVolume(_gameSettingsData.Volume);
     }
 }

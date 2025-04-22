@@ -23,8 +23,17 @@ public class GameSettingsManager : ScriptableSave<GameSettingsData>
         get => _saveData.InvertCamera;
         set { _saveData.InvertCamera = value; Save(); }
     }
-
-    // Add more settings as needed
+    
+    public void SetVolume(float volume)
+    {
+        Volume = volume;
+    
+        // Update AudioManager if it exists
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetMusicVolume(volume);
+        }
+    }
 
     protected override void UpgradeData(GameSettingsData oldData)
     {

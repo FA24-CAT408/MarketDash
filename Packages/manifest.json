@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.gitamend.improvedtimers": "https://github.com/adammyhre/Unity-Improved-Timers.git",
     "com.unity.2d.psdimporter": "8.0.5",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "1.1.5",
