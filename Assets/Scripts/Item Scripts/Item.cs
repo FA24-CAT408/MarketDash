@@ -6,6 +6,7 @@ using UnityEngine;
 public class Item : MonoBehaviour
 {
     public string itemName;
+    public GameObject prefab;
     public static event Action<Item> OnItemCollected;
     
     private AudioSource _audioSource;

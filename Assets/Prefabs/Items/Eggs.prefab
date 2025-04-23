@@ -189,6 +189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemName: Eggs
+  prefab: {fileID: 4586464148236013622}
 --- !u!1001 &553107617260862332
 PrefabInstance:
   m_ObjectHideFlags: 0

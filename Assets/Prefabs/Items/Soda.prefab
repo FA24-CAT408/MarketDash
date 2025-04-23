@@ -145,8 +145,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 325562989958833383}
   - {fileID: 108808929305266904}
+  - {fileID: 325562989958833383}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &2081090032135229347
@@ -183,6 +183,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemName: Blobby Cola
+  prefab: {fileID: 7400203950308614046}
 --- !u!1001 &7071432687629063992
 PrefabInstance:
   m_ObjectHideFlags: 0

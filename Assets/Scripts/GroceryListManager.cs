@@ -98,7 +98,7 @@ public class GroceryListManager : MonoBehaviour
     {
         GameObject completionTextObject = Instantiate(itemTextPrefab, listContainer);
         TMP_Text textComponent = completionTextObject.GetComponent<TMP_Text>();
-        textComponent.text = "PROCEED TO EXIT";
+        textComponent.text = "PROCEED TO STAGING AREA";
         textComponent.fontStyle = FontStyles.Bold;
         textComponent.color = Color.red;
 

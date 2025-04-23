@@ -165,9 +165,9 @@ public class UIManager : MonoBehaviour
                 break;
                 
             case GameManager.GameState.GameOver:
-                ShowInGameUI(false);
-                ShowLevelBeatUI(true);
-                UpdateLevelBeatUI();
+                // ShowInGameUI(false);
+                // ShowLevelBeatUI(true);
+                // UpdateLevelBeatUI();
                 break;
         }
     }
@@ -359,7 +359,9 @@ public class UIManager : MonoBehaviour
 
         if (sensitivityText != null)
         {
-            sensitivityText.text = value.ToString("F2");
+            float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
+            normalized = Mathf.Clamp(normalized, 0.1f, 1f);
+            sensitivityText.text = normalized.ToString("F2");
         }
     }
 
@@ -367,7 +369,6 @@ public class UIManager : MonoBehaviour
     {
         if (_gameSettingsManager != null)
             _gameSettingsManager.SetVolume(value);
-        // Optionally, update your audio system here
         
         if (musicVolumeText != null)
         {

@@ -205,6 +205,12 @@ public class GameManager : MonoBehaviour
         _gameSave.SetLevelTime(currentLevel, finalTime);
 
         currentLevel += 1;
+
+        var stagingArea = FindObjectOfType<StagingAreaController>();
+        if (stagingArea != null)
+        {
+            StartCoroutine(stagingArea.SpawnItemsCoroutine());
+        }
         
         Debug.Log("Level Beat");
     }

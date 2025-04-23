@@ -199,11 +199,13 @@ public class MainMenuController : MonoBehaviour
     private void OnSensitivityChanged(float value)
     {
         if (_gameSettingsManager != null)
-            _gameSettingsManager.SetVolume(value);
+            _gameSettingsManager.Sensitivity = value;
         
         if (sensitivityText != null)
         {
-            sensitivityText.text = value.ToString("F2");
+            float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
+            normalized = Mathf.Clamp(normalized, 0.1f, 1f);
+            sensitivityText.text = normalized.ToString("F2");
         }
     }
     
@@ -211,7 +213,7 @@ public class MainMenuController : MonoBehaviour
     private void OnVolumeChanged(float value)
     {
         if (_gameSettingsManager != null)
-            _gameSettingsManager.Volume = value;
+            _gameSettingsManager.SetVolume(value);
         
         if (AudioManager.Instance != null)
             AudioManager.Instance.SetMusicVolume(value);
