@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
     public static event Action<GameState> OnStateChanged;
     
-    public int currentLevel = 0;
+    public int currentLevel = 1;
     
     [SerializeField] private GameSaveManager _gameSave;
     [SerializeField] private GameSettingsData _gameSettingsData;
