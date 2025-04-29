@@ -1,108 +1,103 @@
 using UnityEngine;
 using UnityEngine.Splines;
+using Unity.Mathematics;
 using DG.Tweening;
+using KinematicCharacterController;
 
-public class NPCSplineWalker : MonoBehaviour
+public class NPCSplineWalker : MonoBehaviour, IMoverController
 {
+    [Header("References")]
     [SerializeField] private SplineContainer spline;
     [SerializeField] private Transform model;
+    
+    [Header("Movement Settings")]
     [SerializeField] private float moveDuration = 3f;
-    [SerializeField] private float rotateDuration = 0.5f;
-    [SerializeField] private Ease moveEase = Ease.Linear;
-    [SerializeField] private Ease rotateEase = Ease.InOutSine;
-
-    private bool movingForward = true;
-    private float t = 0f;
-    private bool isMoving = false;
-    private bool isRotating = false;
-
+    [SerializeField] private bool pingPong = true;
+    
+    private PhysicsMover _mover;
+    private Vector3 _targetPosition;
+    private float _splinePosition = 0f;
+    private bool _movingForward = true;
+    private Tween _currentTween;
+    
     void Start()
     {
-        if (spline == null || model == null) return;
+        // Get references
+        _mover = GetComponent<PhysicsMover>();
+        _mover.MoverController = this;
+        
+        // Initialize position
+        UpdateSplinePosition(_splinePosition);
+        
+        // Start movement
         MoveAlongSpline();
     }
-
+    
     void MoveAlongSpline()
     {
-        isMoving = true;
-        float start = movingForward ? 0f : 1f;
-        float end = movingForward ? 1f : 0f;
-
-        DOTween.To(() => t, x => {
-            t = x;
-            SetModelOnSpline(t, movingForward);
-        }, end, moveDuration)
-        .SetEase(moveEase)
-        .OnComplete(() => {
-            isMoving = false;
-            RotateAtEnd();
-        });
-    }
-
-    void RotateAtEnd()
-    {
-        isRotating = true;
-
-        float endT = movingForward ? 1f : 0f;
-        spline.Spline.Evaluate(endT, out var pos, out var tangent, out _);
-
-        Vector3 worldTangent = spline.transform.TransformDirection(tangent);
-        Vector3 lookDir = -worldTangent;
-
-        if (lookDir.sqrMagnitude < 0.0001f)
-            lookDir = -model.forward; // fallback to current backward
-
-        Quaternion targetRot = Quaternion.identity;
-        if (lookDir.sqrMagnitude > 0.0001f)
-            targetRot = Quaternion.LookRotation(lookDir, Vector3.up);
-        else
-            targetRot = model.rotation; // fallback to current rotation
-
-        model.DORotateQuaternion(targetRot, rotateDuration)
-            .SetEase(rotateEase)
+        float endPosition = _movingForward ? 1f : 0f;
+        
+        _currentTween = DOTween.To(() => _splinePosition, 
+            x => {
+                _splinePosition = x;
+                UpdateSplinePosition(x);
+            }, 
+            endPosition, moveDuration)
+            .SetEase(Ease.Linear)
             .OnComplete(() => {
-                movingForward = !movingForward;
-                isRotating = false;
+                if (pingPong) {
+                    _movingForward = !_movingForward;
+                } else {
+                    _splinePosition = 0f;
+                }
                 MoveAlongSpline();
             });
     }
-
-    void SetModelOnSpline(float t, bool forward)
+    
+    void UpdateSplinePosition(float t)
     {
-        spline.Spline.Evaluate(t, out var pos, out var tangent, out _);
-        model.position = spline.transform.TransformPoint(pos);
-
-        if (isRotating) return; // Don't update rotation during turn
-
-        Vector3 worldTangent = spline.transform.TransformDirection(tangent);
-        if (!forward) worldTangent = -worldTangent;
-
-        if (worldTangent.sqrMagnitude > 0.0001f)
+        if (spline == null) return;
+        
+        // Get position on spline - using correct float3 types
+        float3 position;
+        float3 tangent;
+        float3 upVector;
+        spline.Spline.Evaluate(t, out position, out tangent, out upVector);
+        
+        // Convert to world space
+        _targetPosition = spline.transform.TransformPoint(new Vector3(position.x, position.y, position.z));
+        
+        // Update model rotation if needed
+        if (model != null && math.length(tangent) > 0.01f)
         {
-            Quaternion lookRot = Quaternion.LookRotation(worldTangent, Vector3.up);
-            model.rotation = Quaternion.Euler(0, lookRot.eulerAngles.y, 0);
-        }
-        // else: Do not set rotation if tangent is too small
-    }
-
-
-#if UNITY_EDITOR
-    void OnValidate()
-    {
-        if (spline != null && model != null)
-        {
-            spline.Spline.Evaluate(t, out var pos, out var tangent, out _);
-            model.position = spline.transform.TransformPoint(pos);
-
-            Vector3 worldTangent = spline.transform.TransformDirection(tangent);
-
-            if (worldTangent.sqrMagnitude > 0.0001f)
-            {
-                Quaternion lookRot = Quaternion.LookRotation(worldTangent, Vector3.up);
-                model.rotation = Quaternion.Euler(0, lookRot.eulerAngles.y, 0);
-            }
-            // else: Do not set rotation if tangent is too small
+            Vector3 direction = spline.transform.TransformDirection(new Vector3(tangent.x, tangent.y, tangent.z));
+            if (!_movingForward) direction = -direction;
+            
+            Quaternion lookRotation = Quaternion.LookRotation(direction, Vector3.up);
+            model.rotation = Quaternion.Euler(0, lookRotation.eulerAngles.y, 0);
         }
     }
-#endif
+    
+    public void UpdateMovement(out Vector3 goalPosition, out Quaternion goalRotation, float deltaTime)
+    {
+        // Set target position for the PhysicsMover
+        goalPosition = _targetPosition;
+        
+        // Keep current rotation
+        goalRotation = transform.rotation;
+        
+        // Update model position to follow root transform
+        if (model != null && model != transform)
+        {
+            model.position = transform.position;
+        }
+    }
+    
+    void OnDestroy()
+    {
+        if (_currentTween != null && _currentTween.IsActive())
+        {
+            _currentTween.Kill();
+        }
+    }
 }

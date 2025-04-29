@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8204792190164960203
 Transform:
   m_ObjectHideFlags: 0
@@ -88,7 +88,7 @@ VFXRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4304958402980621376}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -190,6 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Eggs
   prefab: {fileID: 4586464148236013622}
+  glow: 0
 --- !u!1001 &553107617260862332
 PrefabInstance:
   m_ObjectHideFlags: 0

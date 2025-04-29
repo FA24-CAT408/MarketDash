@@ -128,8 +128,8 @@ MonoBehaviour:
   Drag: 0.1
   StableMovementSharpness: 15
   OrientationSharpness: 10
-  JumpParticles: {fileID: 1505881934983182920}
-  particleSpawnPoint: {fileID: 0}
+  JumpParticles: {fileID: 3270974459108386389, guid: c0b4b2ea414680f4587e1171db83c2c7,
+    type: 3}
   MaxJumpCount: 2
   JumpUpSpeed: 12
   JumpPreGroundingGraceTime: 0.15
@@ -1201,12 +1201,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c0b4b2ea414680f4587e1171db83c2c7, type: 3}
---- !u!198 &1505881934983182920 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 3270974459108386389, guid: c0b4b2ea414680f4587e1171db83c2c7,
-    type: 3}
-  m_PrefabInstance: {fileID: 4143630878492220445}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2046309960424286984 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2730542868949153557, guid: c0b4b2ea414680f4587e1171db83c2c7,
