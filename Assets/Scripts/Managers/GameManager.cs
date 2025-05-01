@@ -29,6 +29,8 @@ public class GameManager : MonoBehaviour
     
     [SerializeField]
     private bool setCursorVisible = true;
+    
+    private bool _hasDoubledSpeed = false;
 
     public GameState CurrentState
     {
@@ -153,13 +155,21 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Game Over! EndGame state triggered.");
         var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
+        if (player != null && !_hasDoubledSpeed)
+        {
             player.MaxStableMoveSpeed *= 2f;
-        
+            _hasDoubledSpeed = true;
+        }
+
+        // Resume timer if it exists and isn't already active
+        if (_timerManager != null && !_timerManager.TimerActive)
+        {
+            _timerManager.StartTimer();
+        }
+    
         if (_sceneEventManager != null)
             _sceneEventManager.OnEndGame?.Invoke();
     }
-
 
     public void EnterInProgressGameState()
     {
@@ -179,6 +189,7 @@ public class GameManager : MonoBehaviour
     private void EnterStopGameState()
     {
         UpdateCursorVisible(true);
+        _hasDoubledSpeed = false;
         
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)

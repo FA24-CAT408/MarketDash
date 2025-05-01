@@ -19,7 +19,6 @@ public class AudioManager : MonoBehaviour
     
     [Header("Audio Settings")]
     [SerializeField] private GameSettingsManager _gameSettingsManager;
-    [SerializeField] private float crossFadeDuration = 1f;
     
     private AudioClip _currentMusicClip;
     private Tween _fadeInTween;
@@ -97,12 +96,14 @@ public class AudioManager : MonoBehaviour
                 // Keep current music during loading
                 break;
             case GameManager.GameState.PreGame:
-            case GameManager.GameState.InProgress:
                 CrossFadeToMusic(gameplayMusic);
                 break;
+            case GameManager.GameState.InProgress:
             case GameManager.GameState.EndGame:
+                CrossFadeToMusic(endGameMusic, 0.15f);
+                break;
             case GameManager.GameState.GameOver:
-                CrossFadeToMusic(endGameMusic);
+                CrossFadeToMusic(gameplayMusic);
                 break;
             case GameManager.GameState.Pause:
                 // You could lower volume during pause or just keep it playing
@@ -144,14 +145,14 @@ public class AudioManager : MonoBehaviour
         }
     }
     
-    public void CrossFadeToMusic(AudioClip newClip)
+    public void CrossFadeToMusic(AudioClip newClip, float crossfadeTime = 0.2f)
     {
         if (newClip == null || newClip == _currentMusicClip) return;
         
-        StartCoroutine(CrossFadeMusicCoroutine(newClip));
+        StartCoroutine(CrossFadeMusicCoroutine(newClip, crossfadeTime));
     }
     
-    private IEnumerator CrossFadeMusicCoroutine(AudioClip newClip)
+    private IEnumerator CrossFadeMusicCoroutine(AudioClip newClip, float crossFade = 0.2f)
     {
         if (musicSource.isPlaying)
         {
@@ -160,7 +161,7 @@ public class AudioManager : MonoBehaviour
                 _fadeOutTween.Kill();
                 
             _fadeOutTween = DOTween.To(() => musicSource.volume, 
-                x => musicSource.volume = x, 0, crossFadeDuration / 2)
+                x => musicSource.volume = x, 0, crossFade / 2)
                 .SetEase(Ease.OutQuad);
                 
             yield return _fadeOutTween.WaitForCompletion();
@@ -179,11 +180,11 @@ public class AudioManager : MonoBehaviour
             
         float targetVolume = _gameSettingsManager != null ? _gameSettingsManager.Volume : 1f;
         _fadeInTween = DOTween.To(() => musicSource.volume, 
-            x => musicSource.volume = x, targetVolume, crossFadeDuration / 2)
+            x => musicSource.volume = x, targetVolume, crossFade / 2)
             .SetEase(Ease.InQuad);
     }
     
-    private IEnumerator FadeMusicIn(AudioClip musicClip)
+    private IEnumerator FadeMusicIn(AudioClip musicClip, float crossFade = 0.2f)
     {
         // If music is already playing, fade it out first
         if (musicSource.isPlaying)
@@ -193,7 +194,7 @@ public class AudioManager : MonoBehaviour
                 
             float startVolume = musicSource.volume;
             _fadeOutTween = DOTween.To(() => musicSource.volume, 
-                x => musicSource.volume = x, 0, crossFadeDuration / 2)
+                x => musicSource.volume = x, 0, crossFade / 2)
                 .SetEase(Ease.OutQuad);
                 
             yield return _fadeOutTween.WaitForCompletion();
@@ -211,7 +212,7 @@ public class AudioManager : MonoBehaviour
             
         float targetVolume = _gameSettingsManager != null ? _gameSettingsManager.Volume : 1f;
         _fadeInTween = DOTween.To(() => musicSource.volume, 
-            x => musicSource.volume = x, targetVolume, crossFadeDuration / 2)
+            x => musicSource.volume = x, targetVolume, crossFade / 2)
             .SetEase(Ease.InQuad);
     }
     

@@ -1069,6 +1069,7 @@ MonoBehaviour:
   - {fileID: 8490950383722151372, guid: 9af7a8d97dec792498202f92e1242ca0, type: 3}
   - {fileID: 7400203950308614046, guid: d60a9dd8d68a92940a467342199646b6, type: 3}
   randomizeOnStart: 1
+  useGroceryList: 1
 --- !u!1001 &7807039854050879961
 PrefabInstance:
   m_ObjectHideFlags: 0

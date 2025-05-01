@@ -104,7 +104,7 @@ public class UIManager : MonoBehaviour
 
     void HandlePauseUI()
     {
-        if(DebugController.Instance.ShowConsole)  return;
+        if(DebugController.Instance && DebugController.Instance.ShowConsole)  return;
         
         uiIsPaused = !uiIsPaused;
 

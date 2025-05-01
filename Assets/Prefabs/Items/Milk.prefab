@@ -164,6 +164,7 @@ MonoBehaviour:
   itemName: Milk
   prefab: {fileID: 8490950383722151372}
   glow: 0
+  isCollectable: 0
 --- !u!65 &7054854529657874829
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -185,7 +186,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.5433865, z: 1}
   m_Center: {x: 0, y: 0.8101835, z: 0}
---- !u!1001 &8046727171843800437
+--- !u!1001 &8779068587882060155
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -193,74 +194,69 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 525352262426675214}
     m_Modifications:
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalRotation.y
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5543832150379327786, guid: 73627a75a9c5e4f92bca5e1720b84435,
+    - target: {fileID: 6526162333251949860, guid: 93e3b92879b8754418a26e37208dfd48,
         type: 3}
       propertyPath: m_Name
       value: MilkBottle Visuals
-      objectReference: {fileID: 0}
-    - target: {fileID: 5543832150379327786, guid: 73627a75a9c5e4f92bca5e1720b84435,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 73627a75a9c5e4f92bca5e1720b84435, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: 93e3b92879b8754418a26e37208dfd48, type: 3}
 --- !u!4 &2886740161032623845 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 5162380108640529296, guid: 73627a75a9c5e4f92bca5e1720b84435,
+  m_CorrespondingSourceObject: {fileID: 5898104436314869662, guid: 93e3b92879b8754418a26e37208dfd48,
     type: 3}
-  m_PrefabInstance: {fileID: 8046727171843800437}
+  m_PrefabInstance: {fileID: 8779068587882060155}
   m_PrefabAsset: {fileID: 0}
