@@ -359,9 +359,9 @@ public class UIManager : MonoBehaviour
 
         if (sensitivityText != null)
         {
-            float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
-            normalized = Mathf.Clamp(normalized, 0.1f, 1f);
-            sensitivityText.text = normalized.ToString("F2");
+            // float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
+            // normalized = Mathf.Clamp(normalized, 0.1f, 1f);
+            sensitivityText.text = value.ToString("F2");
         }
     }
 

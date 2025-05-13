@@ -319,7 +319,7 @@ public class GameManager : MonoBehaviour
     {
         //Sensitivity
         _playerFreeLook.m_XAxis.m_MaxSpeed = 120f * _gameSettingsData.Sensitivity;
-        _playerFreeLook.m_YAxis.m_MaxSpeed = 1f * _gameSettingsData.Sensitivity;
+        _playerFreeLook.m_YAxis.m_MaxSpeed = _gameSettingsData.Sensitivity;
         
         //Invert
         _playerFreeLook.m_YAxis.m_InvertInput = _gameSettingsData.InvertCamera;

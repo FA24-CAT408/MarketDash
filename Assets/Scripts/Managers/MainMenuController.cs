@@ -26,6 +26,7 @@ public class MainMenuController : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private GameSettingsManager _gameSettingsManager;
+    [SerializeField] private GameSaveManager _gameSaveManager;
     
     private Tween _currentFadeTween;
     
@@ -135,6 +136,11 @@ public class MainMenuController : MonoBehaviour
     {
         Application.Quit();
     }
+
+    public void ResetGame()
+    {
+        _gameSaveManager.ResetAllTimes();
+    }
     
     // Called when Settings button is clicked
     public void OpenSettings()
@@ -208,9 +214,9 @@ public class MainMenuController : MonoBehaviour
         
         if (sensitivityText != null)
         {
-            float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
-            normalized = Mathf.Clamp(normalized, 0.1f, 1f);
-            sensitivityText.text = normalized.ToString("F2");
+            // float normalized = 0.1f + ((value - 0.1f) / (5f - 0.1f)) * (1f - 0.1f);
+            // normalized = Mathf.Clamp(normalized, 0.1f, 1f);
+            sensitivityText.text = value.ToString("F2");
         }
     }
     
