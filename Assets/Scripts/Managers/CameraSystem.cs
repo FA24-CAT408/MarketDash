@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using DG.Tweening;
 using UnityEngine;
 
@@ -19,23 +19,29 @@ public class CameraSystem : MonoBehaviour
         if (virtualCameras.Count > 0 && currentCamera == null)
         {
             currentCamera = virtualCameras[0];
-            currentCamera.Priority = 100;
+            currentCamera.Priority.Value = 100;
         }
     }
 
+    /// <summary>
+    /// Switches active camera by setting priority. Deactivates all other cameras.
+    /// </summary>
     public void SetNewCamera(CinemachineVirtualCameraBase newCamera)
     {
         if (newCamera == currentCamera) return;
         
         foreach (var cam in virtualCameras)
         {
-            cam.Priority = 0;
+            cam.Priority.Value = 0;
         }
         
-        newCamera.Priority = 100;
+        newCamera.Priority.Value = 100;
         currentCamera = newCamera;
     }
     
+    /// <summary>
+    /// Switches to a camera by its index in the virtualCameras list.
+    /// </summary>
     public void SetCameraByIndex(int cameraIndex)
     {
         if (cameraIndex >= 0 && cameraIndex < virtualCameras.Count)
@@ -48,60 +54,60 @@ public class CameraSystem : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Sets the X component of the current camera's spline dolly offset.
+    /// </summary>
     public void SetCurrentCameraXOffset(float xOffset)
     {
         if (currentCamera == null) return;
         
-        CinemachineVirtualCamera virtualCamera = currentCamera as CinemachineVirtualCamera;
-        if (virtualCamera == null) return;
+        CinemachineSplineDolly splineDolly = currentCamera.GetComponent<CinemachineSplineDolly>();
+        if (splineDolly == null) return;
         
-        CinemachineTrackedDolly trackedDolly = virtualCamera.GetCinemachineComponent<CinemachineTrackedDolly>();
-        if (trackedDolly == null) return;
-        
-        Vector3 currentOffset = trackedDolly.m_PathOffset;
+        Vector3 currentOffset = splineDolly.SplineOffset;
         Vector3 targetOffset = currentOffset;
         targetOffset.x = xOffset;
         
         SetCameraPathOffset(currentCamera, targetOffset);
     }
     
-    // Unity Event compatible method - sets custom Y offset for current camera
+    /// <summary>
+    /// Sets the Y component of the current camera's spline dolly offset.
+    /// </summary>
     public void SetCurrentCameraYOffset(float yOffset)
     {
         if (currentCamera == null) return;
         
-        CinemachineVirtualCamera virtualCamera = currentCamera as CinemachineVirtualCamera;
-        if (virtualCamera == null) return;
+        CinemachineSplineDolly splineDolly = currentCamera.GetComponent<CinemachineSplineDolly>();
+        if (splineDolly == null) return;
         
-        CinemachineTrackedDolly trackedDolly = virtualCamera.GetCinemachineComponent<CinemachineTrackedDolly>();
-        if (trackedDolly == null) return;
-        
-        Vector3 currentOffset = trackedDolly.m_PathOffset;
+        Vector3 currentOffset = splineDolly.SplineOffset;
         Vector3 targetOffset = currentOffset;
         targetOffset.y = yOffset;
         
         SetCameraPathOffset(currentCamera, targetOffset);
     }
     
-    // Unity Event compatible method - sets custom Z offset for current camera
+    /// <summary>
+    /// Sets the Z component of the current camera's spline dolly offset.
+    /// </summary>
     public void SetCurrentCameraZOffset(float zOffset)
     {
         if (currentCamera == null) return;
         
-        CinemachineVirtualCamera virtualCamera = currentCamera as CinemachineVirtualCamera;
-        if (virtualCamera == null) return;
+        CinemachineSplineDolly splineDolly = currentCamera.GetComponent<CinemachineSplineDolly>();
+        if (splineDolly == null) return;
         
-        CinemachineTrackedDolly trackedDolly = virtualCamera.GetCinemachineComponent<CinemachineTrackedDolly>();
-        if (trackedDolly == null) return;
-        
-        Vector3 currentOffset = trackedDolly.m_PathOffset;
+        Vector3 currentOffset = splineDolly.SplineOffset;
         Vector3 targetOffset = currentOffset;
         targetOffset.z = zOffset;
         
         SetCameraPathOffset(currentCamera, targetOffset);
     }
     
-    // Convenience method to flip the current camera
+    /// <summary>
+    /// Flips the current camera's Z offset (mirrors the camera position along the spline).
+    /// </summary>
     public void FlipCurrentCamera()
     {
         if (currentCamera != null)
@@ -112,66 +118,37 @@ public class CameraSystem : MonoBehaviour
     
     private void FlipCamera(CinemachineVirtualCameraBase camera)
     {
-        // We need to cast to CinemachineVirtualCamera to access GetCinemachineComponent
-        CinemachineVirtualCamera virtualCamera = camera as CinemachineVirtualCamera;
+        CinemachineSplineDolly splineDolly = camera.GetComponent<CinemachineSplineDolly>();
         
-        if (virtualCamera == null)
+        if (splineDolly != null)
         {
-            Debug.LogWarning($"Camera {camera.name} is not a CinemachineVirtualCamera!");
-            return;
-        }
-        
-        // Try to get the dolly track component
-        CinemachineTrackedDolly trackedDolly = virtualCamera.GetCinemachineComponent<CinemachineTrackedDolly>();
-        
-        if (trackedDolly != null)
-        {
-            // Get the current path offset
-            Vector3 currentOffset = trackedDolly.m_PathOffset;
-            
-            // Calculate the target offset (with inverted Z)
+            Vector3 currentOffset = splineDolly.SplineOffset;
             Vector3 targetOffset = currentOffset;
             targetOffset.z = -currentOffset.z;
             
-            // Use the custom method to set the path offset
             SetCameraPathOffset(camera, targetOffset);
         }
         else
         {
-            Debug.LogWarning($"Camera {camera.name} does not have a CinemachineTrackedDolly component!");
+            Debug.LogWarning($"Camera {camera.name} does not have a CinemachineSplineDolly component!");
         }
     }
     
     private void SetCameraPathOffset(CinemachineVirtualCameraBase camera, Vector3 targetOffset, float duration = -1)
     {
-        // Use the specified duration or fall back to the default
         float tweenDuration = duration > 0 ? duration : flipDuration;
         
-        // We need to cast to CinemachineVirtualCamera to access GetCinemachineComponent
-        CinemachineVirtualCamera virtualCamera = camera as CinemachineVirtualCamera;
+        CinemachineSplineDolly splineDolly = camera.GetComponent<CinemachineSplineDolly>();
         
-        if (virtualCamera == null)
+        if (splineDolly != null)
         {
-            Debug.LogWarning($"Camera {camera.name} is not a CinemachineVirtualCamera!");
-            return;
-        }
-        
-        // Try to get the dolly track component
-        CinemachineTrackedDolly trackedDolly = virtualCamera.GetCinemachineComponent<CinemachineTrackedDolly>();
-        
-        if (trackedDolly != null)
-        {
-            // Get the current path offset
-            Vector3 currentOffset = trackedDolly.m_PathOffset;
-            
-            // Create a temporary Vector3 to tween
+            Vector3 currentOffset = splineDolly.SplineOffset;
             Vector3 offsetValue = currentOffset;
             
-            // Tween the offset
             DOTween.To(() => offsetValue, 
                        x => {
                            offsetValue = x;
-                           trackedDolly.m_PathOffset = offsetValue;
+                           splineDolly.SplineOffset = offsetValue;
                        }, 
                        targetOffset, 
                        tweenDuration)
@@ -182,7 +159,7 @@ public class CameraSystem : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"Camera {camera.name} does not have a CinemachineTrackedDolly component!");
+            Debug.LogWarning($"Camera {camera.name} does not have a CinemachineSplineDolly component!");
         }
     }
 }

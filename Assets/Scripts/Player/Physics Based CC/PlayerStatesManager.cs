@@ -35,12 +35,12 @@ public class PlayerStatesManager : MonoBehaviour
         {
             updateUITimer = 0.1f;
 
-            float currSpeed = player.rb.velocity.magnitude;
+            float currSpeed = player.rb.linearVelocity.magnitude;
 
             SetSpeed(currSpeed);
-            SetVelocity(player.rb.velocity);
+            SetVelocity(player.rb.linearVelocity);
           
-            SetMovingState(player.rb.velocity.magnitude > 0.1f);
+            SetMovingState(player.rb.linearVelocity.magnitude > 0.1f);
         }
     }
 

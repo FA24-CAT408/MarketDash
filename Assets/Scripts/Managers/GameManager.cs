@@ -1,6 +1,6 @@
 using System;
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -21,7 +21,8 @@ public class GameManager : MonoBehaviour
     
     [SerializeField] private GameSaveManager _gameSave;
     [SerializeField] private GameSettingsData _gameSettingsData;
-    [SerializeField] private CinemachineFreeLook _playerFreeLook;
+    [SerializeField] private CinemachineCamera _playerCamera;
+    [SerializeField] private CinemachineInputAxisController _cameraInputController;
     
     [SerializeField]
     private GameState currentState;
@@ -270,7 +271,9 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.LoadingIn);
     }
     
-    // Add this method to GameManager
+    /// <summary>
+    /// Loads a scene by name, transitioning through LoadingIn state.
+    /// </summary>
     public void LoadScene(string sceneName)
     {
         // Set state to LoadingIn before loading the scene
@@ -317,12 +320,30 @@ public class GameManager : MonoBehaviour
 
     void AssignSaveData()
     {
-        //Sensitivity
-        _playerFreeLook.m_XAxis.m_MaxSpeed = 120f * _gameSettingsData.Sensitivity;
-        _playerFreeLook.m_YAxis.m_MaxSpeed = _gameSettingsData.Sensitivity;
-        
-        //Invert
-        _playerFreeLook.m_YAxis.m_InvertInput = _gameSettingsData.InvertCamera;
+        // Sensitivity and invert are now controlled via CinemachineInputAxisController's Gain property.
+        // Each controller entry maps to an axis on the camera (horizontal/vertical).
+        if (_cameraInputController != null)
+        {
+            var controllers = _cameraInputController.Controllers;
+            for (int i = 0; i < controllers.Count; i++)
+            {
+                var c = controllers[i];
+                
+                // Horizontal axis (orbit around target)
+                if (i == 0)
+                {
+                    c.Input.Gain = 120f * _gameSettingsData.Sensitivity;
+                    controllers[i] = c;
+                }
+                // Vertical axis (orbit up/down)
+                else if (i == 1)
+                {
+                    float gain = _gameSettingsData.Sensitivity;
+                    c.Input.Gain = _gameSettingsData.InvertCamera ? -gain : gain;
+                    controllers[i] = c;
+                }
+            }
+        }
         
         //Volume
         if (AudioManager.Instance != null)

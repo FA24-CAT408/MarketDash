@@ -116,7 +116,7 @@ public class PhysicsCharacterController : MonoBehaviour
         if (movementDirection == Vector3.zero)
         {
             // Dampen speed fast
-            if (isGrounded) rb.velocity = rb.velocity * 0.6f;
+            if (isGrounded) rb.linearVelocity = rb.linearVelocity * 0.6f;
             return;
         }
 
@@ -136,19 +136,19 @@ public class PhysicsCharacterController : MonoBehaviour
 
         // The new velocity to apply
         Vector3 newVelocity = movementDirection.normalized * speedToApply;
-        newVelocity.y = rb.velocity.y; // Keep the current vertical speed
+        newVelocity.y = rb.linearVelocity.y; // Keep the current vertical speed
 
         //? If in the air we add force instead of modifying the velocity so that the gravity can do its thing
-        if (isGrounded) rb.velocity = newVelocity;
+        if (isGrounded) rb.linearVelocity = newVelocity;
         else rb.AddForce(movementDirection.normalized * speedToApply, ForceMode.Force);
 
         // If player is going too fast HORIZONTALLY in AIR => dampen HORIZONTAL speed
         //? Otherwise the speed applied above goes out of control
         if (!isGrounded && horizontalSpeed > baseSpeed)
         {
-            Vector3 newHorizontalVelocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+            Vector3 newHorizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
             newHorizontalVelocity *= 0.98f;
-            rb.velocity = new Vector3(newHorizontalVelocity.x, rb.velocity.y, newHorizontalVelocity.z);
+            rb.linearVelocity = new Vector3(newHorizontalVelocity.x, rb.linearVelocity.y, newHorizontalVelocity.z);
         }
 
     }
@@ -164,7 +164,7 @@ public class PhysicsCharacterController : MonoBehaviour
             //? Using displacement.magnitude as the last speed input, so if player runs into wall etc. momentum resets
             lastSpeedBeforeTakeoff = displacement.magnitude;
 
-            rb.velocity += Vector3.up * jumpForce;
+            rb.linearVelocity += Vector3.up * jumpForce;
         }
     }
 
@@ -179,9 +179,9 @@ public class PhysicsCharacterController : MonoBehaviour
         // If sliding, allow steering slightly
         if (isSliding)
         {
-            Vector3 newVelocity = rb.velocity;
+            Vector3 newVelocity = rb.linearVelocity;
             newVelocity = Quaternion.Euler(0, mouseX * slideSteeringPower, 0) * newVelocity;
-            rb.velocity = newVelocity;
+            rb.linearVelocity = newVelocity;
         }
     }
 
@@ -222,7 +222,7 @@ public class PhysicsCharacterController : MonoBehaviour
             if (isSliding) return;
 
             // Can only slide if the "horizontal" speed (X & Z) is above a threshold
-            float horizontalSpeed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
+            float horizontalSpeed = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z).magnitude;
             if (horizontalSpeed < slideSpeedThreshold) return;
 
             StartSliding();
@@ -232,10 +232,10 @@ public class PhysicsCharacterController : MonoBehaviour
         if (isSliding)
         {
             // Dampen the speed
-            Vector3 newVelocity = rb.velocity * slideSpeedDampening;
+            Vector3 newVelocity = rb.linearVelocity * slideSpeedDampening;
 
             // If the speed is still above the threshold, keep sliding
-            if (newVelocity.magnitude > keepSlidingSpeedThreshold) rb.velocity = newVelocity;
+            if (newVelocity.magnitude > keepSlidingSpeedThreshold) rb.linearVelocity = newVelocity;
             else StopSliding();
         }
     }
@@ -252,14 +252,14 @@ public class PhysicsCharacterController : MonoBehaviour
 
         // Add bonus speed
         // TODO: Boost should "dampen" out as the players speed increases the max cap
-        float currSpeedModifier = Mathf.Clamp(rb.velocity.magnitude / 40, 0, 1); // Maximum speed at 20
+        float currSpeedModifier = Mathf.Clamp(rb.linearVelocity.magnitude / 40, 0, 1); // Maximum speed at 20
         float boost = addedSlideSpeed + Mathf.Lerp(0, addedSlideSpeed * 2f, currSpeedModifier); // Boost the speed (up to 40% more speed with Y speed)
 
         // Get direction, get speed, amplify speed, apply
-        Vector3 direction = rb.velocity.normalized;
+        Vector3 direction = rb.linearVelocity.normalized;
 
         //? Using displacement.magnitude as the "base" speed, so if player runs into wall etc. momentum resets
-        rb.velocity = direction * (displacement.magnitude + boost);
+        rb.linearVelocity = direction * (displacement.magnitude + boost);
 
         // Debug.Log($"SLIDE [START] (boost: {boost}, y speed: {Mathf.Abs(rb.velocity.y)} ");
     }
@@ -368,20 +368,20 @@ public class PhysicsCharacterController : MonoBehaviour
             }
 
             // Current negative Y velocity
-            float ySpeed = rb.velocity.y;
+            float ySpeed = rb.linearVelocity.y;
 
             // Apply the velocity
-            rb.velocity = wallForward * wallRunStartingSpeed;
+            rb.linearVelocity = wallForward * wallRunStartingSpeed;
 
             // Threshold?
-            if (rb.velocity.magnitude < keepWallRunningSpeedThreshold)
+            if (rb.linearVelocity.magnitude < keepWallRunningSpeedThreshold)
             {
                 StopWallRunning();
                 return;
             }
 
             // However negative is the Y speed, half it and add it to the Y speed
-            if (fallWhileWallRunning && ySpeed < 0) rb.velocity += new Vector3(0, ySpeed * 0.75f, 0);
+            if (fallWhileWallRunning && ySpeed < 0) rb.linearVelocity += new Vector3(0, ySpeed * 0.75f, 0);
 
             // Add force TOWARDS the wall
             rb.AddForce(-wallNormal * 100, ForceMode.Force);
@@ -398,7 +398,7 @@ public class PhysicsCharacterController : MonoBehaviour
         playerCameraZRotator.DOLocalRotate(new Vector3(0, 0, rightWall ? 20 : -20), 0.2f);
         playerVisual.transform.DOLocalRotate(new Vector3(0, 0, rightWall ? 20 : -20), 0.2f);
 
-        wallRunStartingSpeed = rb.velocity.magnitude;
+        wallRunStartingSpeed = rb.linearVelocity.magnitude;
 
         // Debug.Log($"WALL RUN [START] (spd: {wallRunStartingSpeed})");
     }

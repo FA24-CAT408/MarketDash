@@ -21,6 +21,26 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
         }
     }
 
+    private void OnDisable()
+    {
+        if (_playerControls != null)
+        {
+            _playerControls.Player.Disable();
+
+            if (Application.isPlaying)
+            {
+                _playerControls.Dispose();
+            }
+            else
+            {
+                // Prevent the finalizer from calling Destroy() in edit mode
+                System.GC.SuppressFinalize(_playerControls);
+            }
+
+            _playerControls = null;
+        }
+    }
+
     public void SetPlayerControls()
     {
         _playerControls.Player.Enable();

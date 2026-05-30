@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 #if UNITY_6000_0_OR_NEWER
@@ -77,8 +77,9 @@ public class ScreenRenderPass : ScriptableRenderPass {
         renderGraph.AddCopyPass(dst, srcCamColor);
     }
 
-    [Obsolete("This rendering path is for compatibility mode only (when Render Graph is disabled).", false)]
 #endif
+
+#if !UNITY_6000_0_OR_NEWER
     public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
         _passData.effectMaterial = _passMaterial;
         _passData.requiresColor = _requiresColor;
@@ -89,9 +90,6 @@ public class ScreenRenderPass : ScriptableRenderPass {
         ExecutePass(_passData, ref renderingData, ref context);
     }
 
-#if UNITY_6000_0_OR_NEWER
-    [Obsolete("This rendering path is for compatibility mode only (when Render Graph is disabled).", false)]
-#endif
     private static void ExecutePass(PassData passData, ref RenderingData renderingData,
         ref ScriptableRenderContext context) {
         var passMaterial = passData.effectMaterial;
@@ -139,6 +137,7 @@ public class ScreenRenderPass : ScriptableRenderPass {
             cmd.Clear();
         }
     }
+#endif
 
     private class PassData {
         internal Material effectMaterial;

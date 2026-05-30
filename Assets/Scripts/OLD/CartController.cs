@@ -41,7 +41,7 @@ public class CartController : MonoBehaviour, IInteractable
     {
         if (PlayerStateMachine.Instance.IsJumpPressed)
         {
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             DetachCart();
         }
         

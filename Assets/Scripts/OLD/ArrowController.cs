@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class ArrowController : MonoBehaviour
 {
     [SerializeField] private float rotationOffset = 0f;
     // [SerializeField] private Camera overlayCamera;
-    [SerializeField] private CinemachineFreeLook freeLookCamera;
+    [SerializeField] private CinemachineCamera freeLookCamera;
 
     PlayerStateMachine _playerStateMachine;
     [SerializeField] Transform _targetTransform;
@@ -18,7 +18,7 @@ public class ArrowController : MonoBehaviour
     void Start()
     {
         _playerStateMachine = FindObjectOfType<PlayerStateMachine>();
-        freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
+        freeLookCamera = FindObjectOfType<CinemachineCamera>();
         _mainCamera = Camera.main;
 
         // SetFixedOverlayPosition();
