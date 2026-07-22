@@ -10,82 +10,82 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a6f656ab8114e939b71b289ffd9d7b2, type: 3}
-  m_Name: '[FlatKit] Example Fog Settings'
+  m_Name: FogSettings
   m_EditorClassIdentifier: 
   useDistance: 0
   distanceGradient:
     serializedVersion: 2
-    key0: {r: 0.1792453, g: 0.1792453, b: 0.1792453, a: 0.54509807}
+    key0: {r: 1, g: 1, b: 1, a: 1}
     key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 1, g: 1, b: 1, a: 1}
-    key3: {r: 0.9019608, g: 0.10513001, b: 0.05490197, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 26699
-    ctime1: 65535
-    ctime2: 65535
-    ctime3: 65535
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 65535
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: 0
-    m_NumColorKeys: 2
-    m_NumAlphaKeys: 2
-  near: 104.3
-  far: 150
-  distanceFogIntensity: 0.306
-  useHeight: 0
-  heightGradient:
-    serializedVersion: 2
-    key0: {r: 1, g: 0.32911384, b: 0, a: 0}
-    key1: {r: 0.8207547, g: 0.2010997, b: 0.10453009, a: 1}
-    key2: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 0}
+    key2: {r: 0, g: 0, b: 0, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
     key6: {r: 0, g: 0, b: 0, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 9599
-    ctime1: 30671
-    ctime2: 56598
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
     ctime3: 0
     ctime4: 0
     ctime5: 0
     ctime6: 0
     ctime7: 0
     atime0: 0
-    atime1: 552
-    atime2: 65535
+    atime1: 65535
+    atime2: 0
     atime3: 0
     atime4: 0
     atime5: 0
     atime6: 0
     atime7: 0
     m_Mode: 0
-    m_ColorSpace: 0
-    m_NumColorKeys: 3
-    m_NumAlphaKeys: 3
-  low: -15
-  high: 1
-  heightFogIntensity: 0.196
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  near: 0
+  far: 100
+  distanceFogIntensity: 1
+  useHeight: 0
+  heightGradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  low: 0
+  high: 10
+  heightFogIntensity: 1
   cameraRelativePosition: 0
   distanceHeightBlend: 0.5
   renderEvent: 550
   applyInSceneView: 1
-  effectMaterial: {fileID: 3809722197779856838}
---- !u!21 &3809722197779856838
+  effectMaterial: {fileID: 1928039045320840455}
+--- !u!21 &1928039045320840455
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -131,12 +131,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DistanceFogIntensity: 0.306
+    - _DistanceFogIntensity: 1
     - _DistanceHeightBlend: 0.5
-    - _Far: 150
-    - _HeightFogIntensity: 0.196
-    - _HighWorldY: 1
-    - _LowWorldY: -15
-    - _Near: 104.3
+    - _Far: 100
+    - _HeightFogIntensity: 1
+    - _HighWorldY: 0.25
+    - _LowWorldY: 0
+    - _Near: 0
     m_Colors: []
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -1,0 +1,268 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8364315132634487088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 770acbaed70db4ad696458511aa3f084, type: 3}
+  m_Name: FlatKitFog
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings: {fileID: 11400000, guid: 8a348686940b53343b4e8fd3d1147cf8, type: 2}
+--- !u!114 &-7027187745363092568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1614fc811f8f184697d9bee70ab9fe5, type: 3}
+  m_Name: DecalRendererFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  m_Settings:
+    technique: 0
+    maxDrawDistance: 1000
+    decalLayers: 1
+    dBufferSettings:
+      surfaceData: 2
+    screenSpaceSettings:
+      normalBlend: 0
+--- !u!114 &-6788664231484012873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
+  m_Name: Player Hidden
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    passTag: Player Hidden
+    Event: 300
+    filterSettings:
+      RenderQueueType: 0
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 1024
+      PassNames: []
+    overrideMaterial: {fileID: 2100000, guid: a453c094335a0b54094eed664d590869, type: 2}
+    overrideMaterialPassIndex: 0
+    overrideShader: {fileID: 0}
+    overrideShaderPassIndex: 0
+    overrideMode: 1
+    overrideDepthState: 1
+    depthCompareFunction: 5
+    enableWrite: 0
+    stencilSettings:
+      overrideStencilState: 0
+      stencilReference: 0
+      stencilCompareFunction: 8
+      passOperation: 0
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0, y: 0, z: 0, w: 0}
+      cameraFieldOfView: 60
+--- !u!114 &-6167829741986575982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
+  m_Name: Player Visible
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    passTag: Player Visible
+    Event: 500
+    filterSettings:
+      RenderQueueType: 0
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 1024
+      PassNames: []
+    overrideMaterial: {fileID: 0}
+    overrideMaterialPassIndex: 0
+    overrideShader: {fileID: 0}
+    overrideShaderPassIndex: 0
+    overrideMode: 1
+    overrideDepthState: 0
+    depthCompareFunction: 4
+    enableWrite: 1
+    stencilSettings:
+      overrideStencilState: 0
+      stencilReference: 0
+      stencilCompareFunction: 8
+      passOperation: 0
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0, y: 0, z: 0, w: 0}
+      cameraFieldOfView: 60
+--- !u!114 &-1878332245247344467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
+  m_Name: SSAO
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  m_Settings:
+    AOMethod: 1
+    Downsample: 1
+    AfterOpaque: 1
+    Source: 1
+    NormalSamples: 1
+    Intensity: 1
+    DirectLightingStrength: 0.122
+    Radius: 1.2
+    Samples: 0
+    BlurQuality: 0
+    Falloff: 100
+    SampleCount: -1
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
+  m_Name: URP-HighFidelity-Renderer
+  m_EditorClassIdentifier: 
+  debugShaders:
+    debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7,
+      type: 3}
+    hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
+    probeVolumeSamplingDebugComputeShader: {fileID: 7200000, guid: 53626a513ea68ce47b59dc1299fe3959,
+      type: 3}
+  probeVolumeResources:
+    probeVolumeDebugShader: {fileID: 0}
+    probeVolumeFragmentationDebugShader: {fileID: 0}
+    probeVolumeOffsetDebugShader: {fileID: 0}
+    probeVolumeSamplingDebugShader: {fileID: 0}
+    probeSamplingDebugMesh: {fileID: 0}
+    probeSamplingDebugTexture: {fileID: 0}
+    probeVolumeBlendStatesCS: {fileID: 0}
+  m_RendererFeatures:
+  - {fileID: -1878332245247344467}
+  - {fileID: -8364315132634487088}
+  - {fileID: -6788664231484012873}
+  - {fileID: 4558574093384587211}
+  - {fileID: 6310476247512198179}
+  - {fileID: -6167829741986575982}
+  - {fileID: -7027187745363092568}
+  m_RendererFeatureMap: adc0de57c6d2eee5d0a6e5f1b3fbeb8b9209cd39877767aab7c6fe6ed9d1c9a1a89ba72bfa697a9e232c8178b6509357
+  m_UseNativeRenderPass: 0
+  xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
+  postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
+  m_AssetVersion: 2
+  m_OpaqueLayerMask:
+    serializedVersion: 2
+    m_Bits: 3071
+  m_TransparentLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_DefaultStencilState:
+    overrideStencilState: 0
+    stencilReference: 0
+    stencilCompareFunction: 8
+    passOperation: 2
+    failOperation: 0
+    zFailOperation: 0
+  m_ShadowTransparentReceive: 1
+  m_RenderingMode: 0
+  m_DepthPrimingMode: 0
+  m_CopyDepthMode: 0
+  m_DepthAttachmentFormat: 0
+  m_DepthTextureFormat: 0
+  m_AccurateGbufferNormals: 0
+  m_IntermediateTextureMode: 1
+--- !u!114 &4558574093384587211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 576f949be0794f548b825c9ce6f556db, type: 3}
+  m_Name: Flat Kit Per Object Outline
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    passTag: RenderObjectsFeature
+    Event: 300
+    filterSettings:
+      RenderQueueType: 0
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 4294967295
+      PassNames:
+      - Outline
+    overrideMaterial: {fileID: 0}
+    overrideMaterialPassIndex: 0
+    overrideShader: {fileID: 4800000, guid: bee44b4a58655ee4cbff107302a3e131, type: 3}
+    overrideShaderPassIndex: 1
+    overrideMode: 2
+    overrideDepthState: 0
+    depthCompareFunction: 4
+    enableWrite: 1
+    stencilSettings:
+      overrideStencilState: 0
+      stencilReference: 0
+      stencilCompareFunction: 8
+      passOperation: 0
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0, y: 0, z: 0, w: 0}
+      cameraFieldOfView: 60
+  materials:
+  - {fileID: 2100000, guid: dea5f7b744154824c90a9a25d1b943b1, type: 2}
+  - {fileID: 2100000, guid: 613dbe45571b32446888bcf4859892ac, type: 2}
+  autoReferenceMaterials: 1
+--- !u!114 &6310476247512198179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cca7768aaaea4b0081f14e7f9d4b5ad, type: 3}
+  m_Name: FlatKitOutline
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings: {fileID: 11400000, guid: 62eca802e933ffd409e635ab5b8f25ba, type: 2}
