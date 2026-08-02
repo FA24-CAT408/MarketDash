@@ -470,7 +470,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def command_dashboard(args: argparse.Namespace) -> None:
-    address = ("127.0.0.1", args.port)
+    address = (args.host, args.port)
     server = ThreadingHTTPServer(address, DashboardHandler)
     url = f"http://{address[0]}:{address[1]}"
     print(url, flush=True)
@@ -540,6 +540,7 @@ def parser() -> argparse.ArgumentParser:
     status.set_defaults(func=command_status)
 
     dashboard = subcommands.add_parser("dashboard", help="Serve the live local dashboard.")
+    dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8765)
     dashboard.add_argument("--no-open", action="store_true")
     dashboard.set_defaults(func=command_dashboard)
