@@ -62,15 +62,25 @@ namespace CrazyMarket.TestCampus
             object motor = _controller?.GetType().GetField("Motor", BindingFlags.Instance | BindingFlags.Public)?.GetValue(_controller);
             if (motor != null)
             {
-                motor.GetType().GetMethod("SetPositionAndRotation", new[] { typeof(Vector3), typeof(Quaternion), typeof(bool) })
-                    ?.Invoke(motor, new object[] { position, rotation, true });
-                motor.GetType().GetField("BaseVelocity", BindingFlags.Instance | BindingFlags.Public)
-                    ?.SetValue(motor, Vector3.zero);
+                MethodInfo teleport = motor.GetType().GetMethod(
+                    "SetPositionAndRotation",
+                    new[] { typeof(Vector3), typeof(Quaternion), typeof(bool) });
+                if (teleport != null)
+                {
+                    teleport.Invoke(motor, new object[] { position, rotation, true });
+                    motor.GetType().GetField("BaseVelocity", BindingFlags.Instance | BindingFlags.Public)
+                        ?.SetValue(motor, Vector3.zero);
+                }
+                else
+                {
+                    Debug.LogWarning("KCC motor has no compatible teleport method; using Transform fallback.", this);
+                    transform.SetPositionAndRotation(position, rotation);
+                }
             }
             else
                 transform.SetPositionAndRotation(position, rotation);
 
-            PlayerWarped?.Invoke(transform, position - previousPosition);
+            PlayerWarped?.Invoke(transform, transform.position - previousPosition);
         }
     }
 }
