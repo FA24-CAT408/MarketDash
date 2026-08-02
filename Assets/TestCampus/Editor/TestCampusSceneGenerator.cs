@@ -246,15 +246,26 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateMovement()
         {
             Scene scene = NewZone(TestZoneId.Movement, "Movement Gym", new Vector3(-75, 0, 20), new Vector3(45, 1, 70), "Movement",
-                "Measure acceleration, stopping, slopes, steps, jumps, coyote time, moving platforms, beams, falls, and respawn.");
+                "Measure acceleration, stopping, slopes, steps, jumps, coyote time, moving platforms, beams, falls, and respawn.",
+                includePresetProvider: false);
             MoveDefaultSpawn(scene, new Vector3(-75, 1, 10));
-            for (int z = -10; z <= 45; z += 5) Cube($"Distance {z + 10}m", new Vector3(-82, 0.05f, z), new Vector3(8, 0.1f, 0.15f), "Grid");
+            for (int z = -10; z <= 45; z += 5)
+            {
+                GameObject marker = Cube($"Distance {z + 10}m", new Vector3(-82, 0.05f, z), new Vector3(8, 0.1f, 0.15f), "Grid");
+                Object.DestroyImmediate(marker.GetComponent<Collider>());
+            }
             for (int i = 0; i < 5; i++) Cube($"Step {i + 1}", new Vector3(-68 + i * 2, i * 0.25f, 4), new Vector3(2, 0.5f + i * 0.5f, 5), "Movement");
             Cube("Slope 15 degrees", new Vector3(-80, 1.5f, 25), new Vector3(10, 0.5f, 12), "Movement", Quaternion.Euler(15, 0, 0));
             Cube("Slope 30 degrees", new Vector3(-67, 3, 25), new Vector3(10, 0.5f, 12), "Movement", Quaternion.Euler(30, 0, 0));
             for (int i = 0; i < 6; i++) Cube($"Jump Target {i + 1}", new Vector3(-84 + i * 4, 1 + i * 0.4f, 43), new Vector3(2.5f, 0.4f, 2.5f), "Movement");
             Cube("Narrow Beam", new Vector3(-72, 2, -2), new Vector3(1, 0.4f, 16), "Movement");
             Cube("Low Ceiling", new Vector3(-62, 2.5f, -5), new Vector3(8, 0.4f, 12), "Movement");
+            GameObject movingPlatform = InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
+            if (movingPlatform != null)
+            {
+                movingPlatform.name = "Movement Production Moving Platform";
+                movingPlatform.transform.position = new Vector3(-58, 2, 25);
+            }
             Save(scene);
         }
 
@@ -403,14 +414,16 @@ namespace CrazyMarket.TestCampus.Editor
             Save(scene);
         }
 
-        private static Scene NewZone(TestZoneId id, string displayName, Vector3 center, Vector3 size, string material, string instructions)
+        private static Scene NewZone(TestZoneId id, string displayName, Vector3 center, Vector3 size, string material, string instructions,
+            bool includePresetProvider = true)
         {
             Scene scene = NewScene($"TestCampus_{SceneSuffix(id)}");
             GameObject rootObject = new($"=== {displayName.ToUpperInvariant()} ===");
             TestZoneRoot root = rootObject.AddComponent<TestZoneRoot>();
             root.Configure(id, displayName, Materials[material].color, instructions);
             _activeZoneRoot = root.transform;
-            rootObject.AddComponent<TestZonePresetProvider>();
+            if (includePresetProvider)
+                rootObject.AddComponent<TestZonePresetProvider>();
             CreateSpawn(root, center + Vector3.up, "Default");
             Cube($"{displayName} Floor", center - Vector3.up * 0.5f, size, "Neutral");
             CreateInteriorShell(center, new Vector3(size.x, 12, size.z), material);

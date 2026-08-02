@@ -353,6 +353,13 @@ var restored = fixture.transform.position;
 return new {{ success = UnityEngine.Vector3.Distance(original, restored) < 0.001f, fixture = fixture.name, zonesLoaded = roots.Length }};
 """.strip()
 
+TELEPORT_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var zoneId = (CrazyMarket.TestCampus.TestZoneId)System.Enum.Parse(typeof(CrazyMarket.TestCampus.TestZoneId), "{zone}");
+var teleported = controller != null && controller.TeleportToZone(zoneId);
+return new {{ success = teleported, currentZone = controller == null ? "No controller" : controller.CurrentZone.ToString() }};
+""".strip()
+
 
 def command_unity_smoke(args: argparse.Namespace) -> None:
     state = load_state()
@@ -410,6 +417,11 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         if scene_count < args.expected_scenes:
             raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes, found {scene_count}.")
 
+        teleport_result = unity_command("eval", code=TELEPORT_PROBE.format(zone=args.zone), timeout=30)
+        if not teleport_result.get("success") or not teleport_result.get("result", {}).get("success"):
+            raise RuntimeError(f"Teleport probe failed: {json.dumps(teleport_result, indent=2)}")
+        time.sleep(1)
+        set_check(state, "zone-teleport", "passed", f"Teleported player to {args.zone} before visual validation.")
         capture_evidence(state, f"Play Mode loaded {scene_count} scenes", "Game")
 
         reset_result = unity_command("eval", code=RESET_PROBE.format(zone=args.zone), timeout=30)

@@ -29,6 +29,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/TestCampus/Scenes/TestCampus_Camera.unity
     guid: 14fc80cc094744771b261adfef81a27a
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Movement.unity
+    guid: cd509443e94b54985912b62e0745fe4f
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: dc6e5ad0aa96e4795b81b665f13eeb52,
       type: 2}
