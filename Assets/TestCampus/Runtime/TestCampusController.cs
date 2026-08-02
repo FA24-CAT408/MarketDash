@@ -14,6 +14,7 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private float killPlaneY = -20f;
 
         private readonly Dictionary<TestZoneId, TestZoneRoot> _zones = new();
+        private readonly Dictionary<TestZoneId, HashSet<ITestResettable>> _externalResettables = new();
         private TestZoneId _currentZone = TestZoneId.Hub;
         private string _lastSpawn = "Default";
 
@@ -106,7 +107,37 @@ namespace CrazyMarket.TestCampus
         {
             if (!_zones.TryGetValue(zone, out TestZoneRoot root) || root == null) return false;
             root.ResetZone();
+            if (_externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+            {
+                foreach (ITestResettable resettable in new List<ITestResettable>(resettables))
+                {
+                    if (resettable is Object unityObject && unityObject == null)
+                    {
+                        resettables.Remove(resettable);
+                        continue;
+                    }
+                    resettable.ResetToInitialState();
+                }
+            }
             return true;
+        }
+
+        public void RegisterZoneResettable(TestZoneId zone, ITestResettable resettable)
+        {
+            if (resettable == null) return;
+            if (!_externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+            {
+                resettables = new HashSet<ITestResettable>();
+                _externalResettables.Add(zone, resettables);
+            }
+            resettables.Add(resettable);
+        }
+
+        public void UnregisterZoneResettable(TestZoneId zone, ITestResettable resettable)
+        {
+            if (resettable != null
+                && _externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+                resettables.Remove(resettable);
         }
 
         public void ResetCampus()
