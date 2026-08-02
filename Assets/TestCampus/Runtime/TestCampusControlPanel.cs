@@ -182,6 +182,8 @@ namespace CrazyMarket.TestCampus
 
         private void SetPanelOpen(bool open)
         {
+            if (!open && Time.timeScale == 0f)
+                Time.timeScale = 1f;
             if (_panel != null)
                 _panel.SetActive(open);
             _cameraPrototypes ??= TestCampusCameraPrototypeController.Instance;
@@ -201,15 +203,7 @@ namespace CrazyMarket.TestCampus
 
         private bool ResetCurrentZone()
         {
-            if (controller == null || !controller.ResetZone(controller.CurrentZone))
-                return false;
-
-            if (controller.CurrentZone == TestZoneId.Camera)
-            {
-                _cameraPrototypes ??= TestCampusCameraPrototypeController.Instance;
-                _cameraPrototypes?.ResetToInitialState();
-            }
-            return true;
+            return controller != null && controller.ResetZone(controller.CurrentZone);
         }
 
         private void TogglePause()

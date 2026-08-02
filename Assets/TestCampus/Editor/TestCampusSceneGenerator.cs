@@ -107,9 +107,10 @@ namespace CrazyMarket.TestCampus.Editor
             Scene scene = NewScene("TestCampus_Core");
             GameObject root = new("=== TEST CAMPUS CORE ===");
             TestCampusController controller = root.AddComponent<TestCampusController>();
-            root.AddComponent<TestCampusCameraInputFocus>();
-            root.AddComponent<TestCampusCameraOcclusionController>();
-            root.AddComponent<TestCampusCameraPrototypeController>();
+            GameObject cameraSystems = new("Camera Systems");
+            cameraSystems.AddComponent<TestCampusCameraInputFocus>();
+            cameraSystems.AddComponent<TestCampusCameraOcclusionController>();
+            cameraSystems.AddComponent<TestCampusCameraPrototypeController>();
             controller.AutoLoadDefaultZones = true;
             TestZoneRoot hub = root.AddComponent<TestZoneRoot>();
             hub.Configure(TestZoneId.Hub, "Core Control Hub", new Color(0.2f, 0.8f, 1f),
@@ -358,10 +359,7 @@ namespace CrazyMarket.TestCampus.Editor
             {
                 GameObject npc = InstantiatePrefab("Assets/Prefabs/NPC.prefab", scene);
                 if (npc != null)
-                {
                     npc.transform.position = new Vector3(-80 + i * 10, 1, -55);
-                    npc.AddComponent<TestCampusFixtureGuard>();
-                }
             }
             for (int i = 0; i < 5; i++)
             {
@@ -399,13 +397,9 @@ namespace CrazyMarket.TestCampus.Editor
             {
                 GameObject npc = InstantiatePrefab("Assets/Prefabs/NPC.prefab", scene);
                 if (npc != null)
-                {
                     npc.transform.position = new Vector3(-18 + i * 12, 1, -75);
-                    npc.AddComponent<TestCampusFixtureGuard>();
-                }
             }
-            GameObject movingPlatform = InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
-            if (movingPlatform != null) movingPlatform.AddComponent<TestCampusFixtureGuard>();
+            InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
             Save(scene);
         }
 
