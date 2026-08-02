@@ -97,7 +97,7 @@ def set_check(state: dict[str, Any], name: str, status: str, note: str = "") -> 
     save_state(state)
 
 
-def capture_evidence(state: dict[str, Any], label: str, view: str) -> None:
+def capture_evidence(state: dict[str, Any], label: str, view: str, group: str | None = None) -> None:
     session = state.get("session") or "unscoped"
     session_dir = EVIDENCE_DIR / session
     session_dir.mkdir(parents=True, exist_ok=True)
@@ -114,16 +114,145 @@ def capture_evidence(state: dict[str, Any], label: str, view: str) -> None:
         raise RuntimeError(result.get("message") or f"Unity could not capture {view} view.")
     if not output.exists():
         raise RuntimeError(f"Unity did not create screenshot: {output}")
-    state["evidence"].append(
-        {
-            "label": label,
-            "view": view,
-            "phase": state.get("currentPhase", "unity"),
-            "url": f"/evidence/{session}/{filename}",
-            "capturedAt": now(),
-        }
-    )
+    evidence = {
+        "label": label,
+        "view": view,
+        "phase": state.get("currentPhase", "unity"),
+        "url": f"/evidence/{session}/{filename}",
+        "capturedAt": now(),
+    }
+    if group:
+        evidence["group"] = group
+    state["evidence"].append(evidence)
     save_state(state)
+
+
+def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
+    base = state.get("base")
+    if not base:
+        return {"files": [], "snippets": []}
+
+    def safe_path(path: str) -> bool:
+        candidate = Path(path)
+        sensitive_names = {".env", ".npmrc", ".pypirc", "credentials", "credentials.json", "id_rsa", "id_ed25519"}
+        sensitive_suffixes = {".key", ".pem", ".p12", ".pfx"}
+        if candidate.name.lower() in sensitive_names or candidate.suffix.lower() in sensitive_suffixes:
+            return False
+        return (
+            path.startswith("Assets/TestCampus/")
+            or path.startswith("Tools/LocalReview/")
+            or path == "ProjectSettings/EditorBuildSettings.asset"
+        )
+
+    file_totals: dict[str, dict[str, Any]] = {}
+    output = git("diff", "--numstat", base, "--", check=False)
+    for line in output.splitlines():
+        parts = line.split("\t", 2)
+        if len(parts) != 3:
+            continue
+        added, deleted, path = parts
+        if not safe_path(path):
+            continue
+        item = file_totals.setdefault(path, {"path": path, "added": 0, "deleted": 0})
+        if added.isdigit():
+            item["added"] = int(added)
+        if deleted.isdigit():
+            item["deleted"] = int(deleted)
+
+    files = []
+    for item in sorted(file_totals.values(), key=lambda value: value["path"]):
+        suffix = Path(item["path"]).suffix.lower()
+        item["kind"] = "generated" if suffix in (".unity", ".meta") else "source" if suffix in (".cs", ".py", ".html") else "config"
+        files.append(item)
+
+    patches: dict[str, list[str]] = {}
+    patch = git("diff", "--unified=2", base, "--", check=False)
+    current_path = None
+    for line in patch.splitlines():
+        if line.startswith("diff --git "):
+            current_path = None
+        elif line.startswith("+++ b/"):
+            path = line[6:]
+            current_path = path if safe_path(path) else None
+            if current_path:
+                patches.setdefault(current_path, [])
+        elif current_path is not None:
+            patches[current_path].append(line)
+
+    snippets = []
+    for item in files:
+        suffix = Path(item["path"]).suffix.lower()
+        snippet_allowed = (
+            (item["path"].startswith("Assets/TestCampus/") and suffix in (".cs", ".asmdef"))
+            or (item["path"].startswith("Tools/LocalReview/") and suffix in (".py", ".html", ".md"))
+            or item["path"] == "ProjectSettings/EditorBuildSettings.asset"
+        )
+        if not snippet_allowed:
+            continue
+        lines = patches.get(item["path"], [])
+        hunks: list[dict[str, Any]] = []
+        current: dict[str, Any] | None = None
+        for line in lines:
+            if line.startswith("@@"):
+                if current and current["lines"]:
+                    hunks.append(current)
+                current = {"key": line, "lines": [], "search": []}
+                if len(hunks) >= 4:
+                    break
+            elif current is not None and not line.startswith(("---", "+++")):
+                current["search"].append(line)
+                if len(current["lines"]) < 18:
+                    current["lines"].append(line)
+        if current and current["lines"] and len(hunks) < 4:
+            hunks.append(current)
+        for hunk in hunks:
+            key = hunk["key"]
+            joined_lines = "\n".join(hunk.pop("search"))
+            key_hints = (
+                ("def collect_change_summary", "Changed files and snippets"),
+                ("MOVEMENT_TOUR_STOPS", "Movement screenshot tour"),
+                ("changed-files", "Changed-files dashboard"),
+                ("TestCampus_Movement.unity", "Movement in Build Settings"),
+                ("Moving Platform.prefab", "Production moving platform fixture"),
+                ("Distance ", "Non-colliding distance markers"),
+                ("includePresetProvider", "Zone preset capability"),
+                ("TELEPORT_PROBE", "Screenshot zone teleport"),
+            )
+            hinted = False
+            for marker, label in key_hints:
+                if marker in joined_lines:
+                    key = label
+                    hinted = True
+                    break
+            for raw_line in (() if hinted else hunk["lines"]):
+                candidate = raw_line[1:].strip() if raw_line[:1] in ("+", "-", " ") else raw_line.strip()
+                match = re.search(r"\b(?:def|class)\s+([A-Za-z_]\w*)", candidate)
+                if not match:
+                    match = re.match(
+                        r"(?:public|private|protected|internal)\s+(?:static\s+)?(?:[\w<>\[\],?]+\s+)+([A-Za-z_]\w*)\s*\(",
+                        candidate,
+                    )
+                if not match:
+                    match = re.match(r"([A-Z][A-Z0-9_]+)\s*=", candidate)
+                if match:
+                    key = match.group(1)
+                    break
+            snippets.append({"file": item["path"], "key": key, "lines": hunk["lines"]})
+
+    unique_snippets = list({(item["file"], item["key"]): item for item in snippets}.values())
+    priority_keys = {
+        "Movement screenshot tour": 0,
+        "Changed files and snippets": 0,
+        "Changed-files dashboard": 0,
+        "Non-colliding distance markers": 1,
+        "Production moving platform fixture": 1,
+        "Zone preset capability": 1,
+        "Screenshot zone teleport": 1,
+        "Movement in Build Settings": 1,
+    }
+    unique_snippets.sort(
+        key=lambda item: (priority_keys.get(item["key"], 3 if item["key"].startswith("@@") else 2), item["file"], item["key"]))
+    return {"files": files, "snippets": unique_snippets[:8]}
 
 
 def validate_status(status: str) -> None:
@@ -360,6 +489,44 @@ var teleported = controller != null && controller.TeleportToZone(zoneId);
 return new {{ success = teleported, currentZone = controller == null ? "No controller" : controller.CurrentZone.ToString() }};
 """.strip()
 
+MOVE_PLAYER_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+if (controller == null || controller.PlayerRoot == null) return new {{ success = false, reason = "Player unavailable" }};
+var position = new UnityEngine.Vector3({x}f, {y}f, {z}f);
+var rotation = UnityEngine.Quaternion.Euler(0f, {yaw}f, 0f);
+var adapter = controller.PlayerRoot.GetComponent<CrazyMarket.TestCampus.TestCampusPlayerAdapter>();
+if (adapter != null) adapter.TeleportTo(position, rotation);
+else controller.PlayerRoot.SetPositionAndRotation(position, rotation);
+return new {{ success = true, position = controller.PlayerRoot.position.ToString(), zone = controller.CurrentZone.ToString() }};
+""".strip()
+
+MOVEMENT_TOUR_STOPS = (
+    ("Distance-marker lane", -82, 1, -8, 0),
+    ("Balance beam and low-ceiling tests", -68, 1, -13, 0),
+    ("Step-height progression", -70, 1, -2, 0),
+    ("15° and 30° slope tests", -74, 1, 13, 0),
+    ("Jump-target progression", -75, 1, 37, 0),
+    ("Production moving platform at close range", -58, 1, 18, 0),
+)
+
+
+def wait_for_loaded_scenes(expected_scenes: int) -> int:
+    deadline = time.time() + 30
+    scene_count = 0
+    while time.time() < deadline:
+        try:
+            status = unity_command("editor_status")
+            if status.get("playMode") == "playing":
+                scenes = unity_command("list_open_scenes")
+                scene_count = scenes.get("count", 0)
+                if scene_count >= expected_scenes:
+                    return scene_count
+        except (RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError):
+            # Entering Play Mode can briefly reset the Pipeline connection.
+            pass
+        time.sleep(1)
+    return scene_count
+
 
 def command_unity_smoke(args: argparse.Namespace) -> None:
     state = load_state()
@@ -400,20 +567,7 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         unity_command("set_autotick", enable=True, interval_ms=100)
         unity_command("editor_play")
         playing = True
-        deadline = time.time() + 30
-        scene_count = 0
-        while time.time() < deadline:
-            try:
-                status = unity_command("editor_status")
-                if status.get("playMode") == "playing":
-                    scenes = unity_command("list_open_scenes")
-                    scene_count = scenes.get("count", 0)
-                    if scene_count >= args.expected_scenes:
-                        break
-            except (RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError):
-                # Entering Play Mode can briefly reset the Pipeline connection.
-                pass
-            time.sleep(1)
+        scene_count = wait_for_loaded_scenes(args.expected_scenes)
         if scene_count < args.expected_scenes:
             raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes, found {scene_count}.")
 
@@ -480,6 +634,52 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
                 pass
 
 
+def command_unity_tour(args: argparse.Namespace) -> None:
+    state = load_state()
+    group = f"{args.zone.lower()}-tour"
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != group]
+    set_check(state, group, "running", f"Capturing in-game views around {args.zone}.")
+    playing = False
+    try:
+        ensure_editor()
+        stop_play_mode()
+        unity_command("open_scene", path=args.scene, additive=False)
+        unity_command("clear_console")
+        unity_command("set_autotick", enable=True, interval_ms=100)
+        unity_command("editor_play")
+        playing = True
+        scene_count = wait_for_loaded_scenes(args.expected_scenes)
+        if scene_count < args.expected_scenes:
+            raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes, found {scene_count}.")
+
+        teleport_result = unity_command("eval", code=TELEPORT_PROBE.format(zone=args.zone), timeout=30)
+        if not teleport_result.get("success") or not teleport_result.get("result", {}).get("success"):
+            raise RuntimeError(f"Teleport probe failed: {json.dumps(teleport_result, indent=2)}")
+
+        stops = MOVEMENT_TOUR_STOPS if args.zone == "Movement" else ()
+        if not stops:
+            raise RuntimeError(f"No screenshot tour is configured for zone {args.zone}.")
+        for label, x, y, z, yaw in stops:
+            move_result = unity_command(
+                "eval", code=MOVE_PLAYER_PROBE.format(x=x, y=y, z=z, yaw=yaw), timeout=30)
+            if not move_result.get("success") or not move_result.get("result", {}).get("success"):
+                raise RuntimeError(f"Could not stage screenshot '{label}': {json.dumps(move_result, indent=2)}")
+            time.sleep(2)
+            capture_evidence(state, label, "Game", group=group)
+
+        runtime_errors = unity_command("get_console_logs", severity="Error", limit=200)
+        if runtime_errors.get("total", 0):
+            raise RuntimeError(f"Screenshot tour produced {runtime_errors['total']} Console errors.")
+        set_check(state, group, "passed",
+                  f"Captured {len(stops)} in-game views around {args.zone} with zero Console errors.")
+    except Exception as error:
+        set_check(state, group, "failed", str(error))
+        raise
+    finally:
+        if playing:
+            stop_play_mode()
+
+
 def command_status(args: argparse.Namespace) -> None:
     state = load_state()
     if args.json:
@@ -496,6 +696,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/state":
             payload = load_state(required=False)
+            payload["changes"] = collect_change_summary(payload)
             body = json.dumps(payload).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -603,6 +804,12 @@ def parser() -> argparse.ArgumentParser:
     smoke.add_argument("--regenerate", action="store_true")
     smoke.add_argument("--build-guard", action="store_true")
     smoke.set_defaults(func=command_unity_smoke)
+
+    tour = subcommands.add_parser("unity-tour", help="Capture an in-game screenshot tour of a loaded campus zone.")
+    tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
+    tour.add_argument("--zone", default="Movement", choices=("Movement",))
+    tour.add_argument("--expected-scenes", type=int, default=3)
+    tour.set_defaults(func=command_unity_tour)
 
     status = subcommands.add_parser("status", help="Print current review-loop state.")
     status.add_argument("--json", action="store_true")

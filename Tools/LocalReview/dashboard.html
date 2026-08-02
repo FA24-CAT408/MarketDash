@@ -64,12 +64,25 @@
     .capture img { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
     .capture figcaption { padding-top: 7px; font-size: 13px; }
     .capture-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .changes-panel { margin-top: 18px; }
+    .changes-layout { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.4fr); gap: 22px; }
+    .file-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .file-table th, .file-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .file-table th { color: var(--muted); font-weight: 500; }
+    .file-table code { color: var(--text); overflow-wrap: anywhere; }
+    .delta { white-space: nowrap; color: var(--muted); }
+    .snippet { border-top: 1px solid var(--line); padding: 9px 0; }
+    .snippet:first-child { border-top: 0; padding-top: 0; }
+    .snippet summary { cursor: pointer; font-size: 13px; }
+    .snippet-file { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+    .snippet pre { margin: 9px 0 0; padding: 10px; border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
     @media (max-width: 760px) {
       main { padding: 16px; }
       header { align-items: start; flex-direction: column; }
       .layout { grid-template-columns: 1fr; }
       .phase-graph { min-height: 430px; }
       .evidence-grid { grid-template-columns: 1fr; }
+      .changes-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -102,6 +115,18 @@
       </section>
     </aside>
   </div>
+  <section class="panel changes-panel">
+    <h2>Files and key code changes</h2>
+    <div class="changes-layout">
+      <div>
+        <table class="file-table">
+          <thead><tr><th>File</th><th>Type</th><th>Diff</th></tr></thead>
+          <tbody id="changed-files"></tbody>
+        </table>
+      </div>
+      <div id="snippets"></div>
+    </div>
+  </section>
   <section class="panel evidence-panel">
     <h2>Unity testing screenshots</h2>
     <div class="evidence-grid" id="evidence"></div>
@@ -213,9 +238,65 @@
     renderRows(document.getElementById("checks"), Object.entries(state.checks || {}).map(([name, value]) => ({ name, ...value })), "check");
     renderRows(document.getElementById("findings"), (state.findings || []).filter(item => item.status !== "resolved"), "finding");
 
+    const changedFiles = document.getElementById("changed-files");
+    changedFiles.replaceChildren();
+    (state.changes?.files || []).forEach(file => {
+      const row = document.createElement("tr");
+      const pathCell = document.createElement("td");
+      const path = document.createElement("code");
+      path.textContent = file.path;
+      pathCell.appendChild(path);
+      const kind = document.createElement("td");
+      kind.textContent = file.kind;
+      const delta = document.createElement("td");
+      delta.className = "delta";
+      delta.textContent = `+${file.added} −${file.deleted}`;
+      row.append(pathCell, kind, delta);
+      changedFiles.appendChild(row);
+    });
+    if (!changedFiles.children.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 3;
+      cell.className = "empty";
+      cell.textContent = "No branch changes detected.";
+      row.appendChild(cell);
+      changedFiles.appendChild(row);
+    }
+
+    const snippets = document.getElementById("snippets");
+    snippets.replaceChildren();
+    (state.changes?.snippets || []).forEach((snippet, index) => {
+      const details = document.createElement("details");
+      details.className = "snippet";
+      details.open = index < 2;
+      const summary = document.createElement("summary");
+      summary.textContent = snippet.key;
+      const file = document.createElement("span");
+      file.className = "snippet-file";
+      file.textContent = snippet.file;
+      const pre = document.createElement("pre");
+      const code = document.createElement("code");
+      code.textContent = (snippet.lines || []).join("\n");
+      pre.appendChild(code);
+      details.append(summary, file, pre);
+      snippets.appendChild(details);
+    });
+    if (!snippets.children.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "No readable code snippets in this layer.";
+      snippets.appendChild(empty);
+    }
+
     const evidence = document.getElementById("evidence");
     evidence.replaceChildren();
-    (state.evidence || []).forEach(capture => {
+    const captures = [...(state.evidence || [])].sort((left, right) => {
+      const leftTour = left.group === "movement-tour" ? 0 : 1;
+      const rightTour = right.group === "movement-tour" ? 0 : 1;
+      return leftTour - rightTour;
+    });
+    captures.forEach(capture => {
       const figure = document.createElement("figure");
       figure.className = "capture";
       const link = document.createElement("a");
@@ -230,7 +311,8 @@
       caption.textContent = capture.label;
       const meta = document.createElement("div");
       meta.className = "capture-meta";
-      meta.textContent = `${capture.view} · ${capture.capturedAt || ""}`;
+      const group = capture.group === "movement-tour" ? "Movement tour · " : "";
+      meta.textContent = `${group}${capture.view} · ${capture.capturedAt || ""}`;
       link.append(image, caption, meta);
       figure.appendChild(link);
       evidence.appendChild(figure);
