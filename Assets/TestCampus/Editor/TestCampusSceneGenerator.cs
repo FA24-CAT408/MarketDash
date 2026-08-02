@@ -107,6 +107,8 @@ namespace CrazyMarket.TestCampus.Editor
             Scene scene = NewScene("TestCampus_Core");
             GameObject root = new("=== TEST CAMPUS CORE ===");
             TestCampusController controller = root.AddComponent<TestCampusController>();
+            root.AddComponent<TestCampusCameraInputFocus>();
+            root.AddComponent<TestCampusCameraOcclusionController>();
             root.AddComponent<TestCampusCameraPrototypeController>();
             controller.AutoLoadDefaultZones = true;
             TestZoneRoot hub = root.AddComponent<TestZoneRoot>();
@@ -135,7 +137,6 @@ namespace CrazyMarket.TestCampus.Editor
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/KCC Player Controller.prefab");
             GameObject player = playerPrefab != null ? (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene) : Capsule("Test Player", Vector3.up);
             player.transform.position = Vector3.up;
-            DisableLegacyPlayerShadows(player);
             player.AddComponent<TestCampusPlayerAdapter>();
             controller.PlayerRoot = player.transform;
             InstantiatePrefab("Assets/Prefabs/Level Components/Managers/Game Manager.prefab", scene);
@@ -615,14 +616,6 @@ namespace CrazyMarket.TestCampus.Editor
             }
         }
 
-        private static void DisableLegacyPlayerShadows(GameObject player)
-        {
-            foreach (Transform child in player.GetComponentsInChildren<Transform>(true))
-            {
-                if (child != player.transform && child.name.Contains("Shadow Decal", System.StringComparison.OrdinalIgnoreCase))
-                    child.gameObject.SetActive(false);
-            }
-        }
         private static void CreateDirectionalLight()
         {
             GameObject go = new("Campus Directional Light", typeof(Light));

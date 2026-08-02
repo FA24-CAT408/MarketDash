@@ -55,7 +55,7 @@ namespace CrazyMarket.TestCampus
             if ((keyboard.f1Key.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
                 && _panel != null)
                 SetPanelOpen(!_panel.activeSelf);
-            if (keyboard.f2Key.wasPressedThisFrame) controller?.ResetZone(controller.CurrentZone);
+            if (keyboard.f2Key.wasPressedThisFrame) ResetCurrentZone();
             if (keyboard.f3Key.wasPressedThisFrame) controller?.ReturnToHub();
             if (keyboard.pKey.wasPressedThisFrame) TogglePause();
             if (_showDiagnostics && _diagnostics != null) RefreshDiagnostics();
@@ -122,11 +122,12 @@ namespace CrazyMarket.TestCampus
                     controller != null && controller.TeleportToZone(zone),
                     $"TELEPORTED: {zone}", $"UNAVAILABLE: {zone}"));
             CreateButton("RESET CURRENT (F2)", () => Report(
-                controller != null && controller.ResetZone(controller.CurrentZone),
+                ResetCurrentZone(),
                 $"RESET: {controller?.CurrentZone}", "RESET FAILED"));
             CreateButton("RESET CAMPUS", () =>
             {
                 controller?.ResetCampus();
+                SetPanelOpen(false);
                 Report(controller != null, "CAMPUS RESET — returned to Hub", "CAMPUS RESET FAILED");
             });
             CreateButton("RETURN TO HUB (F3)", () => Report(
@@ -196,6 +197,19 @@ namespace CrazyMarket.TestCampus
             if (available)
                 _cameraPrototypes.SetMode(mode);
             Report(available, $"CAMERA MODE: {mode}", "CAMERA PROTOTYPE UNAVAILABLE");
+        }
+
+        private bool ResetCurrentZone()
+        {
+            if (controller == null || !controller.ResetZone(controller.CurrentZone))
+                return false;
+
+            if (controller.CurrentZone == TestZoneId.Camera)
+            {
+                _cameraPrototypes ??= TestCampusCameraPrototypeController.Instance;
+                _cameraPrototypes?.ResetToInitialState();
+            }
+            return true;
         }
 
         private void TogglePause()

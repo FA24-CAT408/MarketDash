@@ -38,7 +38,13 @@ namespace CrazyMarket.TestCampus.Editor
                 Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
                 TestZoneRoot[] roots = Object.FindObjectsByType<TestZoneRoot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 if (roots.Length != 1) errors.Add($"{scene.name} must contain exactly one TestZoneRoot; found {roots.Length}.");
-                else if (!ids.Add(roots[0].ZoneId)) errors.Add($"Duplicate zone identifier: {roots[0].ZoneId}.");
+                else
+                {
+                    if (roots[0].ZoneId != id)
+                        errors.Add($"{scene.name} has zone identifier {roots[0].ZoneId}; expected {id}.");
+                    if (!ids.Add(roots[0].ZoneId))
+                        errors.Add($"Duplicate zone identifier: {roots[0].ZoneId}.");
+                }
                 if (Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
                     errors.Add($"{scene.name} must contain at least one TextMesh Pro label.");
                 if (Object.FindObjectsByType<TextMesh>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)

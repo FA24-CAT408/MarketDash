@@ -142,6 +142,7 @@ namespace CrazyMarket.TestCampus
 
         public void ResetCampus()
         {
+            Time.timeScale = 1f;
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId))) ResetZone(id);
             ReturnToHub();
         }

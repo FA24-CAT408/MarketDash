@@ -181,7 +181,6 @@ namespace CrazyMarket.TestCampus
 
         public void ResetToInitialState()
         {
-            Time.timeScale = 1f;
             _inputFocus?.ResetInput();
             _lastLookDelta = Vector2.zero;
             _lastManualInputTime = float.NegativeInfinity;
@@ -197,7 +196,6 @@ namespace CrazyMarket.TestCampus
             }
             _surfaceConstraint?.ResetConstraint(_initialRadiusScale);
             SetMode(TestCampusCameraMode.AssistedOrbit);
-            SetUiFocus(false);
         }
 
         private void OnPlayerWarped(Transform player, Vector3 positionDelta)
