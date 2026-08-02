@@ -2,6 +2,7 @@
   "name": "CrazyMarket.TestCampus.Runtime",
   "rootNamespace": "CrazyMarket.TestCampus",
   "references": [
+    "Unity.Cinemachine",
     "Unity.UGUI",
     "Unity.InputSystem"
   ]
