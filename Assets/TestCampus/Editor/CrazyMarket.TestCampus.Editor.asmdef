@@ -1,0 +1,11 @@
+{
+  "name": "CrazyMarket.TestCampus.Editor",
+  "rootNamespace": "CrazyMarket.TestCampus.Editor",
+  "references": [
+    "CrazyMarket.TestCampus.Runtime",
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}
