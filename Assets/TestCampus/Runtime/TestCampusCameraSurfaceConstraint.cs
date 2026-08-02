@@ -180,7 +180,7 @@ namespace CrazyMarket.TestCampus
         private bool MostRestrictiveFloor(
             Vector3 target, Vector3 point, float cameraRadius, ref float limitY)
         {
-            if (!TestCampusCameraGround.TryGetMinimumCameraY(
+            if (!TestCampusCameraSurfaceProbe.TryGetMinimumCameraY(
                     target, point, cameraRadius,
                     _groundGuard != null ? _groundGuard.GroundClearance : TestCampusCameraGroundGuard.DefaultClearance,
                     _groundGuard != null ? _groundGuard.GroundProbeSlack : TestCampusCameraGroundGuard.DefaultProbeSlack,
@@ -193,7 +193,7 @@ namespace CrazyMarket.TestCampus
         private bool MostRestrictiveCeiling(
             Vector3 target, Vector3 point, float cameraRadius, ref float limitY)
         {
-            if (!TestCampusCameraGround.TryGetMaximumCameraY(
+            if (!TestCampusCameraSurfaceProbe.TryGetMaximumCameraY(
                     target, point, cameraRadius,
                     _groundGuard != null ? _groundGuard.GroundClearance : TestCampusCameraGroundGuard.DefaultClearance,
                     _groundGuard != null ? _groundGuard.GroundProbeSlack : TestCampusCameraGroundGuard.DefaultProbeSlack,

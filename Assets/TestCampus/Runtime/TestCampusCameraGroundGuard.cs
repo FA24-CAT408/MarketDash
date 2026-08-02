@@ -14,10 +14,8 @@ namespace CrazyMarket.TestCampus
     /// extension enforces the same limit on the final corrected position.
     ///
     /// It runs at the Body stage, so the CinemachineRotationComposer in the Aim stage re-aims from
-    /// the corrected position automatically and composition is preserved without any manual
-    /// restore. Place it after the CinemachineDecollider on the rig: extension callbacks fire in
-    /// component order. Ordering is not load bearing because this only ever raises the camera and
-    /// the clearance keeps the camera sphere clear of penetration, but keep it deterministic.
+    /// the corrected position automatically. Place it after the CinemachineDecollider because it
+    /// applies the final vertical correction—up from floors or down from ceilings.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class TestCampusCameraGroundGuard : CinemachineExtension
@@ -72,21 +70,21 @@ namespace CrazyMarket.TestCampus
             Vector3 camera = state.GetCorrectedPosition();
 
             float correction = 0f;
-            if (TestCampusCameraGround.TryGetMinimumCameraY(
+            if (TestCampusCameraSurfaceProbe.TryGetMinimumCameraY(
                     target, camera, cameraRadius, groundClearance, groundProbeSlack,
                     groundLayers, out float minimumY)
                 && camera.y < minimumY)
             {
                 correction = minimumY - camera.y;
             }
-            else if (TestCampusCameraGround.TryGetMaximumCameraY(
+            else if (TestCampusCameraSurfaceProbe.TryGetMaximumCameraY(
                          target, camera, cameraRadius, groundClearance, groundProbeSlack,
                          groundLayers, out float maximumY)
                      && camera.y > maximumY)
             {
                 // Never push down past the surface the player is standing on: in a space too tight
                 // to satisfy both, clipping a ceiling reads far better than falling out of the level.
-                float floorY = TestCampusCameraGround.TryGetMinimumCameraY(
+                float floorY = TestCampusCameraSurfaceProbe.TryGetMinimumCameraY(
                     target, new Vector3(camera.x, target.y - 0.001f, camera.z), cameraRadius,
                     groundClearance, groundProbeSlack, groundLayers, out float standingY)
                     ? standingY
