@@ -13,6 +13,7 @@ namespace CrazyMarket.TestCampus.Editor
         public const string SceneFolder = "Assets/TestCampus/Scenes";
         public const string MaterialFolder = "Assets/TestCampus/Materials";
         private static readonly Dictionary<string, Material> Materials = new();
+        private static Transform _activeZoneRoot;
 
         [MenuItem("CrazyMarket/Test Campus/Build All Scenes")]
         public static void BuildAll()
@@ -72,6 +73,7 @@ namespace CrazyMarket.TestCampus.Editor
             TestZoneRoot hub = root.AddComponent<TestZoneRoot>();
             hub.Configure(TestZoneId.Hub, "Core Control Hub", new Color(0.2f, 0.8f, 1f),
                 "Navigate physically or use F1. F2 resets the current zone. F3 returns to hub.");
+            _activeZoneRoot = hub.transform;
             CreateSpawn(hub, Vector3.zero + Vector3.up, "Default");
             Cube("Hub Floor", new Vector3(0, -0.5f, 0), new Vector3(40, 1, 40), "Neutral");
             for (int i = -20; i <= 20; i += 5)
@@ -89,6 +91,7 @@ namespace CrazyMarket.TestCampus.Editor
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId)))
                 if (id != TestZoneId.Hub)
                     controller.ZoneScenes.Add(new TestZoneScene { Zone = id, SceneName = $"TestCampus_{SceneSuffix(id)}", LoadByDefault = true });
+            _activeZoneRoot = null;
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/KCC Player Controller.prefab");
             GameObject player = playerPrefab != null ? (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene) : Capsule("Test Player", Vector3.up);
             player.transform.position = Vector3.up;
@@ -153,6 +156,7 @@ namespace CrazyMarket.TestCampus.Editor
                 light.intensity = 4f; light.range = 15f;
                 lightObject.transform.position = new Vector3(x, 6, 65);
                 lightObject.transform.rotation = Quaternion.Euler(90, 0, 0);
+                ParentToActiveZone(lightObject);
             }
             Save(scene);
         }
@@ -212,6 +216,7 @@ namespace CrazyMarket.TestCampus.Editor
             GameObject rootObject = new($"=== {displayName.ToUpperInvariant()} ===");
             TestZoneRoot root = rootObject.AddComponent<TestZoneRoot>();
             root.Configure(id, displayName, Materials[material].color, instructions);
+            _activeZoneRoot = root.transform;
             rootObject.AddComponent<TestZonePresetProvider>();
             CreateSpawn(root, center + Vector3.up, "Default");
             Cube($"{displayName} Floor", center - Vector3.up * 0.5f, size, material);
@@ -226,7 +231,11 @@ namespace CrazyMarket.TestCampus.Editor
             return scene;
         }
 
-        private static void Save(Scene scene) => EditorSceneManager.SaveScene(scene, $"{SceneFolder}/{scene.name}.unity");
+        private static void Save(Scene scene)
+        {
+            EditorSceneManager.SaveScene(scene, $"{SceneFolder}/{scene.name}.unity");
+            _activeZoneRoot = null;
+        }
         private static void CreateSpawn(TestZoneRoot root, Vector3 position, string id)
         {
             GameObject spawn = new($"Spawn - {id}");
@@ -244,6 +253,7 @@ namespace CrazyMarket.TestCampus.Editor
             go.transform.rotation = rotation == default ? Quaternion.identity : rotation;
             go.GetComponent<Renderer>().sharedMaterial = Materials[material];
             go.AddComponent<TestResettableTransform>();
+            ParentToActiveZone(go);
             return go;
         }
         private static GameObject Sphere(string name, Vector3 position, Vector3 scale, string material)
@@ -252,12 +262,14 @@ namespace CrazyMarket.TestCampus.Editor
             go.name = name; go.transform.position = position; go.transform.localScale = scale;
             go.GetComponent<Renderer>().sharedMaterial = Materials[material];
             go.AddComponent<TestResettableTransform>();
+            ParentToActiveZone(go);
             return go;
         }
         private static GameObject Capsule(string name, Vector3 position)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = name; go.transform.position = position;
+            ParentToActiveZone(go);
             return go;
         }
         private static void Label(string text, Vector3 position, Color color, float size)
@@ -265,6 +277,7 @@ namespace CrazyMarket.TestCampus.Editor
             GameObject go = new($"SIGN - {text}", typeof(TextMesh));
             go.transform.position = position;
             go.transform.rotation = Quaternion.Euler(0, 180, 0);
+            ParentToActiveZone(go);
             TextMesh mesh = go.GetComponent<TextMesh>();
             mesh.text = text; mesh.color = color; mesh.characterSize = size; mesh.fontSize = 64;
             mesh.anchor = TextAnchor.MiddleCenter; mesh.alignment = TextAlignment.Center;
@@ -272,7 +285,16 @@ namespace CrazyMarket.TestCampus.Editor
         private static GameObject InstantiatePrefab(string path, Scene scene)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            return prefab == null ? null : (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            if (prefab == null) return null;
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            ParentToActiveZone(instance);
+            return instance;
+        }
+
+        private static void ParentToActiveZone(GameObject gameObject)
+        {
+            if (_activeZoneRoot != null)
+                gameObject.transform.SetParent(_activeZoneRoot, true);
         }
         private static void CreateDirectionalLight()
         {
