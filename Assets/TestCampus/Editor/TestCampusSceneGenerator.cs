@@ -341,22 +341,38 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateLighting()
         {
             Scene scene = NewZone(TestZoneId.Lighting, "Lighting and Shading Gallery", new Vector3(0, 0, 70), new Vector3(50, 1, 60), "Lighting",
-                "Compare identical forms under directional, point, spot, warm, cool, bright, dark, emissive, and high-contrast conditions.");
+                "Compare identical forms in five isolated point and spot bays progressing from cool to warm light.",
+                includePresetProvider: false, includeInteriorLights: false);
             MoveDefaultSpawn(scene, new Vector3(0, 1, 55));
+            string[] bayNames = { "Cool Point", "Cool-Neutral Spot", "Neutral Point", "Warm-Neutral Spot", "Warm Point" };
             for (int bay = 0; bay < 5; bay++)
             {
                 float x = -20 + bay * 10;
-                Cube($"Bay {bay} Wall", new Vector3(x, 3, 78), new Vector3(8, 6, 0.5f), "Neutral");
-                Sphere($"Reference Sphere {bay}", new Vector3(x, 1.5f, 70), Vector3.one * 3, bay % 2 == 0 ? "Glossy" : "Neutral");
-                Cube($"Reference Cube {bay}", new Vector3(x, 1.5f, 65), Vector3.one * 3, "Neutral");
-                GameObject lightObject = new($"Bay Light {bay}", typeof(Light));
+                string bayName = bayNames[bay];
+                GameObject bayRoot = new($"Bay {bay + 1} — {bayName}");
+                ParentToActiveZone(bayRoot);
+
+                GameObject wall = Cube($"{bayName} Backdrop", new Vector3(x, 3, 78), new Vector3(8, 6, 0.5f), "Neutral");
+                GameObject sphere = Sphere($"{bayName} Reference Sphere", new Vector3(x, 1.5f, 70), Vector3.one * 3, "Glossy");
+                GameObject cube = Cube($"{bayName} Reference Cube", new Vector3(x, 1.5f, 65), Vector3.one * 3, "Neutral");
+                GameObject label = Label(bayName.ToUpperInvariant(), new Vector3(x, 6.5f, 77.6f),
+                    Color.Lerp(new Color(0.4f, 0.65f, 1f), new Color(1f, 0.55f, 0.25f), bay / 4f), 0.3f);
+                wall.transform.SetParent(bayRoot.transform, true);
+                sphere.transform.SetParent(bayRoot.transform, true);
+                cube.transform.SetParent(bayRoot.transform, true);
+                label.transform.SetParent(bayRoot.transform, true);
+
+                GameObject lightObject = new($"{bayName} Light", typeof(Light));
                 Light light = lightObject.GetComponent<Light>();
                 light.type = bay % 2 == 0 ? LightType.Point : LightType.Spot;
                 light.color = Color.Lerp(new Color(0.4f, 0.65f, 1f), new Color(1f, 0.55f, 0.25f), bay / 4f);
-                light.intensity = 4f; light.range = 15f;
-                lightObject.transform.position = new Vector3(x, 6, 65);
+                light.intensity = 40f;
+                light.range = 7.5f;
+                light.spotAngle = 65f;
+                light.shadows = LightShadows.Soft;
+                lightObject.transform.position = new Vector3(x, 6, 67.5f);
                 lightObject.transform.rotation = Quaternion.Euler(90, 0, 0);
-                ParentToActiveZone(lightObject);
+                lightObject.transform.SetParent(bayRoot.transform, true);
             }
             Save(scene);
         }
@@ -415,7 +431,7 @@ namespace CrazyMarket.TestCampus.Editor
         }
 
         private static Scene NewZone(TestZoneId id, string displayName, Vector3 center, Vector3 size, string material, string instructions,
-            bool includePresetProvider = true)
+            bool includePresetProvider = true, bool includeInteriorLights = true)
         {
             Scene scene = NewScene($"TestCampus_{SceneSuffix(id)}");
             GameObject rootObject = new($"=== {displayName.ToUpperInvariant()} ===");
@@ -426,7 +442,7 @@ namespace CrazyMarket.TestCampus.Editor
                 rootObject.AddComponent<TestZonePresetProvider>();
             CreateSpawn(root, center + Vector3.up, "Default");
             Cube($"{displayName} Floor", center - Vector3.up * 0.5f, size, "Neutral");
-            CreateInteriorShell(center, new Vector3(size.x, 12, size.z), material);
+            CreateInteriorShell(center, new Vector3(size.x, 12, size.z), material, includeInteriorLights);
             Label(displayName.ToUpperInvariant(), center + new Vector3(0, 5, size.z * 0.42f), Materials[material].color, 0.65f);
             return scene;
         }
@@ -456,7 +472,7 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateWalkway(Vector3 position, Vector3 scale, float yRotation = 0) =>
             Cube("Campus Walkway", position, scale, "Grid", Quaternion.Euler(0, yRotation, 0));
 
-        private static void CreateInteriorShell(Vector3 center, Vector3 size, string accentMaterial)
+        private static void CreateInteriorShell(Vector3 center, Vector3 size, string accentMaterial, bool includeInteriorLights = true)
         {
             float halfX = size.x * 0.5f;
             float halfZ = size.z * 0.5f;
@@ -487,8 +503,11 @@ namespace CrazyMarket.TestCampus.Editor
                 Cube("Structural Column", new Vector3(center.x + halfX - 1f, 3f, z), new Vector3(1.2f, 6f, 1.2f), accentMaterial)
                     .AddComponent<TestCampusSelectiveOccluder>();
             }
-            for (int i = -1; i <= 1; i++)
-                CreateInteriorLight($"Ceiling Light {i + 2}", center + new Vector3(i * size.x * 0.27f, 10.7f, 0), 28f, new Color(0.78f, 0.86f, 1f));
+            if (includeInteriorLights)
+            {
+                for (int i = -1; i <= 1; i++)
+                    CreateInteriorLight($"Ceiling Light {i + 2}", center + new Vector3(i * size.x * 0.27f, 10.7f, 0), 28f, new Color(0.78f, 0.86f, 1f));
+            }
         }
 
         private static void CreateCameraApron(Vector3 center, Vector3 size)
@@ -583,7 +602,7 @@ namespace CrazyMarket.TestCampus.Editor
             ParentToActiveZone(go);
             return go;
         }
-        private static void Label(string text, Vector3 position, Color color, float size)
+        private static GameObject Label(string text, Vector3 position, Color color, float size)
         {
             GameObject go = new($"SIGN - {text}", typeof(TextMeshPro));
             go.transform.position = position;
@@ -595,6 +614,7 @@ namespace CrazyMarket.TestCampus.Editor
             mesh.fontSize = size * 10f;
             mesh.alignment = TextAlignmentOptions.Center;
             mesh.enableWordWrapping = false;
+            return go;
         }
         private static GameObject InstantiatePrefab(string path, Scene scene)
         {
