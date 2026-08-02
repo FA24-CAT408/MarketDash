@@ -18,7 +18,11 @@
 
 ## Local review loop
 
-- For feature completion or stack review, use the `crazy-market-review-loop` skill and `Tools/LocalReview/review_loop.py`.
+- Automatically use the `crazy-market-review-loop` skill and `Tools/LocalReview/review_loop.py` whenever finishing or reviewing a feature, splitting a large change, or validating a stack branch. The user does not need to request the skill by name.
+- Treat `.codex/skills/crazy-market-review-loop/SKILL.md` and its `references/acceptance-gates.md` as the canonical workflow.
 - Always open the live agent graph visibly in the T3 shared preview, falling back to the machine's default browser when needed.
 - Keep the live dashboard updated during reviewer handoffs, fixes, and Unity validation.
+- Use two fresh read-only reviewers when agent delegation is available: one for architecture and one for Unity correctness. Reviewer agents must not edit files.
+- Keep the entire workflow local. Do not push stack branches or create PRs unless the user separately requests publishing.
+- Do not add tests unless the user requests them; Unity smoke validation is still required for relevant changes.
 - Stop after three review/fix rounds and ask the user rather than looping indefinitely.
