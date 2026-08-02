@@ -1,48 +1,35 @@
-using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace CrazyMarket.TestCampus
 {
     [DefaultExecutionOrder(10000)]
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(TestCampusCameraInputFocus))]
+    [RequireComponent(typeof(TestCampusCameraOcclusionController))]
     public sealed class TestCampusCameraPrototypeController : MonoBehaviour, ITestResettable
     {
         [Header("Assisted orbit")]
-        [SerializeField] private float mouseSensitivity = 0.08f;
-        [SerializeField] private float legacyMouseSensitivity = 0.8f;
-        [SerializeField] private float controllerYawSpeed = 140f;
-        [SerializeField] private float controllerPitchSpeed = 95f;
         [SerializeField] private float recenterDelay = 2.5f;
         [SerializeField] private float recenterSmoothTime = 1.2f;
         [SerializeField] private float maximumRecenterSpeed = 65f;
         [SerializeField] private float minimumMovementSpeed = 0.6f;
 
-        [Header("Selective obstruction")]
-        [SerializeField] private float occlusionProbeRadius = 0.22f;
-
-        private readonly HashSet<TestCampusSelectiveOccluder> _hidden = new();
-        private readonly HashSet<TestCampusSelectiveOccluder> _nextHidden = new();
         private CinemachineCamera _assistedCamera;
         private CinemachineCamera _railCamera;
         private CinemachineOrbitalFollow _orbit;
         private TestCampusCameraSurfaceConstraint _surfaceConstraint;
+        private TestCampusCameraInputFocus _inputFocus;
+        private TestCampusCameraOcclusionController _occlusion;
         private Transform _player;
         private TestCampusPlayerAdapter _playerAdapter;
         private Vector3 _previousPlayerPosition;
         private Vector3 _lastGroundedMoveDirection = Vector3.forward;
-        private InputAction _mouseLookAction;
-        private Vector2 _pendingMouseLookDelta;
         private float _lastManualInputTime = float.NegativeInfinity;
         private float _recenterVelocity;
         private float _latchedRecenterHeading;
         private Vector2 _lastLookDelta;
-        private string _lookInputSource = "Waiting for look input";
-        private bool _uiHasFocus;
         private bool _guidedZoneActive;
         private bool _autoRecenterActive;
         private bool _recenterConsumedForMovement;
@@ -53,14 +40,15 @@ namespace CrazyMarket.TestCampus
 
         public static TestCampusCameraPrototypeController Instance { get; private set; }
         public TestCampusCameraMode Mode => _mode;
-        public bool UiHasFocus => _uiHasFocus;
+        public bool UiHasFocus => _inputFocus != null && _inputFocus.UiHasFocus;
         public bool IsRecentering => _autoRecenterActive;
         public Vector2 LastLookDelta => _lastLookDelta;
-        public string LookInputSource => _lookInputSource;
+        public string LookInputSource => _inputFocus != null
+            ? _inputFocus.InputSource
+            : "Waiting for look input";
         public float Yaw => _orbit != null ? _orbit.HorizontalAxis.Value : 0f;
         public float Pitch => _orbit != null ? _orbit.VerticalAxis.Value : 0f;
-        public bool PointerLookActive =>
-            Cursor.lockState == CursorLockMode.Confined && !Cursor.visible;
+        public bool PointerLookActive => _inputFocus != null && _inputFocus.PointerLookActive;
         public bool OrbitLive => IsOrbitLive();
         public float OrbitRadius => _surfaceConstraint != null ? _surfaceConstraint.OrbitRadius : 0f;
         public bool FloorLimitActive => _surfaceConstraint != null && _surfaceConstraint.FloorLimitActive;
@@ -74,12 +62,12 @@ namespace CrazyMarket.TestCampus
             + $" | R {OrbitRadius:0.00}m CamY {CameraY:0.00}"
             + (FloorLimitActive ? $" | FLOOR {FloorPitchLimit:0.0}°" : "")
             + (CeilingLimitActive ? $" | CEILING {CeilingPitchLimit:0.0}°" : "")
-            + $" | {_lookInputSource}"
+            + $" | {LookInputSource}"
             + (_autoRecenterActive ? " | RECENTERING" : "");
 
-        private string FocusStatus => _uiHasFocus
-            ? "UI INPUT"
-            : PointerLookActive ? "CONFINED MOUSE LOOK" : "POINTER VISIBLE";
+        private string FocusStatus => _inputFocus != null
+            ? _inputFocus.FocusStatus
+            : "POINTER VISIBLE";
 
         private void Awake()
         {
@@ -89,26 +77,11 @@ namespace CrazyMarket.TestCampus
         private void OnEnable()
         {
             TestCampusPlayerAdapter.PlayerWarped += OnPlayerWarped;
-            _mouseLookAction = new InputAction(
-                "Test Campus Mouse Look",
-                InputActionType.PassThrough,
-                "<Mouse>/delta",
-                expectedControlType: "Vector2");
-            _mouseLookAction.performed += AccumulateMouseLook;
-            _mouseLookAction.Enable();
         }
 
         private void OnDisable()
         {
             TestCampusPlayerAdapter.PlayerWarped -= OnPlayerWarped;
-            if (_mouseLookAction == null)
-                return;
-
-            _mouseLookAction.performed -= AccumulateMouseLook;
-            _mouseLookAction.Disable();
-            _mouseLookAction.Dispose();
-            _mouseLookAction = null;
-            _pendingMouseLookDelta = Vector2.zero;
         }
 
         private void Start()
@@ -123,27 +96,14 @@ namespace CrazyMarket.TestCampus
 
         private void OnDestroy()
         {
-            RestoreOccluders();
             if (Instance == this)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
                 Instance = null;
-            }
         }
 
         private void Update()
         {
             if (_player == null || _assistedCamera == null || _orbit == null || _railCamera == null)
                 RefreshRigs();
-
-            bool wantsPointerLook = !_uiHasFocus && HasGameplayPointerFocus();
-            if (wantsPointerLook
-                && (Cursor.lockState != CursorLockMode.Confined || Cursor.visible))
-                ApplyCursorState();
-            else if (!wantsPointerLook
-                     && (Cursor.lockState != CursorLockMode.None || !Cursor.visible))
-                ApplyCursorState();
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null)
@@ -171,16 +131,22 @@ namespace CrazyMarket.TestCampus
             if (IsOrbitLive())
                 UpdateAssistedOrbit(grounded, planarVelocity.magnitude);
             else
-                _pendingMouseLookDelta = Vector2.zero;
+                _inputFocus?.ResetInput();
 
         }
 
-        private void LateUpdate() => UpdateSelectiveOcclusion();
+        private void LateUpdate()
+        {
+            Vector3 targetOffset = _orbit != null
+                ? _orbit.TargetOffset
+                : Vector3.up * TestCampusCameraGroundGuard.DefaultTargetYOffset;
+            _occlusion?.UpdateOcclusion(_player, targetOffset, IsOrbitLive());
+        }
 
         public void SetMode(TestCampusCameraMode mode)
         {
             _mode = mode;
-            _pendingMouseLookDelta = Vector2.zero;
+            _inputFocus?.ResetInput();
             ApplyMode();
         }
 
@@ -193,11 +159,7 @@ namespace CrazyMarket.TestCampus
 
         public void SetUiFocus(bool hasFocus)
         {
-            _uiHasFocus = hasFocus;
-            _lookInputSource = hasFocus ? "UI focus" : "Waiting for look input";
-            _pendingMouseLookDelta = Vector2.zero;
-            ApplyCursorState();
-            _playerAdapter?.SetMovementEnabled(!hasFocus);
+            _inputFocus?.SetUiFocus(hasFocus);
         }
 
         public void CaptureInitialState()
@@ -211,13 +173,13 @@ namespace CrazyMarket.TestCampus
         {
             Time.timeScale = 1f;
             _guidedZoneActive = false;
-            _pendingMouseLookDelta = Vector2.zero;
+            _inputFocus?.ResetInput();
             _lastLookDelta = Vector2.zero;
             _lastManualInputTime = float.NegativeInfinity;
             _recenterVelocity = 0f;
             _autoRecenterActive = false;
             _recenterConsumedForMovement = false;
-            RestoreOccluders();
+            _occlusion?.RestoreOccluders();
             if (_orbit != null)
             {
                 _orbit.HorizontalAxis.Value = _orbit.HorizontalAxis.ClampValue(_initialYaw);
@@ -238,38 +200,6 @@ namespace CrazyMarket.TestCampus
             _previousPlayerPosition = _player.position;
         }
 
-        private void OnApplicationFocus(bool focused)
-        {
-            ApplyCursorState();
-        }
-
-        private void ApplyCursorState()
-        {
-            // Confined keeps the pointer inside the Game view without warping it
-            // back to the center like CursorLockMode.Locked.
-            bool wantsPointerLook = !_uiHasFocus && HasGameplayPointerFocus();
-            Cursor.lockState = wantsPointerLook ? CursorLockMode.Confined : CursorLockMode.None;
-            Cursor.visible = !wantsPointerLook;
-        }
-
-        private void AccumulateMouseLook(InputAction.CallbackContext context)
-        {
-            if (!PointerLookActive)
-                return;
-
-            _pendingMouseLookDelta += context.ReadValue<Vector2>();
-        }
-
-        private static bool HasGameplayPointerFocus()
-        {
-#if UNITY_EDITOR
-            EditorWindow focusedWindow = EditorWindow.focusedWindow;
-            return focusedWindow != null && focusedWindow.GetType().Name == "GameView";
-#else
-            return Application.isFocused;
-#endif
-        }
-
         public void RecenterNow()
         {
             if (_orbit == null)
@@ -287,6 +217,9 @@ namespace CrazyMarket.TestCampus
                 ? TestCampusController.Instance.PlayerRoot
                 : GameObject.FindGameObjectWithTag("Player")?.transform;
             _playerAdapter = _player != null ? _player.GetComponent<TestCampusPlayerAdapter>() : null;
+            _inputFocus ??= GetComponent<TestCampusCameraInputFocus>();
+            _occlusion ??= GetComponent<TestCampusCameraOcclusionController>();
+            _inputFocus?.SetPlayerAdapter(_playerAdapter);
 
             foreach (TestCampusCameraRigTag tag in FindObjectsByType<TestCampusCameraRigTag>(
                          FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -337,50 +270,9 @@ namespace CrazyMarket.TestCampus
 
         private void UpdateAssistedOrbit(bool grounded, float speed)
         {
-            Vector2 input = Vector2.zero;
-
-            if (!_uiHasFocus)
-            {
-                Vector2 actionMouseDelta = _pendingMouseLookDelta;
-                _pendingMouseLookDelta = Vector2.zero;
-                if (actionMouseDelta.sqrMagnitude > 0.0001f)
-                {
-                    input += actionMouseDelta * mouseSensitivity;
-                    _lookInputSource = "Input Action mouse delta";
-                }
-
-                if (input.sqrMagnitude <= 0.0001f && Mouse.current != null)
-                {
-                    Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-                    if (mouseDelta.sqrMagnitude > 0.0001f)
-                    {
-                        input += mouseDelta * mouseSensitivity;
-                        _lookInputSource = "Input System mouse";
-                    }
-                }
-
-                if (input.sqrMagnitude <= 0.0001f)
-                {
-                    Vector2 legacyDelta = new(
-                        Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
-                    if (legacyDelta.sqrMagnitude > 0.0001f)
-                    {
-                        input += legacyDelta * legacyMouseSensitivity;
-                        _lookInputSource = "Legacy mouse fallback";
-                    }
-                }
-
-                if (Gamepad.current != null)
-                {
-                    Vector2 stick = Gamepad.current.rightStick.ReadValue();
-                    input.x += stick.x * controllerYawSpeed * Time.unscaledDeltaTime;
-                    input.y += stick.y * controllerPitchSpeed * Time.unscaledDeltaTime;
-                    if (stick.sqrMagnitude > 0.0001f)
-                        _lookInputSource = "Gamepad right stick";
-                }
-            }
-            else if (_uiHasFocus)
-                _lookInputSource = "UI focus";
+            Vector2 input = _inputFocus != null
+                ? _inputFocus.ConsumeLookInput()
+                : Vector2.zero;
 
             if (input.sqrMagnitude > 0.0001f)
             {
@@ -435,56 +327,6 @@ namespace CrazyMarket.TestCampus
                 _autoRecenterActive = false;
                 _recenterVelocity = 0f;
             }
-        }
-
-        private void UpdateSelectiveOcclusion()
-        {
-            if (_player == null || Camera.main == null || !IsOrbitLive())
-            {
-                RestoreOccluders();
-                return;
-            }
-
-            Vector3 target = _player.position
-                + (_orbit != null
-                    ? _orbit.TargetOffset
-                    : Vector3.up * TestCampusCameraGroundGuard.DefaultTargetYOffset);
-            Vector3 direction = Camera.main.transform.position - target;
-            float distance = direction.magnitude;
-            _nextHidden.Clear();
-            if (distance > 0.01f)
-            {
-                RaycastHit[] hits = Physics.SphereCastAll(
-                    target, occlusionProbeRadius, direction / distance, distance,
-                    ~0, QueryTriggerInteraction.Ignore);
-                foreach (RaycastHit hit in hits)
-                {
-                    TestCampusSelectiveOccluder occluder =
-                        hit.collider.GetComponentInParent<TestCampusSelectiveOccluder>();
-                    if (occluder != null)
-                        _nextHidden.Add(occluder);
-                }
-            }
-
-            foreach (TestCampusSelectiveOccluder old in _hidden)
-                if (old != null && !_nextHidden.Contains(old))
-                    old.SetOccluded(false);
-            foreach (TestCampusSelectiveOccluder current in _nextHidden)
-                if (current != null)
-                    current.SetOccluded(true);
-
-            _hidden.Clear();
-            foreach (TestCampusSelectiveOccluder item in _nextHidden)
-                _hidden.Add(item);
-        }
-
-        private void RestoreOccluders()
-        {
-            foreach (TestCampusSelectiveOccluder item in _hidden)
-                if (item != null)
-                    item.SetOccluded(false);
-            _hidden.Clear();
-            _nextHidden.Clear();
         }
 
         private static float HeadingFor(Vector3 direction) =>
