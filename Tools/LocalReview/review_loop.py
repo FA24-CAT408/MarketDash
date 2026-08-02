@@ -341,9 +341,9 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         set_check(state, "compile", "passed", "Unity scripts compiled with zero errors.")
 
         if args.regenerate:
-            unity_command("menu", path="CrazyMarket/Test Campus/Build All Scenes")
+            unity_command("menu", path="CrazyMarket/Test Campus/Build Existing Scenes")
             ensure_editor()
-            set_check(state, "generation", "passed", "Campus scenes regenerated.")
+            set_check(state, "generation", "passed", "Scenes present in this stack layer regenerated.")
         else:
             set_check(state, "generation", "skipped", "Use --regenerate when generator or scene inputs changed.")
 

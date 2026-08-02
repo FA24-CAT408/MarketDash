@@ -4,6 +4,7 @@
   "references": [
     "Unity.Cinemachine",
     "Unity.UGUI",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
   ]
 }
