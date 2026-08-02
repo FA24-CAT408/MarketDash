@@ -125,7 +125,7 @@
     </aside>
   </div>
   <section class="panel changelog-panel">
-    <h2>Movement changelog — what is new</h2>
+    <h2>Layer changelog — what is new</h2>
     <div class="changelog" id="changelog"></div>
   </section>
   <section class="panel changes-panel">
@@ -141,9 +141,11 @@
     </div>
   </section>
   <section class="panel evidence-panel">
-    <h2>Unity action proof — player using the new fixtures</h2>
-    <div class="evidence-grid" id="action-evidence"></div>
-    <h2 style="margin-top: 22px">Room walkthrough</h2>
+    <div id="action-section">
+      <h2>Unity action proof — player using the new fixtures</h2>
+      <div class="evidence-grid" id="action-evidence"></div>
+    </div>
+    <h2 id="tour-heading" style="margin-top: 22px">Feature walkthrough</h2>
     <div class="evidence-grid" id="tour-evidence"></div>
     <h2 style="margin-top: 22px">Validation timeline</h2>
     <div class="evidence-grid" id="validation-evidence"></div>
@@ -336,7 +338,8 @@
     };
     Object.values(evidenceGroups).forEach(target => target.replaceChildren());
     (state.evidence || []).forEach(capture => {
-      const evidence = evidenceGroups[capture.group] || evidenceGroups.validation;
+      const evidence = capture.group?.endsWith("-tour") ? evidenceGroups["movement-tour"]
+        : evidenceGroups[capture.group] || evidenceGroups.validation;
       const figure = document.createElement("figure");
       figure.className = "capture";
       const link = document.createElement("a");
@@ -351,7 +354,8 @@
       caption.textContent = capture.label;
       const meta = document.createElement("div");
       meta.className = "capture-meta";
-      const group = capture.group === "movement-action" ? "Action proof · " : capture.group === "movement-tour" ? "Movement tour · " : "";
+      const group = capture.group === "movement-action" ? "Action proof · "
+        : capture.group?.endsWith("-tour") ? `${capture.group.replace("-tour", "")} tour · ` : "";
       meta.textContent = `${group}${capture.view} · ${capture.capturedAt || ""}`;
       link.append(image, caption, meta);
       figure.appendChild(link);
@@ -366,6 +370,8 @@
         : "No screenshots in this section yet.";
       evidence.appendChild(empty);
     });
+    document.getElementById("action-section").hidden = !document.querySelector("#action-evidence .capture");
+    document.getElementById("tour-heading").hidden = !document.querySelector("#tour-evidence .capture");
   }
 
   async function refresh() {

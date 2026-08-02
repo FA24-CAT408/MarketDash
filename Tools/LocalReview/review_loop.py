@@ -60,6 +60,39 @@ MOVEMENT_CHANGELOG = (
     },
 )
 
+LIGHTING_CHANGELOG = (
+    {
+        "type": "FIXED",
+        "title": "Lighting is reachable from the normal campus flow",
+        "detail": "Core now loads the Lighting scene, and local Build Settings include it after Movement.",
+        "file": "Assets/TestCampus/Scenes/TestCampus_Core.unity · ProjectSettings/EditorBuildSettings.asset",
+    },
+    {
+        "type": "NEW",
+        "title": "Five labeled lighting comparisons",
+        "detail": "Identical spheres and cubes progress from cool to warm across alternating point and spot bays.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "Each bay measures its own light",
+        "detail": "Shorter light ranges and no shared ceiling fill keep neighboring bays from muddying the comparison.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "Controls only claim real behavior",
+        "detail": "The inert Low/Normal/Stress selector is omitted because this room does not implement lighting presets.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "VERIFIED",
+        "title": "Lighting passed the local Unity gates",
+        "detail": "Four scenes loaded, teleport and reset worked, the Console stayed clean, and the release guard rejected Test Campus scenes.",
+        "file": "Tools/LocalReview/review_loop.py",
+    },
+)
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -243,8 +276,11 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
             joined_lines = "\n".join(hunk.pop("search"))
             key_hints = (
                 ("def collect_change_summary", "Changed files and snippets"),
+                ("LIGHTING_CHANGELOG", "Lighting changelog"),
+                ("LIGHTING_TOUR_STOPS", "Lighting screenshot tour"),
                 ("MOVEMENT_TOUR_STOPS", "Movement screenshot tour"),
                 ("changed-files", "Changed-files dashboard"),
+                ("TestCampus_Lighting.unity", "Lighting in Build Settings"),
                 ("TestCampus_Movement.unity", "Movement in Build Settings"),
                 ("Moving Platform.prefab", "Production moving platform fixture"),
                 ("Distance ", "Non-colliding distance markers"),
@@ -274,6 +310,8 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
 
     unique_snippets = list({(item["file"], item["key"]): item for item in snippets}.values())
     priority_keys = {
+        "Lighting changelog": 0,
+        "Lighting screenshot tour": 0,
         "Movement screenshot tour": 0,
         "Changed files and snippets": 0,
         "Changed-files dashboard": 0,
@@ -281,6 +319,7 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
         "Production moving platform fixture": 1,
         "Zone preset capability": 1,
         "Screenshot zone teleport": 1,
+        "Lighting in Build Settings": 1,
         "Movement in Build Settings": 1,
     }
     unique_snippets.sort(
@@ -542,6 +581,13 @@ MOVEMENT_TOUR_STOPS = (
     ("Production moving platform at close range", -58, 1, 18, 0),
 )
 
+LIGHTING_TOUR_STOPS = (
+    ("Lighting gallery — full cool-to-warm comparison", 0, 1, 55, 0),
+    ("Cool point and cool-neutral spot bays", -15, 1, 60, 0),
+    ("Neutral point reference bay", 0, 1, 60, 0),
+    ("Warm-neutral spot and warm point bays", 15, 1, 60, 0),
+)
+
 MOVEMENT_ACTION_STOPS = (
     ("NEW: Player balancing on the narrow beam", -72, 3.25, -4, 0),
     ("NEW: Player standing on the tallest step", -60, 3.35, 4, 180),
@@ -733,7 +779,11 @@ def command_unity_tour(args: argparse.Namespace) -> None:
         if not teleport_result.get("success") or not teleport_result.get("result", {}).get("success"):
             raise RuntimeError(f"Teleport probe failed: {json.dumps(teleport_result, indent=2)}")
 
-        stops = MOVEMENT_TOUR_STOPS if args.zone == "Movement" else ()
+        stops_by_zone = {
+            "Movement": MOVEMENT_TOUR_STOPS,
+            "Lighting": LIGHTING_TOUR_STOPS,
+        }
+        stops = stops_by_zone.get(args.zone, ())
         if not stops:
             raise RuntimeError(f"No screenshot tour is configured for zone {args.zone}.")
         for label, x, y, z, yaw in stops:
@@ -850,7 +900,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if self.path == "/api/state":
             payload = load_state(required=False)
             payload["changes"] = collect_change_summary(payload)
-            payload["changelog"] = MOVEMENT_CHANGELOG if payload.get("branch") == "stack/test-campus-movement" else ()
+            changelogs = {
+                "stack/test-campus-movement": MOVEMENT_CHANGELOG,
+                "stack/test-campus-lighting": LIGHTING_CHANGELOG,
+            }
+            payload["changelog"] = changelogs.get(payload.get("branch"), ())
             body = json.dumps(payload).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -961,7 +1015,7 @@ def parser() -> argparse.ArgumentParser:
 
     tour = subcommands.add_parser("unity-tour", help="Capture an in-game screenshot tour of a loaded campus zone.")
     tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
-    tour.add_argument("--zone", default="Movement", choices=("Movement",))
+    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting"))
     tour.add_argument("--expected-scenes", type=int, default=3)
     tour.set_defaults(func=command_unity_tour)
 
