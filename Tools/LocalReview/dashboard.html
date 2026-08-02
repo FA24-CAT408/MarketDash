@@ -57,11 +57,19 @@
     .status { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .side { display: grid; gap: 18px; align-content: start; }
     .empty { color: var(--muted); font-size: 13px; }
+    .evidence-panel { margin-top: 18px; }
+    .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .capture { margin: 0; min-width: 0; }
+    .capture a { display: block; color: inherit; text-decoration: none; }
+    .capture img { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+    .capture figcaption { padding-top: 7px; font-size: 13px; }
+    .capture-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
     @media (max-width: 760px) {
       main { padding: 16px; }
       header { align-items: start; flex-direction: column; }
       .layout { grid-template-columns: 1fr; }
       .phase-graph { min-height: 430px; }
+      .evidence-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -94,6 +102,10 @@
       </section>
     </aside>
   </div>
+  <section class="panel evidence-panel">
+    <h2>Unity testing screenshots</h2>
+    <div class="evidence-grid" id="evidence"></div>
+  </section>
 </main>
 <script>
   const phases = ["scope", "review", "fix", "unity", "done"];
@@ -200,6 +212,35 @@
 
     renderRows(document.getElementById("checks"), Object.entries(state.checks || {}).map(([name, value]) => ({ name, ...value })), "check");
     renderRows(document.getElementById("findings"), (state.findings || []).filter(item => item.status !== "resolved"), "finding");
+
+    const evidence = document.getElementById("evidence");
+    evidence.replaceChildren();
+    (state.evidence || []).forEach(capture => {
+      const figure = document.createElement("figure");
+      figure.className = "capture";
+      const link = document.createElement("a");
+      link.href = capture.url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      const image = document.createElement("img");
+      image.src = capture.url;
+      image.alt = `${capture.label} — ${capture.view} view`;
+      image.loading = "lazy";
+      const caption = document.createElement("figcaption");
+      caption.textContent = capture.label;
+      const meta = document.createElement("div");
+      meta.className = "capture-meta";
+      meta.textContent = `${capture.view} · ${capture.capturedAt || ""}`;
+      link.append(image, caption, meta);
+      figure.appendChild(link);
+      evidence.appendChild(figure);
+    });
+    if (!evidence.children.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Screenshots will appear during the next Unity smoke run.";
+      evidence.appendChild(empty);
+    }
   }
 
   async function refresh() {

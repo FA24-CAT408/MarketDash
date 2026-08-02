@@ -16,11 +16,13 @@ from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = ROOT / "Temp" / "LocalReview"
 STATE_PATH = STATE_DIR / "state.json"
+EVIDENCE_DIR = STATE_DIR / "evidence"
 DASHBOARD_PATH = Path(__file__).with_name("dashboard.html")
 PHASES = ("scope", "review", "fix", "unity", "done")
 STATUSES = ("queued", "running", "passed", "failed", "blocked", "skipped")
@@ -53,6 +55,7 @@ def default_state() -> dict[str, Any]:
         "phases": {phase: "queued" for phase in PHASES},
         "agents": [],
         "checks": {},
+        "evidence": [],
         "findings": [],
         "stack": [],
         "notes": [],
@@ -91,6 +94,35 @@ def refresh_git_state(state: dict[str, Any]) -> None:
 
 def set_check(state: dict[str, Any], name: str, status: str, note: str = "") -> None:
     state["checks"][name] = {"status": status, "note": note, "updatedAt": now()}
+    save_state(state)
+
+
+def capture_evidence(state: dict[str, Any], label: str, view: str) -> None:
+    session = state.get("session") or "unscoped"
+    session_dir = EVIDENCE_DIR / session
+    session_dir.mkdir(parents=True, exist_ok=True)
+    sequence = len(state.setdefault("evidence", [])) + 1
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-") or "capture"
+    filename = f"{sequence:02d}-{slug}.png"
+    output = session_dir / filename
+    normalized_view = view.lower()
+    if normalized_view == "scene":
+        unity_command("menu", path="Window/General/Scene")
+    result = unity_command(
+        "screenshot", view=normalized_view, output=output, width=1280, height=720)
+    if isinstance(result, dict) and result.get("success") is False:
+        raise RuntimeError(result.get("message") or f"Unity could not capture {view} view.")
+    if not output.exists():
+        raise RuntimeError(f"Unity did not create screenshot: {output}")
+    state["evidence"].append(
+        {
+            "label": label,
+            "view": view,
+            "phase": state.get("currentPhase", "unity"),
+            "url": f"/evidence/{session}/{filename}",
+            "capturedAt": now(),
+        }
+    )
     save_state(state)
 
 
@@ -326,6 +358,7 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
     state = load_state()
     state["currentPhase"] = "unity"
     state["phases"]["unity"] = "running"
+    state["evidence"] = []
     save_state(state)
     before_status = git("status", "--porcelain=v1")
     playing = False
@@ -355,6 +388,7 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         set_check(state, "campus-validator", "passed", "Campus validator completed with zero errors.")
 
         unity_command("open_scene", path=args.scene, additive=False)
+        capture_evidence(state, "Scene ready for Play Mode", "Scene")
         unity_command("clear_console")
         unity_command("set_autotick", enable=True, interval_ms=100)
         unity_command("editor_play")
@@ -376,20 +410,23 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         if scene_count < args.expected_scenes:
             raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes, found {scene_count}.")
 
+        capture_evidence(state, f"Play Mode loaded {scene_count} scenes", "Game")
+
         reset_result = unity_command("eval", code=RESET_PROBE.format(zone=args.zone), timeout=30)
         if not reset_result.get("success") or not reset_result.get("result", {}).get("success"):
             raise RuntimeError(f"Reset probe failed: {json.dumps(reset_result, indent=2)}")
         set_check(state, "reset-probe", "passed", f"Reset restored {reset_result['result'].get('fixture')}.")
+        capture_evidence(state, f"{args.zone} reset verified", "Game")
 
         runtime_errors = unity_command("get_console_logs", severity="Error", limit=200)
         if runtime_errors.get("total", 0):
             raise RuntimeError(f"Play Mode produced {runtime_errors['total']} errors.")
         set_check(state, "play-mode", "passed", f"Loaded {scene_count} scenes with zero Console errors.")
-        screenshot = STATE_DIR / "game-view.png"
-        unity_command("screenshot", view="Game", output=screenshot, width=1280, height=720)
-        set_check(state, "game-view", "passed", str(screenshot))
+        capture_evidence(state, "Final clean Game view", "Game")
+        set_check(state, "game-view", "passed", "Screenshot timeline captured.")
         stop_play_mode()
         playing = False
+        capture_evidence(state, "Returned to Edit Mode", "Scene")
 
         if args.build_guard:
             build_settings = ROOT / "ProjectSettings" / "EditorBuildSettings.asset"
@@ -415,6 +452,7 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
         state["phases"]["unity"] = "passed"
         state["phases"]["done"] = "passed"
         state["currentPhase"] = "done"
+        set_check(state, "unity-smoke", "passed", "Unity smoke and screenshot timeline completed.")
         save_state(state)
         after_status = git("status", "--porcelain=v1")
         print(json.dumps({"success": True, "beforeStatus": before_status, "afterStatus": after_status}, indent=2))
@@ -449,6 +487,25 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             body = json.dumps(payload).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if self.path.startswith("/evidence/"):
+            relative = Path(unquote(self.path.removeprefix("/evidence/")))
+            evidence_root = EVIDENCE_DIR.resolve()
+            image_path = (EVIDENCE_DIR / relative).resolve()
+            if evidence_root not in image_path.parents or image_path.suffix.lower() != ".png":
+                self.send_error(404)
+                return
+            try:
+                body = image_path.read_bytes()
+            except FileNotFoundError:
+                self.send_error(404)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
