@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CrazyMarket Review Loop</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f5f7fb, #10131a);
+      --surface: light-dark(#ffffff, #171c25);
+      --surface-2: light-dark(#eef2f8, #202733);
+      --text: light-dark(#182033, #e8edf7);
+      --muted: light-dark(#68738a, #9aa6bb);
+      --line: light-dark(#cbd3e2, #3a4455);
+      --queued: light-dark(#8792a8, #7e899d);
+      --running: #4f8cff;
+      --passed: #2da66d;
+      --failed: #dc4f5e;
+      --blocked: #d68a1f;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    main { width: min(1220px, 100%); margin: 0 auto; padding: 24px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    h1, h2 { margin: 0; font-weight: 500; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 15px; margin-bottom: 12px; }
+    .subtitle, .updated { color: var(--muted); font-size: 13px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(240px, 1fr); gap: 18px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .phase-graph { width: 100%; min-height: 310px; display: block; }
+    .edge { stroke: var(--line); stroke-width: 2; }
+    .node rect { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; rx: 10; }
+    .node text { fill: var(--text); font-size: 14px; text-anchor: middle; }
+    .node .small { fill: var(--muted); font-size: 11px; }
+    .node.running rect { stroke: var(--running); stroke-width: 3; animation: pulse 1.4s ease-in-out infinite; }
+    .node.passed rect { stroke: var(--passed); }
+    .node.failed rect { stroke: var(--failed); }
+    .node.blocked rect { stroke: var(--blocked); }
+    .agent-edge { stroke: var(--running); stroke-width: 1.5; opacity: .55; }
+    @keyframes pulse { 50% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--running) 55%, transparent)); } }
+    .stack { display: grid; gap: 8px; }
+    .branch { display: grid; grid-template-columns: 12px 1fr; gap: 9px; align-items: center; color: var(--muted); font-size: 13px; }
+    .branch::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--queued); }
+    .branch.current { color: var(--text); font-weight: 500; }
+    .branch.current::before { background: var(--running); box-shadow: 0 0 0 4px color-mix(in srgb, var(--running) 20%, transparent); }
+    .checks, .findings { display: grid; gap: 8px; }
+    .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 9px; align-items: start; font-size: 13px; }
+    .dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--queued); }
+    .dot.running { background: var(--running); }
+    .dot.passed, .dot.resolved { background: var(--passed); }
+    .dot.failed, .dot.open.blocker { background: var(--failed); }
+    .dot.blocked, .dot.deferred { background: var(--blocked); }
+    .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .status { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .side { display: grid; gap: 18px; align-content: start; }
+    .empty { color: var(--muted); font-size: 13px; }
+    @media (max-width: 760px) {
+      main { padding: 16px; }
+      header { align-items: start; flex-direction: column; }
+      .layout { grid-template-columns: 1fr; }
+      .phase-graph { min-height: 430px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>CrazyMarket review loop</h1>
+      <div class="subtitle" id="subtitle">Waiting for a session</div>
+    </div>
+    <div class="updated" id="updated"></div>
+  </header>
+  <div class="layout">
+    <section class="panel">
+      <h2>Review and validation graph</h2>
+      <svg class="phase-graph" id="graph" viewBox="0 0 900 330" role="img" aria-label="Review phases and active agents"></svg>
+    </section>
+    <aside class="side">
+      <section class="panel">
+        <h2>Local stack</h2>
+        <div class="stack" id="stack"></div>
+      </section>
+      <section class="panel">
+        <h2>Validation gates</h2>
+        <div class="checks" id="checks"></div>
+      </section>
+      <section class="panel">
+        <h2>Open findings</h2>
+        <div class="findings" id="findings"></div>
+      </section>
+    </aside>
+  </div>
+</main>
+<script>
+  const phases = ["scope", "review", "fix", "unity", "done"];
+  const svg = document.getElementById("graph");
+  const escapeText = value => String(value ?? "");
+
+  function svgElement(name, attributes = {}) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
+    return element;
+  }
+
+  function drawGraph(state) {
+    svg.replaceChildren();
+    const compact = window.innerWidth < 760;
+    const positions = phases.map((phase, index) => compact
+      ? { phase, x: 240, y: 45 + index * 65 }
+      : { phase, x: 95 + index * 175, y: 70 });
+
+    positions.slice(0, -1).forEach((position, index) => {
+      const next = positions[index + 1];
+      svg.appendChild(svgElement("line", { x1: position.x, y1: position.y, x2: next.x, y2: next.y, class: "edge" }));
+    });
+
+    positions.forEach(position => {
+      const group = svgElement("g", { class: `node ${state.phases?.[position.phase] || "queued"}` });
+      group.appendChild(svgElement("rect", { x: position.x - 65, y: position.y - 25, width: 130, height: 50 }));
+      const label = svgElement("text", { x: position.x, y: position.y - 1 });
+      label.textContent = position.phase.toUpperCase();
+      group.appendChild(label);
+      const status = svgElement("text", { x: position.x, y: position.y + 16, class: "small" });
+      status.textContent = state.phases?.[position.phase] || "queued";
+      group.appendChild(status);
+      svg.appendChild(group);
+    });
+
+    const review = positions[1];
+    (state.agents || []).forEach((agent, index) => {
+      const x = compact ? 570 : 170 + index * 250;
+      const y = compact ? 70 + index * 90 : 235;
+      svg.appendChild(svgElement("line", { x1: review.x, y1: review.y + 25, x2: x, y2: y - 28, class: "agent-edge" }));
+      const group = svgElement("g", { class: `node ${agent.status || "queued"}` });
+      group.appendChild(svgElement("rect", { x: x - 95, y: y - 30, width: 190, height: 60 }));
+      const role = svgElement("text", { x, y: y - 5 });
+      role.textContent = escapeText(agent.role || agent.id);
+      group.appendChild(role);
+      const task = svgElement("text", { x, y: y + 15, class: "small" });
+      task.textContent = escapeText((agent.task || "").slice(0, 28));
+      group.appendChild(task);
+      svg.appendChild(group);
+    });
+  }
+
+  function renderRows(target, entries, type) {
+    target.replaceChildren();
+    if (!entries.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = type === "finding" ? "No findings recorded" : "No gates recorded";
+      target.appendChild(empty);
+      return;
+    }
+    entries.forEach(entry => {
+      const row = document.createElement("div");
+      row.className = "row";
+      const dot = document.createElement("span");
+      dot.className = `dot ${entry.status || "queued"} ${entry.severity || ""}`;
+      const text = document.createElement("div");
+      const title = document.createElement("div");
+      title.textContent = entry.title || entry.name;
+      text.appendChild(title);
+      if (entry.note) {
+        const note = document.createElement("div");
+        note.className = "note";
+        note.textContent = entry.note;
+        text.appendChild(note);
+      }
+      const status = document.createElement("span");
+      status.className = "status";
+      status.textContent = entry.status || "queued";
+      row.append(dot, text, status);
+      target.appendChild(row);
+    });
+  }
+
+  function render(state) {
+    document.getElementById("subtitle").textContent = state.session
+      ? `${state.branch} · round ${state.round} · ${state.currentPhase}`
+      : "Waiting for `review_loop.py init`";
+    document.getElementById("updated").textContent = state.updatedAt ? `Updated ${state.updatedAt}` : "";
+    drawGraph(state);
+
+    const stack = document.getElementById("stack");
+    stack.replaceChildren();
+    (state.stack || []).forEach(branch => {
+      const item = document.createElement("div");
+      item.className = `branch ${branch.current ? "current" : ""}`;
+      const label = document.createElement("span");
+      label.textContent = branch.name;
+      item.append(label);
+      stack.appendChild(item);
+    });
+    if (!stack.children.length) stack.textContent = "No local stack detected";
+
+    renderRows(document.getElementById("checks"), Object.entries(state.checks || {}).map(([name, value]) => ({ name, ...value })), "check");
+    renderRows(document.getElementById("findings"), (state.findings || []).filter(item => item.status !== "resolved"), "finding");
+  }
+
+  async function refresh() {
+    try {
+      const response = await fetch("/api/state", { cache: "no-store" });
+      render(await response.json());
+    } catch (error) {
+      document.getElementById("updated").textContent = "Dashboard disconnected";
+    }
+  }
+  refresh();
+  setInterval(refresh, 1500);
+  window.addEventListener("resize", refresh);
+</script>
+</body>
+</html>

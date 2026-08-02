@@ -15,3 +15,10 @@
 - After changing gameplay, scenes, prefabs, editor generation, or build behavior, validate the result in Unity before declaring the work complete.
 - At minimum: confirm scripts compile, regenerate and validate affected generated content when applicable, enter Play Mode in the relevant scene, exercise the changed behavior, and inspect the Console for errors or exceptions.
 - Automated tests are optional unless the user requests them; interactive Unity validation is still required.
+
+## Local review loop
+
+- For feature completion or stack review, use the `crazy-market-review-loop` skill and `Tools/LocalReview/review_loop.py`.
+- Always open the live agent graph visibly in the T3 shared preview, falling back to the machine's default browser when needed.
+- Keep the live dashboard updated during reviewer handoffs, fixes, and Unity validation.
+- Stop after three review/fix rounds and ask the user rather than looping indefinitely.
