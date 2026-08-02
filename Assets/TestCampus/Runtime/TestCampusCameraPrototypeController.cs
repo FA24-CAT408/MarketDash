@@ -182,8 +182,6 @@ namespace CrazyMarket.TestCampus
         public void ResetToInitialState()
         {
             Time.timeScale = 1f;
-            _guidedZoneActive = false;
-            _guidedZones.Clear();
             _inputFocus?.ResetInput();
             _lastLookDelta = Vector2.zero;
             _lastManualInputTime = float.NegativeInfinity;
