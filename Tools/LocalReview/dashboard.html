@@ -65,6 +65,14 @@
     .capture figcaption { padding-top: 7px; font-size: 13px; }
     .capture-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
     .changes-panel { margin-top: 18px; }
+    .changelog-panel { margin-top: 18px; }
+    .changelog { display: grid; gap: 10px; }
+    .change { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+    .change:first-child { border-top: 0; padding-top: 0; }
+    .change-type { color: var(--muted); font-size: 11px; letter-spacing: .05em; }
+    .change-title { font-size: 14px; font-weight: 500; }
+    .change-detail, .change-file { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .change-file { overflow-wrap: anywhere; }
     .changes-layout { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.4fr); gap: 22px; }
     .file-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .file-table th, .file-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
@@ -83,6 +91,7 @@
       .phase-graph { min-height: 430px; }
       .evidence-grid { grid-template-columns: 1fr; }
       .changes-layout { grid-template-columns: 1fr; }
+      .change { grid-template-columns: 58px minmax(0, 1fr); }
     }
   </style>
 </head>
@@ -115,6 +124,10 @@
       </section>
     </aside>
   </div>
+  <section class="panel changelog-panel">
+    <h2>Movement changelog — what is new</h2>
+    <div class="changelog" id="changelog"></div>
+  </section>
   <section class="panel changes-panel">
     <h2>Files and key code changes</h2>
     <div class="changes-layout">
@@ -128,8 +141,12 @@
     </div>
   </section>
   <section class="panel evidence-panel">
-    <h2>Unity testing screenshots</h2>
-    <div class="evidence-grid" id="evidence"></div>
+    <h2>Unity action proof — player using the new fixtures</h2>
+    <div class="evidence-grid" id="action-evidence"></div>
+    <h2 style="margin-top: 22px">Room walkthrough</h2>
+    <div class="evidence-grid" id="tour-evidence"></div>
+    <h2 style="margin-top: 22px">Validation timeline</h2>
+    <div class="evidence-grid" id="validation-evidence"></div>
   </section>
 </main>
 <script>
@@ -238,6 +255,29 @@
     renderRows(document.getElementById("checks"), Object.entries(state.checks || {}).map(([name, value]) => ({ name, ...value })), "check");
     renderRows(document.getElementById("findings"), (state.findings || []).filter(item => item.status !== "resolved"), "finding");
 
+    const changelog = document.getElementById("changelog");
+    changelog.replaceChildren();
+    (state.changelog || []).forEach(item => {
+      const row = document.createElement("article");
+      row.className = "change";
+      const type = document.createElement("div");
+      type.className = "change-type";
+      type.textContent = item.type;
+      const body = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "change-title";
+      title.textContent = item.title;
+      const detail = document.createElement("div");
+      detail.className = "change-detail";
+      detail.textContent = item.detail;
+      const file = document.createElement("div");
+      file.className = "change-file";
+      file.textContent = item.file;
+      body.append(title, detail, file);
+      row.append(type, body);
+      changelog.appendChild(row);
+    });
+
     const changedFiles = document.getElementById("changed-files");
     changedFiles.replaceChildren();
     (state.changes?.files || []).forEach(file => {
@@ -289,14 +329,14 @@
       snippets.appendChild(empty);
     }
 
-    const evidence = document.getElementById("evidence");
-    evidence.replaceChildren();
-    const captures = [...(state.evidence || [])].sort((left, right) => {
-      const leftTour = left.group === "movement-tour" ? 0 : 1;
-      const rightTour = right.group === "movement-tour" ? 0 : 1;
-      return leftTour - rightTour;
-    });
-    captures.forEach(capture => {
+    const evidenceGroups = {
+      "movement-action": document.getElementById("action-evidence"),
+      "movement-tour": document.getElementById("tour-evidence"),
+      validation: document.getElementById("validation-evidence"),
+    };
+    Object.values(evidenceGroups).forEach(target => target.replaceChildren());
+    (state.evidence || []).forEach(capture => {
+      const evidence = evidenceGroups[capture.group] || evidenceGroups.validation;
       const figure = document.createElement("figure");
       figure.className = "capture";
       const link = document.createElement("a");
@@ -311,18 +351,21 @@
       caption.textContent = capture.label;
       const meta = document.createElement("div");
       meta.className = "capture-meta";
-      const group = capture.group === "movement-tour" ? "Movement tour · " : "";
+      const group = capture.group === "movement-action" ? "Action proof · " : capture.group === "movement-tour" ? "Movement tour · " : "";
       meta.textContent = `${group}${capture.view} · ${capture.capturedAt || ""}`;
       link.append(image, caption, meta);
       figure.appendChild(link);
       evidence.appendChild(figure);
     });
-    if (!evidence.children.length) {
+    Object.entries(evidenceGroups).forEach(([group, evidence]) => {
+      if (evidence.children.length) return;
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = "Screenshots will appear during the next Unity smoke run.";
+      empty.textContent = group === "movement-action"
+        ? "Action screenshots are being captured in Unity."
+        : "No screenshots in this section yet.";
       evidence.appendChild(empty);
-    }
+    });
   }
 
   async function refresh() {

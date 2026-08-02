@@ -27,6 +27,39 @@ DASHBOARD_PATH = Path(__file__).with_name("dashboard.html")
 PHASES = ("scope", "review", "fix", "unity", "done")
 STATUSES = ("queued", "running", "passed", "failed", "blocked", "skipped")
 
+MOVEMENT_CHANGELOG = (
+    {
+        "type": "NEW",
+        "title": "Movement room is part of the playable campus",
+        "detail": "Core loads the Movement scene during play, and the scene is included in local Build Settings.",
+        "file": "Assets/TestCampus/Scenes/TestCampus_Core.unity · ProjectSettings/EditorBuildSettings.asset",
+    },
+    {
+        "type": "FIXED",
+        "title": "Distance markers no longer interrupt movement",
+        "detail": "The distance markers are visual guides without colliders, so the sprint lane stays smooth.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "NEW",
+        "title": "Movement challenges cover distinct player behaviors",
+        "detail": "The room now has a narrow beam, step heights, two slopes, jump targets, and a low ceiling.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "NEW",
+        "title": "The room exercises the real moving platform",
+        "detail": "The fixture is the production Moving Platform prefab, not a Test Campus imitation.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "VERIFIED",
+        "title": "Local review now includes visible Unity proof",
+        "detail": "Repeatable tours capture the room, player-on-fixture action shots, and two moments of platform motion.",
+        "file": "Tools/LocalReview/review_loop.py",
+    },
+)
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -509,6 +542,50 @@ MOVEMENT_TOUR_STOPS = (
     ("Production moving platform at close range", -58, 1, 18, 0),
 )
 
+MOVEMENT_ACTION_STOPS = (
+    ("NEW: Player balancing on the narrow beam", -72, 3.25, -4, 0),
+    ("NEW: Player standing on the tallest step", -60, 3.35, 4, 180),
+    ("NEW: Player approaching the 30-degree slope", -67, 1, 15, 0),
+    ("NEW: Player landed on an elevated jump target", -68, 3.85, 43, 270),
+)
+
+BOARD_MOVING_PLATFORM_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+if (controller == null || controller.PlayerRoot == null) return new { success = false, reason = "Player unavailable" };
+var platform = UnityEngine.GameObject.Find("Movement Production Moving Platform");
+if (platform == null) return new { success = false, reason = "Moving platform unavailable" };
+var mover = platform.GetComponentInChildren<MovingPlatform>(true);
+if (mover == null) return new { success = false, reason = "MovingPlatform component unavailable" };
+var renderers = mover.GetComponentsInChildren<UnityEngine.Renderer>(true);
+if (renderers.Length == 0) return new { success = false, reason = "Moving platform has no renderer" };
+var bounds = renderers[0].bounds;
+for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+var position = new UnityEngine.Vector3(bounds.center.x, bounds.max.y + 1.05f, bounds.center.z);
+var rotation = UnityEngine.Quaternion.Euler(0f, 180f, 0f);
+var adapter = controller.PlayerRoot.GetComponent<CrazyMarket.TestCampus.TestCampusPlayerAdapter>();
+if (adapter != null) adapter.TeleportTo(position, rotation);
+else controller.PlayerRoot.SetPositionAndRotation(position, rotation);
+return new { success = true, platformX = mover.transform.position.x, platformZ = mover.transform.position.z, player = controller.PlayerRoot.position.ToString() };
+""".strip()
+
+READ_MOVING_PLATFORM_PROBE = """
+var platform = UnityEngine.GameObject.Find("Movement Production Moving Platform");
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+if (platform == null || controller == null || controller.PlayerRoot == null) return new { success = false };
+var mover = platform.GetComponentInChildren<MovingPlatform>(true);
+if (mover == null) return new { success = false };
+var renderers = mover.GetComponentsInChildren<UnityEngine.Renderer>(true);
+if (renderers.Length == 0) return new { success = false };
+var bounds = renderers[0].bounds;
+for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+var player = controller.PlayerRoot.position;
+var aboard = UnityEngine.Mathf.Abs(player.x - bounds.center.x) <= bounds.extents.x + 1f
+    && UnityEngine.Mathf.Abs(player.z - bounds.center.z) <= bounds.extents.z + 1f
+    && player.y >= bounds.max.y - 0.25f
+    && player.y <= bounds.max.y + 2f;
+return new { success = true, aboard = aboard, platformX = mover.transform.position.x, platformZ = mover.transform.position.z, player = player.ToString() };
+""".strip()
+
 
 def wait_for_loaded_scenes(expected_scenes: int) -> int:
     deadline = time.time() + 30
@@ -680,6 +757,82 @@ def command_unity_tour(args: argparse.Namespace) -> None:
             stop_play_mode()
 
 
+def command_unity_action_tour(args: argparse.Namespace) -> None:
+    state = load_state()
+    group = "movement-action"
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != group]
+    set_check(state, group, "running", "Capturing the player actively using Movement fixtures.")
+    playing = False
+    try:
+        ensure_editor()
+        stop_play_mode()
+        unity_command("open_scene", path=args.scene, additive=False)
+        unity_command("clear_console")
+        unity_command("set_autotick", enable=True, interval_ms=100)
+        unity_command("editor_play")
+        playing = True
+        scene_count = wait_for_loaded_scenes(args.expected_scenes)
+        if scene_count < args.expected_scenes:
+            raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes, found {scene_count}.")
+
+        teleport_result = unity_command("eval", code=TELEPORT_PROBE.format(zone="Movement"), timeout=30)
+        if not teleport_result.get("success") or not teleport_result.get("result", {}).get("success"):
+            raise RuntimeError(f"Teleport probe failed: {json.dumps(teleport_result, indent=2)}")
+
+        for label, x, y, z, yaw in MOVEMENT_ACTION_STOPS:
+            move_result = unity_command(
+                "eval", code=MOVE_PLAYER_PROBE.format(x=x, y=y, z=z, yaw=yaw), timeout=30)
+            if not move_result.get("success") or not move_result.get("result", {}).get("success"):
+                raise RuntimeError(f"Could not stage screenshot '{label}': {json.dumps(move_result, indent=2)}")
+            time.sleep(2)
+            capture_evidence(state, label, "Game", group=group)
+
+        board_result = unity_command("eval", code=BOARD_MOVING_PLATFORM_PROBE, timeout=30)
+        if not board_result.get("success") or not board_result.get("result", {}).get("success"):
+            raise RuntimeError(f"Could not board moving platform: {json.dumps(board_result, indent=2)}")
+        time.sleep(0.5)
+        first_result = unity_command("eval", code=READ_MOVING_PLATFORM_PROBE, timeout=30)
+        if not first_result.get("success") or not first_result.get("result", {}).get("success"):
+            raise RuntimeError(f"Could not sample moving platform: {json.dumps(first_result, indent=2)}")
+        if not first_result["result"].get("aboard"):
+            raise RuntimeError(f"Player was not aboard for the first platform capture: {json.dumps(first_result, indent=2)}")
+        start_x = float(first_result["result"].get("platformX", 0))
+        start_z = float(first_result["result"].get("platformZ", 0))
+        capture_evidence(
+            state, f"NEW: Moving platform — first position ({start_x:.1f}, {start_z:.1f})", "Game", group=group)
+        deadline = time.time() + 5
+        later_result = None
+        moved = 0.0
+        while time.time() < deadline and moved < 3:
+            time.sleep(0.25)
+            later_result = unity_command("eval", code=READ_MOVING_PLATFORM_PROBE, timeout=30)
+            if not later_result.get("success") or not later_result.get("result", {}).get("success"):
+                raise RuntimeError(f"Could not read moving platform: {json.dumps(later_result, indent=2)}")
+            end_x = float(later_result["result"].get("platformX", 0))
+            end_z = float(later_result["result"].get("platformZ", 0))
+            moved = ((end_x - start_x) ** 2 + (end_z - start_z) ** 2) ** 0.5
+        if later_result is None:
+            raise RuntimeError("Could not sample moving platform motion.")
+        if not later_result["result"].get("aboard"):
+            raise RuntimeError(f"Player was not aboard for the later platform capture: {json.dumps(later_result, indent=2)}")
+        capture_evidence(
+            state, f"NEW: Moving platform — later position ({end_x:.1f}, {end_z:.1f})", "Game", group=group)
+
+        runtime_errors = unity_command("get_console_logs", severity="Error", limit=200)
+        if runtime_errors.get("total", 0):
+            raise RuntimeError(f"Action tour produced {runtime_errors['total']} Console errors.")
+        if moved < 0.1:
+            raise RuntimeError(f"Moving platform changed only {moved:.2f} m during the timed capture.")
+        set_check(state, group, "passed",
+                  f"Captured {len(MOVEMENT_ACTION_STOPS) + 2} action views; platform moved {moved:.1f} m; zero Console errors.")
+    except Exception as error:
+        set_check(state, group, "failed", str(error))
+        raise
+    finally:
+        if playing:
+            stop_play_mode()
+
+
 def command_status(args: argparse.Namespace) -> None:
     state = load_state()
     if args.json:
@@ -697,6 +850,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if self.path == "/api/state":
             payload = load_state(required=False)
             payload["changes"] = collect_change_summary(payload)
+            payload["changelog"] = MOVEMENT_CHANGELOG if payload.get("branch") == "stack/test-campus-movement" else ()
             body = json.dumps(payload).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -810,6 +964,12 @@ def parser() -> argparse.ArgumentParser:
     tour.add_argument("--zone", default="Movement", choices=("Movement",))
     tour.add_argument("--expected-scenes", type=int, default=3)
     tour.set_defaults(func=command_unity_tour)
+
+    action_tour = subcommands.add_parser(
+        "unity-action-tour", help="Capture the player actively using Movement fixtures.")
+    action_tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
+    action_tour.add_argument("--expected-scenes", type=int, default=3)
+    action_tour.set_defaults(func=command_unity_action_tour)
 
     status = subcommands.add_parser("status", help="Print current review-loop state.")
     status.add_argument("--json", action="store_true")
