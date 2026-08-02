@@ -81,9 +81,9 @@ namespace CrazyMarket.TestCampus
         public Vector2 ConsumeLookInput()
         {
             Vector2 input = Vector2.zero;
-            if (_uiHasFocus)
+            if (_uiHasFocus || !HasGameplayPointerFocus())
             {
-                InputSource = "UI focus";
+                InputSource = _uiHasFocus ? "UI focus" : "Game view not focused";
                 ResetInput();
                 return input;
             }

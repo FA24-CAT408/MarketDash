@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -17,6 +18,7 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private float minimumMovementSpeed = 0.6f;
 
         private CinemachineCamera _assistedCamera;
+        private readonly HashSet<TestCampusCameraModeZone> _guidedZones = new();
         private CinemachineCamera _railCamera;
         private CinemachineOrbitalFollow _orbit;
         private TestCampusCameraSurfaceConstraint _surfaceConstraint;
@@ -92,10 +94,12 @@ namespace CrazyMarket.TestCampus
             ApplyMode();
             SetUiFocus(false);
             CaptureInitialState();
+            TestCampusController.Instance?.RegisterZoneResettable(TestZoneId.Camera, this);
         }
 
         private void OnDestroy()
         {
+            TestCampusController.Instance?.UnregisterZoneResettable(TestZoneId.Camera, this);
             if (Instance == this)
                 Instance = null;
         }
@@ -150,9 +154,15 @@ namespace CrazyMarket.TestCampus
             ApplyMode();
         }
 
-        public void SetGuidedZoneActive(bool active)
+        public void SetGuidedZoneActive(TestCampusCameraModeZone zone, bool active)
         {
-            _guidedZoneActive = active;
+            if (zone == null)
+                return;
+            if (active)
+                _guidedZones.Add(zone);
+            else
+                _guidedZones.Remove(zone);
+            _guidedZoneActive = _guidedZones.Count > 0;
             if (_mode == TestCampusCameraMode.HybridZones)
                 ApplyMode();
         }
@@ -173,6 +183,7 @@ namespace CrazyMarket.TestCampus
         {
             Time.timeScale = 1f;
             _guidedZoneActive = false;
+            _guidedZones.Clear();
             _inputFocus?.ResetInput();
             _lastLookDelta = Vector2.zero;
             _lastManualInputTime = float.NegativeInfinity;
