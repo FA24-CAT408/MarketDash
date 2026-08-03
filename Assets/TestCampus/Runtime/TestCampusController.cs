@@ -155,6 +155,13 @@ namespace CrazyMarket.TestCampus
             return applied;
         }
 
+        public bool ApplyPreset(TestZoneId zone, string presetId)
+        {
+            bool applied = _zones.TryGetValue(zone, out TestZoneRoot root) && root.ApplyPreset(presetId);
+            if (!applied) Debug.LogWarning($"Test zone {zone} did not accept preset '{presetId}'.");
+            return applied;
+        }
+
         public Transform ResolveSpawn(TestZoneId zone, string spawnId = "Default")
         {
             return _zones.TryGetValue(zone, out TestZoneRoot root) ? root.ResolveSpawn(spawnId) : null;

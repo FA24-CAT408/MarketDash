@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace CrazyMarket.TestCampus.Editor
 {
@@ -16,6 +17,10 @@ namespace CrazyMarket.TestCampus.Editor
     {
         public const string SceneFolder = "Assets/TestCampus/Scenes";
         public const string MaterialFolder = "Assets/TestCampus/Materials";
+        public const string UiFolder = "Assets/TestCampus/UI";
+        public const string UiPanelSettingsPath = UiFolder + "/TestCampusPanelSettings.asset";
+        public const string UiLayoutPath = UiFolder + "/TestCampusControlPanel.uxml";
+        public const string UiThemePath = UiFolder + "/TestCampusRuntimeTheme.tss";
 
         private static readonly Dictionary<string, Material> Materials = new();
         private static Transform _activeZoneRoot;
@@ -68,8 +73,33 @@ namespace CrazyMarket.TestCampus.Editor
         {
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(MaterialFolder);
+            Directory.CreateDirectory(UiFolder);
             CreateMaterials();
+            CreateUiPanelSettings();
             RenderSettings.skybox = null;
+        }
+
+        private static void CreateUiPanelSettings()
+        {
+            ThemeStyleSheet theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(UiThemePath);
+            VisualTreeAsset layout = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiLayoutPath);
+            if (theme == null || layout == null)
+                throw new FileNotFoundException("Test Campus UI Toolkit theme or UXML layout is missing.");
+
+            PanelSettings settings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPanelSettingsPath);
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance<PanelSettings>();
+                settings.name = "TestCampusPanelSettings";
+                AssetDatabase.CreateAsset(settings, UiPanelSettingsPath);
+            }
+            settings.themeStyleSheet = theme;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(1920, 1080);
+            settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            settings.match = 0.5f;
+            settings.sortingOrder = 100;
+            EditorUtility.SetDirty(settings);
         }
 
         [MenuItem("CrazyMarket/Test Campus/Open Core")]
@@ -146,7 +176,12 @@ namespace CrazyMarket.TestCampus.Editor
             GameObject eventPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Level Components/UI/EventSystem.prefab");
             if (eventPrefab != null) PrefabUtility.InstantiatePrefab(eventPrefab, scene);
             else new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-            new GameObject("Test Campus Control Panel").AddComponent<TestCampusControlPanel>();
+            GameObject controlPanelObject = new("Test Campus Control Panel");
+            UIDocument uiDocument = controlPanelObject.AddComponent<UIDocument>();
+            uiDocument.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPanelSettingsPath);
+            uiDocument.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiLayoutPath);
+            uiDocument.sortingOrder = 100;
+            controlPanelObject.AddComponent<TestCampusControlPanel>();
             GameObject camera = new("Main Camera", typeof(Camera), typeof(AudioListener), typeof(CinemachineBrain));
             camera.tag = "MainCamera";
             camera.transform.SetPositionAndRotation(new Vector3(0, 9, -12), Quaternion.Euler(24, 0, 0));
@@ -199,7 +234,7 @@ namespace CrazyMarket.TestCampus.Editor
                 Wrap = false
             };
             TrackerSettings tracker = orbit.TrackerSettings;
-            tracker.BindingMode = BindingMode.WorldSpace;
+            tracker.BindingMode = Unity.Cinemachine.TargetTracking.BindingMode.WorldSpace;
             tracker.PositionDamping = new Vector3(0.12f, 0.18f, 0.12f);
             tracker.RotationDamping = Vector3.zero;
             orbit.TrackerSettings = tracker;
@@ -445,12 +480,22 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateUi()
         {
             Scene scene = NewZone(TestZoneId.UI, "UI Systems Lab", new Vector3(70, 0, -55), new Vector3(40, 1, 45), "UI",
-                "Use the persistent panel to inspect HUD, pause, settings, focus, long text, empty data, aspect ratios, and contrast backdrops.");
+                "Open F1 after teleporting here. Low hides production fixtures, Normal shows the HUD, Stress adds the pause overlay, and Reset returns to hidden.",
+                includePresetProvider: false);
             MoveDefaultSpawn(scene, new Vector3(70, 1, -66));
             Cube("Bright Backdrop", new Vector3(62, 5, -55), new Vector3(10, 10, 1), "Bright");
             Cube("Dark Backdrop", new Vector3(78, 5, -55), new Vector3(10, 10, 1), "Dark");
-            InstantiatePrefab("Assets/Prefabs/Level Components/UI/In - Game Canvas.prefab", scene);
-            InstantiatePrefab("Assets/Prefabs/UI/Pause Canvas.prefab", scene);
+            GameObject galleryObject = new("Production UI Fixture Gallery");
+            ParentToActiveZone(galleryObject);
+            GameObject hud = InstantiatePrefab("Assets/Prefabs/Level Components/UI/In - Game Canvas.prefab", scene);
+            GameObject pause = InstantiatePrefab("Assets/Prefabs/UI/Pause Canvas.prefab", scene);
+            if (hud == null || pause == null)
+                throw new FileNotFoundException("UI Systems Lab requires the production HUD and Pause Canvas prefabs.");
+            hud.name = "Production HUD Fixture";
+            pause.name = "Production Pause Overlay Fixture";
+            hud.transform.SetParent(galleryObject.transform, true);
+            pause.transform.SetParent(galleryObject.transform, true);
+            galleryObject.AddComponent<TestCampusUiFixtureGallery>().Configure(hud, pause);
             Label("UI STATE GALLERY", new Vector3(70, 7, -43), Color.magenta, 0.5f);
             Save(scene);
         }

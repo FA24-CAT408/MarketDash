@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Unity.Cinemachine;
+using UnityEngine.UIElements;
 
 namespace CrazyMarket.TestCampus.Editor
 {
@@ -79,6 +80,20 @@ namespace CrazyMarket.TestCampus.Editor
                         errors.Add($"{scene.name} must contain exactly one CinemachineBrain.");
                     if (Object.FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
                         errors.Add($"{scene.name} must contain a CinemachineCamera.");
+                    UIDocument[] documents = Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    if (documents.Length != 1)
+                        errors.Add($"{scene.name} must contain exactly one Test Campus UIDocument; found {documents.Length}.");
+                    else
+                    {
+                        if (documents[0].panelSettings == null)
+                            errors.Add($"{scene.name} UIDocument has no PanelSettings.");
+                        if (documents[0].visualTreeAsset == null)
+                            errors.Add($"{scene.name} UIDocument has no UI Toolkit visual tree.");
+                        if (documents[0].GetComponent<TestCampusControlPanel>() == null)
+                            errors.Add($"{scene.name} UIDocument must be owned by TestCampusControlPanel.");
+                    }
+                    if (Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 1)
+                        errors.Add($"{scene.name} must retain exactly one shared EventSystem for production UI fixtures.");
                 }
             }
             if (!string.IsNullOrEmpty(original)) EditorSceneManager.OpenScene(original, OpenSceneMode.Single);

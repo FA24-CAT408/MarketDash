@@ -3,8 +3,6 @@
   "rootNamespace": "CrazyMarket.TestCampus",
   "references": [
     "Unity.Cinemachine",
-    "Unity.UGUI",
-    "Unity.InputSystem",
-    "Unity.TextMeshPro"
+    "Unity.InputSystem"
   ]
 }
