@@ -166,6 +166,39 @@ UI_CHANGELOG = (
     },
 )
 
+INTEGRATION_CHANGELOG = (
+    {
+        "type": "FIXED",
+        "title": "Integration is reachable through the normal campus flow",
+        "detail": "Core now loads the seventh scene, the Integration button resolves its spawn, and Build Settings retain the full ordered campus.",
+        "file": "Assets/TestCampus/Scenes/TestCampus_Core.unity · ProjectSettings/EditorBuildSettings.asset",
+    },
+    {
+        "type": "NEW",
+        "title": "One component owns the cross-system scenario",
+        "detail": "A focused adapter coordinates production NPC, light, moving-platform, and collectible fixtures while exposing concise diagnostics.",
+        "file": "Assets/TestCampus/Runtime/TestCampusIntegrationScenario.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "Low, Normal, and Stress now change real load",
+        "detail": "Presets scale active NPCs and lights and include or remove the moving platform instead of changing only a label.",
+        "file": "Assets/TestCampus/Runtime/TestCampusIntegrationScenario.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "The production platform and collectible are on the route",
+        "detail": "The moving platform is inside the arena, and a glowing production Apple provides a real pickup/reset interaction.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "REMOVED",
+        "title": "Deferred automated tests are out of this layer",
+        "detail": "The added EditMode test assembly was removed; validation remains an interactive local Unity smoke and action pass.",
+        "file": "Assets/TestCampus/Tests/EditMode",
+    },
+)
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -395,9 +428,11 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
                 ("LIGHTING_CHANGELOG", "Lighting changelog"),
                 ("NPC_CHANGELOG", "NPC interaction changelog"),
                 ("UI_CHANGELOG", "UI Toolkit changelog"),
+                ("INTEGRATION_CHANGELOG", "Integration changelog"),
                 ("LIGHTING_TOUR_STOPS", "Lighting screenshot tour"),
                 ("NPC_TOUR_STOPS", "NPC interaction screenshot tour"),
                 ("UI_TOUR_STOPS", "UI screenshot tour"),
+                ("INTEGRATION_TOUR_STOPS", "Integration screenshot tour"),
                 ("MOVEMENT_TOUR_STOPS", "Movement screenshot tour"),
                 ("changed-files", "Changed-files dashboard"),
                 ("TestCampus_Lighting.unity", "Lighting in Build Settings"),
@@ -410,6 +445,9 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
                 ("COLLECT_NPC_APPLE_PROBE", "Production Apple pickup proof"),
                 ("OPEN_UI_TOOLKIT_PROBE", "UI focus handoff proof"),
                 ("APPLY_UI_PRESET_PROBE", "Production UI fixture proof"),
+                ("APPLY_INTEGRATION_PRESET_PROBE", "Integration load preset proof"),
+                ("COLLECT_INTEGRATION_APPLE_PROBE", "Integration Apple pickup proof"),
+                ("TestCampusIntegrationScenario", "Integration scenario component"),
                 ("TestCampusControlPanel.uxml", "UI Toolkit document"),
                 ("TestCampusUiFixtureGallery", "Production UI fixture states"),
                 ("ScreenCapture.CaptureScreenshot", "Composed UI screenshot capture"),
@@ -441,6 +479,7 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
     priority_keys = {
         "Lighting changelog": 0,
         "UI Toolkit changelog": 0,
+        "Integration changelog": 0,
         "Lighting screenshot tour": 0,
         "UI screenshot tour": 0,
         "Movement screenshot tour": 0,
@@ -731,6 +770,71 @@ UI_TOUR_STOPS = (
     ("Bright production UI backdrop", 62, 1, -63, 0),
     ("Dark production UI backdrop", 78, 1, -63, 0),
 )
+
+INTEGRATION_TOUR_STOPS = (
+    ("Integration route — checkpoints 1 through 3", -24, 1, -109, 25),
+    ("Production NPC crossings and collectible", -9, 1, -91, 25),
+    ("Route finale and production moving platform", 13, 1, -72, 25),
+)
+
+APPLY_INTEGRATION_PRESET_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var scenario = UnityEngine.Object.FindAnyObjectByType<CrazyMarket.TestCampus.TestCampusIntegrationScenario>();
+var applied = controller != null && controller.ApplyPreset(CrazyMarket.TestCampus.TestZoneId.Integration, "{preset}");
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var npcs = System.Array.FindAll(all, item => item.name.StartsWith("Integration Crossing NPC") && item.scene.isLoaded);
+var platform = System.Array.Find(all, item => item.name == "Integration Production Moving Platform" && item.scene.isLoaded);
+var lights = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.Light>();
+var activeNpcCount = 0;
+foreach (var npc in npcs) if (npc.activeSelf) activeNpcCount++;
+var activeLightCount = 0;
+foreach (var light in lights) if (light.gameObject.scene.name == "TestCampus_Integration" && light.gameObject.activeSelf) activeLightCount++;
+return new {{ success = applied && scenario != null && platform != null,
+    activeNpcCount = activeNpcCount, activeLightCount = activeLightCount,
+    platformActive = platform != null && platform.activeSelf }};
+""".strip()
+
+READ_INTEGRATION_PLATFORM_PROBE = """
+var platform = UnityEngine.GameObject.Find("Integration Production Moving Platform");
+var mover = platform == null ? null : platform.GetComponentInChildren<MovingPlatform>(true);
+if (platform == null || mover == null) return new { success = false };
+var p = mover.transform.position;
+var insideArena = p.x >= -30f && p.x <= 30f && p.z >= -120f && p.z <= -50f && p.y >= -2f && p.y <= 25f;
+return new { success = true, active = platform.activeSelf, insideArena = insideArena,
+    x = p.x, y = p.y, z = p.z };
+""".strip()
+
+COLLECT_INTEGRATION_APPLE_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var apple = UnityEngine.GameObject.Find("Integration Route Apple");
+if (controller == null || controller.PlayerRoot == null || apple == null)
+    return new { success = false, reason = "Player or Integration Apple unavailable" };
+var adapter = controller.PlayerRoot.GetComponent<CrazyMarket.TestCampus.TestCampusPlayerAdapter>();
+if (adapter != null) adapter.TeleportTo(apple.transform.position, UnityEngine.Quaternion.identity);
+else controller.PlayerRoot.SetPositionAndRotation(apple.transform.position, UnityEngine.Quaternion.identity);
+UnityEngine.Physics.SyncTransforms();
+return new { success = true };
+""".strip()
+
+READ_INTEGRATION_APPLE_PROBE = """
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var apple = System.Array.Find(all, item => item.name == "Integration Route Apple" && item.scene.isLoaded);
+return new { success = apple != null, active = apple != null && apple.activeSelf };
+""".strip()
+
+RESET_INTEGRATION_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var reset = controller != null && controller.ResetZone(CrazyMarket.TestCampus.TestZoneId.Integration);
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var apple = System.Array.Find(all, item => item.name == "Integration Route Apple" && item.scene.isLoaded);
+var npcs = System.Array.FindAll(all, item => item.name.StartsWith("Integration Crossing NPC") && item.scene.isLoaded);
+var platform = System.Array.Find(all, item => item.name == "Integration Production Moving Platform" && item.scene.isLoaded);
+var activeNpcCount = 0;
+foreach (var npc in npcs) if (npc.activeSelf) activeNpcCount++;
+return new { success = reset && apple != null && apple.activeSelf && activeNpcCount == 2 && platform != null && platform.activeSelf,
+    appleActive = apple != null && apple.activeSelf, activeNpcCount = activeNpcCount,
+    platformActive = platform != null && platform.activeSelf };
+""".strip()
 
 OPEN_UI_TOOLKIT_PROBE = """
 var presenter = UnityEngine.Object.FindAnyObjectByType<CrazyMarket.TestCampus.TestCampusControlPanel>();
@@ -1036,6 +1140,7 @@ def command_unity_tour(args: argparse.Namespace) -> None:
             "Lighting": LIGHTING_TOUR_STOPS,
             "NPCInteraction": NPC_TOUR_STOPS,
             "UI": UI_TOUR_STOPS,
+            "Integration": INTEGRATION_TOUR_STOPS,
         }
         stops = stops_by_zone.get(args.zone, ())
         if not stops:
@@ -1225,6 +1330,94 @@ def command_unity_ui_toolkit(args: argparse.Namespace) -> None:
             stop_play_mode()
 
 
+def command_unity_integration(args: argparse.Namespace) -> None:
+    state = load_state()
+    group = "integration-action"
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != group]
+    set_check(state, group, "running", "Verifying Integration load presets, platform motion, Apple pickup, and Reset.")
+    playing = False
+    try:
+        ensure_editor()
+        stop_play_mode()
+        unity_command("open_scene", path=args.scene, additive=False)
+        unity_command("clear_console")
+        unity_command("set_autotick", enable=True, interval_ms=100)
+        unity_command("editor_play")
+        playing = True
+        if wait_for_loaded_scenes(args.expected_scenes) < args.expected_scenes:
+            raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes.")
+        teleport = unity_command("eval", code=TELEPORT_PROBE.format(zone="Integration"), timeout=30)
+        if not teleport.get("success") or not teleport.get("result", {}).get("success"):
+            raise RuntimeError(f"Integration teleport failed: {json.dumps(teleport, indent=2)}")
+
+        expected = (
+            ("Low", 1, 1, False),
+            ("Normal", 2, 2, True),
+            ("Stress", 4, None, True),
+        )
+        stress_lights = 0
+        for preset, npc_count, light_count, platform_active in expected:
+            applied = unity_command("eval", code=APPLY_INTEGRATION_PRESET_PROBE.format(preset=preset), timeout=30)
+            result = applied.get("result", {})
+            valid_lights = result.get("activeLightCount") == light_count if light_count is not None else result.get("activeLightCount", 0) >= 2
+            if (not applied.get("success") or not result.get("success")
+                    or result.get("activeNpcCount") != npc_count
+                    or not valid_lights
+                    or result.get("platformActive") is not platform_active):
+                raise RuntimeError(f"Integration preset {preset} produced the wrong load: {json.dumps(applied, indent=2)}")
+            stress_lights = max(stress_lights, int(result.get("activeLightCount", 0)))
+            time.sleep(1)
+            capture_runtime_screen_evidence(state, f"{preset.upper()}: real Integration fixture load", group)
+
+        normal = unity_command("eval", code=APPLY_INTEGRATION_PRESET_PROBE.format(preset="Normal"), timeout=30)
+        if not normal.get("success") or not normal.get("result", {}).get("success"):
+            raise RuntimeError("Could not restore Normal Integration load before action checks.")
+        platform_start = unity_command("eval", code=READ_INTEGRATION_PLATFORM_PROBE, timeout=30)
+        start = platform_start.get("result", {})
+        if not platform_start.get("success") or not start.get("success") or not start.get("insideArena"):
+            raise RuntimeError(f"Integration moving platform started outside the arena: {json.dumps(platform_start, indent=2)}")
+        start_position = (float(start.get("x", 0)), float(start.get("y", 0)), float(start.get("z", 0)))
+        moved = 0.0
+        platform_later = None
+        deadline = time.time() + 5
+        while time.time() < deadline and moved < 0.1:
+            time.sleep(0.5)
+            platform_later = unity_command("eval", code=READ_INTEGRATION_PLATFORM_PROBE, timeout=30)
+            later = platform_later.get("result", {})
+            if not platform_later.get("success") or not later.get("success") or not later.get("insideArena"):
+                raise RuntimeError(f"Integration moving platform left the arena: {json.dumps(platform_later, indent=2)}")
+            moved = sum((float(later.get(axis, 0)) - start_position[index]) ** 2 for index, axis in enumerate(("x", "y", "z"))) ** 0.5
+        if moved < 0.1:
+            raise RuntimeError(f"Integration moving platform moved only {moved:.2f} m.")
+
+        unity_command("eval", code=MOVE_PLAYER_PROBE.format(x=-3, y=1, z=-90, yaw=0), timeout=30)
+        time.sleep(1)
+        capture_runtime_screen_evidence(state, "BEFORE: production Apple on the Integration route", group)
+        collected = unity_command("eval", code=COLLECT_INTEGRATION_APPLE_PROBE, timeout=30)
+        if not collected.get("success") or not collected.get("result", {}).get("success"):
+            raise RuntimeError(f"Could not stage Integration Apple pickup: {json.dumps(collected, indent=2)}")
+        time.sleep(2)
+        apple = unity_command("eval", code=READ_INTEGRATION_APPLE_PROBE, timeout=30)
+        if not apple.get("success") or apple.get("result", {}).get("active", True):
+            raise RuntimeError(f"Integration Apple stayed active after pickup: {json.dumps(apple, indent=2)}")
+        capture_runtime_screen_evidence(state, "AFTER: production Apple collected", group)
+
+        reset = unity_command("eval", code=RESET_INTEGRATION_PROBE, timeout=30)
+        if not reset.get("success") or not reset.get("result", {}).get("success"):
+            raise RuntimeError(f"Integration Reset did not restore Normal load: {json.dumps(reset, indent=2)}")
+        runtime_errors = unity_command("get_console_logs", severity="Error", limit=200)
+        if runtime_errors.get("total", 0):
+            raise RuntimeError(f"Integration action validation produced {runtime_errors['total']} Console errors.")
+        set_check(state, group, "passed",
+                  f"Low/Normal/Stress changed real load, {stress_lights} Stress lights were active, platform moved {moved:.1f} m inside the arena, Apple pickup/reset passed, and the Console stayed clean.")
+    except Exception as error:
+        set_check(state, group, "failed", str(error))
+        raise
+    finally:
+        if playing:
+            stop_play_mode()
+
+
 def command_unity_npc_interaction(args: argparse.Namespace) -> None:
     state = load_state()
     group = "npcinteraction-action"
@@ -1307,6 +1500,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "stack/test-campus-lighting": LIGHTING_CHANGELOG,
                 "stack/test-campus-npc-interaction": NPC_CHANGELOG,
                 "stack/test-campus-ui": UI_CHANGELOG,
+                "stack/test-campus-integration": INTEGRATION_CHANGELOG,
             }
             payload["changelog"] = changelogs.get(payload.get("branch"), ())
             body = json.dumps(payload).encode("utf-8")
@@ -1419,7 +1613,7 @@ def parser() -> argparse.ArgumentParser:
 
     tour = subcommands.add_parser("unity-tour", help="Capture an in-game screenshot tour of a loaded campus zone.")
     tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
-    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting", "NPCInteraction", "UI"))
+    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting", "NPCInteraction", "UI", "Integration"))
     tour.add_argument("--expected-scenes", type=int, default=3)
     tour.set_defaults(func=command_unity_tour)
 
@@ -1434,6 +1628,12 @@ def parser() -> argparse.ArgumentParser:
     ui_toolkit.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
     ui_toolkit.add_argument("--expected-scenes", type=int, default=6)
     ui_toolkit.set_defaults(func=command_unity_ui_toolkit)
+
+    integration = subcommands.add_parser(
+        "unity-integration", help="Verify Integration load presets, platform motion, Apple pickup, and Reset.")
+    integration.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
+    integration.add_argument("--expected-scenes", type=int, default=7)
+    integration.set_defaults(func=command_unity_integration)
 
     npc_interaction = subcommands.add_parser(
         "unity-npc-interaction", help="Verify and capture production Apple pickup and NPC-room Reset.")
