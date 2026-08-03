@@ -20,7 +20,8 @@ from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parents[2]
-STATE_DIR = ROOT / "Temp" / "LocalReview"
+# Unity recreates Temp when the Editor launches, so review history must live outside it.
+STATE_DIR = ROOT / ".local-review"
 STATE_PATH = STATE_DIR / "state.json"
 EVIDENCE_DIR = STATE_DIR / "evidence"
 DASHBOARD_PATH = Path(__file__).with_name("dashboard.html")
@@ -126,6 +127,45 @@ NPC_CHANGELOG = (
     },
 )
 
+UI_CHANGELOG = (
+    {
+        "type": "NEW",
+        "title": "Test Campus controls now use UI Toolkit",
+        "detail": "A configured UIDocument renders a UXML hierarchy styled by USS; the presenter only binds campus commands and live state.",
+        "file": "Assets/TestCampus/UI/TestCampusControlPanel.uxml · Assets/TestCampus/UI/TestCampusControlPanel.uss · Assets/TestCampus/Runtime/TestCampusControlPanel.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "The UI room is reachable",
+        "detail": "Core loads the UI scene as the sixth campus scene and Build Settings include it after NPC Interaction.",
+        "file": "Assets/TestCampus/Scenes/TestCampus_Core.unity · ProjectSettings/EditorBuildSettings.asset",
+    },
+    {
+        "type": "NEW",
+        "title": "Production UI fixtures have honest states",
+        "detail": "Low hides both fixtures, Normal shows the production HUD, Stress adds the production pause overlay, and Reset hides both.",
+        "file": "Assets/TestCampus/Runtime/TestCampusUiFixtureGallery.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "UI focus still protects gameplay input",
+        "detail": "Opening the Toolkit panel exposes the cursor and disables player movement; closing it restores gameplay focus.",
+        "file": "Assets/TestCampus/Runtime/TestCampusControlPanel.cs",
+    },
+    {
+        "type": "VERIFIED",
+        "title": "UI Toolkit setup is now a validation gate",
+        "detail": "Core must contain exactly one UIDocument with PanelSettings, a visual tree, a presenter, and the shared EventSystem.",
+        "file": "Assets/TestCampus/Editor/TestCampusValidator.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "Moving platforms initialize before physics",
+        "detail": "Unity validation exposed a lifecycle race; the production mover now assigns its controller in Awake before the first physics simulation.",
+        "file": "Assets/Scripts/MovingPlatform.cs",
+    },
+)
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -207,8 +247,17 @@ def capture_evidence(state: dict[str, Any], label: str, view: str, group: str | 
     normalized_view = view.lower()
     if normalized_view == "scene":
         unity_command("menu", path="Window/General/Scene")
-    result = unity_command(
-        "screenshot", view=normalized_view, output=output, width=1280, height=720)
+    result = None
+    for attempt in range(3):
+        try:
+            result = unity_command(
+                "screenshot", view=normalized_view, output=output, width=1280, height=720)
+            break
+        except RuntimeError:
+            if attempt == 2:
+                raise
+            ensure_editor()
+            time.sleep(1)
     if isinstance(result, dict) and result.get("success") is False:
         raise RuntimeError(result.get("message") or f"Unity could not capture {view} view.")
     if not output.exists():
@@ -226,6 +275,38 @@ def capture_evidence(state: dict[str, Any], label: str, view: str, group: str | 
     save_state(state)
 
 
+def capture_runtime_screen_evidence(state: dict[str, Any], label: str, group: str) -> None:
+    """Capture the composed player frame, including UI Toolkit overlays."""
+    session = state.get("session") or "unscoped"
+    session_dir = EVIDENCE_DIR / session
+    session_dir.mkdir(parents=True, exist_ok=True)
+    sequence = len(state.setdefault("evidence", [])) + 1
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-") or "capture"
+    filename = f"{sequence:02d}-{slug}.png"
+    output = session_dir / filename
+    code = (
+        f"UnityEngine.ScreenCapture.CaptureScreenshot({json.dumps(str(output))}, 1); "
+        "return new { success = true };"
+    )
+    result = unity_command("eval", code=code, timeout=30)
+    if not result.get("success") or not result.get("result", {}).get("success"):
+        raise RuntimeError(f"Runtime screenshot failed: {json.dumps(result, indent=2)}")
+    deadline = time.time() + 10
+    while time.time() < deadline and not output.exists():
+        time.sleep(0.25)
+    if not output.exists():
+        raise RuntimeError(f"Unity did not create composed screenshot: {output}")
+    state["evidence"].append({
+        "label": label,
+        "view": "Game + UI Toolkit",
+        "phase": state.get("currentPhase", "unity"),
+        "url": f"/evidence/{session}/{filename}",
+        "capturedAt": now(),
+        "group": group,
+    })
+    save_state(state)
+
+
 def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
     base = state.get("base")
     if not base:
@@ -240,6 +321,7 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
         return (
             path.startswith("Assets/TestCampus/")
             or path.startswith("Tools/LocalReview/")
+            or path == "Assets/Scripts/MovingPlatform.cs"
             or path == "ProjectSettings/EditorBuildSettings.asset"
         )
 
@@ -284,6 +366,7 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
         snippet_allowed = (
             (item["path"].startswith("Assets/TestCampus/") and suffix in (".cs", ".asmdef"))
             or (item["path"].startswith("Tools/LocalReview/") and suffix in (".py", ".html", ".md"))
+            or item["path"] == "Assets/Scripts/MovingPlatform.cs"
             or item["path"] == "ProjectSettings/EditorBuildSettings.asset"
         )
         if not snippet_allowed:
@@ -311,8 +394,10 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
                 ("def collect_change_summary", "Changed files and snippets"),
                 ("LIGHTING_CHANGELOG", "Lighting changelog"),
                 ("NPC_CHANGELOG", "NPC interaction changelog"),
+                ("UI_CHANGELOG", "UI Toolkit changelog"),
                 ("LIGHTING_TOUR_STOPS", "Lighting screenshot tour"),
                 ("NPC_TOUR_STOPS", "NPC interaction screenshot tour"),
+                ("UI_TOUR_STOPS", "UI screenshot tour"),
                 ("MOVEMENT_TOUR_STOPS", "Movement screenshot tour"),
                 ("changed-files", "Changed-files dashboard"),
                 ("TestCampus_Lighting.unity", "Lighting in Build Settings"),
@@ -323,6 +408,12 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
                 ("includePresetProvider", "Zone preset capability"),
                 ("TestResettableActivation", "Fixture activation reset"),
                 ("COLLECT_NPC_APPLE_PROBE", "Production Apple pickup proof"),
+                ("OPEN_UI_TOOLKIT_PROBE", "UI focus handoff proof"),
+                ("APPLY_UI_PRESET_PROBE", "Production UI fixture proof"),
+                ("TestCampusControlPanel.uxml", "UI Toolkit document"),
+                ("TestCampusUiFixtureGallery", "Production UI fixture states"),
+                ("ScreenCapture.CaptureScreenshot", "Composed UI screenshot capture"),
+                ("private void Awake", "Moving platform physics initialization"),
                 ("TELEPORT_PROBE", "Screenshot zone teleport"),
             )
             hinted = False
@@ -349,7 +440,9 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
     unique_snippets = list({(item["file"], item["key"]): item for item in snippets}.values())
     priority_keys = {
         "Lighting changelog": 0,
+        "UI Toolkit changelog": 0,
         "Lighting screenshot tour": 0,
+        "UI screenshot tour": 0,
         "Movement screenshot tour": 0,
         "Changed files and snippets": 0,
         "Changed-files dashboard": 0,
@@ -633,6 +726,77 @@ NPC_TOUR_STOPS = (
     ("Glowing production collectible line", -84, 1, -44, 70),
 )
 
+UI_TOUR_STOPS = (
+    ("UI Systems Lab — full contrast gallery", 70, 1, -66, 0),
+    ("Bright production UI backdrop", 62, 1, -63, 0),
+    ("Dark production UI backdrop", 78, 1, -63, 0),
+)
+
+OPEN_UI_TOOLKIT_PROBE = """
+var presenter = UnityEngine.Object.FindAnyObjectByType<CrazyMarket.TestCampus.TestCampusControlPanel>();
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+if (presenter == null || controller == null || controller.PlayerRoot == null)
+    return new { success = false, reason = "Presenter or player unavailable" };
+var open = presenter.GetType().GetMethod("SetPanelOpen", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+open.Invoke(presenter, new object[] { true });
+var document = presenter.GetComponent<UnityEngine.UIElements.UIDocument>();
+var panel = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.ScrollView>(document.rootVisualElement, "campus-panel");
+var gameplayHud = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.VisualElement>(document.rootVisualElement, "gameplay-hud");
+var playerController = controller.PlayerRoot.GetComponent("KCCPlayerController");
+var canMoveField = playerController == null ? null : playerController.GetType().GetField("canMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+var canMove = canMoveField == null || (bool)canMoveField.GetValue(playerController);
+return new { success = panel.resolvedStyle.display == UnityEngine.UIElements.DisplayStyle.Flex && !canMove,
+    panel = panel.resolvedStyle.display.ToString(), gameplayHud = gameplayHud.resolvedStyle.display.ToString(),
+    cursorVisible = UnityEngine.Cursor.visible, canMove = canMove };
+""".strip()
+
+CLOSE_UI_TOOLKIT_PROBE = """
+var presenter = UnityEngine.Object.FindAnyObjectByType<CrazyMarket.TestCampus.TestCampusControlPanel>();
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+if (presenter == null || controller == null || controller.PlayerRoot == null) return new { success = false };
+var close = presenter.GetType().GetMethod("SetPanelOpen", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+close.Invoke(presenter, new object[] { false });
+var document = presenter.GetComponent<UnityEngine.UIElements.UIDocument>();
+var panel = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.ScrollView>(document.rootVisualElement, "campus-panel");
+var gameplayHud = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.VisualElement>(document.rootVisualElement, "gameplay-hud");
+var playerController = controller.PlayerRoot.GetComponent("KCCPlayerController");
+var canMoveField = playerController == null ? null : playerController.GetType().GetField("canMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+var canMove = canMoveField == null || (bool)canMoveField.GetValue(playerController);
+return new { success = panel.resolvedStyle.display == UnityEngine.UIElements.DisplayStyle.None && canMove,
+    panel = panel.resolvedStyle.display.ToString(), gameplayHud = gameplayHud.resolvedStyle.display.ToString(), canMove = canMove };
+""".strip()
+
+APPLY_UI_PRESET_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var applied = controller != null && controller.ApplyPreset(CrazyMarket.TestCampus.TestZoneId.UI, "{preset}");
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var hud = System.Array.Find(all, item => item.name == "Production HUD Fixture" && item.scene.isLoaded);
+var pause = System.Array.Find(all, item => item.name == "Production Pause Overlay Fixture" && item.scene.isLoaded);
+return new {{ success = applied && hud != null && pause != null,
+    hudActive = hud != null && hud.activeSelf, pauseActive = pause != null && pause.activeSelf }};
+""".strip()
+
+RESET_UI_FIXTURES_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var reset = controller != null && controller.ResetZone(CrazyMarket.TestCampus.TestZoneId.UI);
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var hud = System.Array.Find(all, item => item.name == "Production HUD Fixture" && item.scene.isLoaded);
+var pause = System.Array.Find(all, item => item.name == "Production Pause Overlay Fixture" && item.scene.isLoaded);
+return new { success = reset && hud != null && pause != null && !hud.activeSelf && !pause.activeSelf,
+    hudActive = hud != null && hud.activeSelf, pauseActive = pause != null && pause.activeSelf };
+""".strip()
+
+TOGGLE_UI_PAUSE_PROBE = """
+var presenter = UnityEngine.Object.FindAnyObjectByType<CrazyMarket.TestCampus.TestCampusControlPanel>();
+if (presenter == null) return new { success = false, reason = "Presenter unavailable" };
+var toggle = presenter.GetType().GetMethod("TogglePause", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+toggle.Invoke(presenter, null);
+var document = presenter.GetComponent<UnityEngine.UIElements.UIDocument>();
+var panel = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.ScrollView>(document.rootVisualElement, "campus-panel");
+return new { success = true, timeScale = UnityEngine.Time.timeScale,
+    panel = panel.resolvedStyle.display.ToString(), cursorVisible = UnityEngine.Cursor.visible };
+""".strip()
+
 COLLECT_NPC_APPLE_PROBE = """
 var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
 var apple = System.Array.Find(UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>(),
@@ -871,6 +1035,7 @@ def command_unity_tour(args: argparse.Namespace) -> None:
             "Movement": MOVEMENT_TOUR_STOPS,
             "Lighting": LIGHTING_TOUR_STOPS,
             "NPCInteraction": NPC_TOUR_STOPS,
+            "UI": UI_TOUR_STOPS,
         }
         stops = stops_by_zone.get(args.zone, ())
         if not stops:
@@ -972,6 +1137,94 @@ def command_unity_action_tour(args: argparse.Namespace) -> None:
             stop_play_mode()
 
 
+def command_unity_ui_toolkit(args: argparse.Namespace) -> None:
+    state = load_state()
+    group = "ui-action"
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != group]
+    set_check(state, group, "running", "Verifying UI Toolkit focus handoff and production fixture states.")
+    playing = False
+    try:
+        ensure_editor()
+        stop_play_mode()
+        unity_command("open_scene", path=args.scene, additive=False)
+        unity_command("clear_console")
+        unity_command("set_autotick", enable=True, interval_ms=100)
+        unity_command("editor_play")
+        playing = True
+        if wait_for_loaded_scenes(args.expected_scenes) < args.expected_scenes:
+            raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes.")
+
+        teleport = unity_command("eval", code=TELEPORT_PROBE.format(zone="UI"), timeout=30)
+        if not teleport.get("success") or not teleport.get("result", {}).get("success"):
+            raise RuntimeError(f"UI room teleport failed: {json.dumps(teleport, indent=2)}")
+        time.sleep(1)
+
+        opened = unity_command("eval", code=OPEN_UI_TOOLKIT_PROBE, timeout=30)
+        opened_state = opened.get("result", {})
+        if not opened.get("success") or not opened_state.get("success") or not opened_state.get("cursorVisible"):
+            raise RuntimeError(f"UI Toolkit panel did not take gameplay focus: {json.dumps(opened, indent=2)}")
+        time.sleep(1)
+        capture_runtime_screen_evidence(
+            state, "UI Toolkit control panel — gameplay input paused", group)
+
+        closed = unity_command("eval", code=CLOSE_UI_TOOLKIT_PROBE, timeout=30)
+        if not closed.get("success") or not closed.get("result", {}).get("success"):
+            raise RuntimeError(f"UI Toolkit panel did not restore gameplay focus: {json.dumps(closed, indent=2)}")
+        time.sleep(1)
+        capture_runtime_screen_evidence(
+            state, "UI Toolkit gameplay HUD — movement restored", group)
+
+        expected_states = (
+            ("Normal", True, False, "NORMAL: Production HUD fixture"),
+            ("Stress", True, True, "STRESS: Production HUD and pause overlay"),
+        )
+        for preset, expected_hud, expected_pause, label in expected_states:
+            applied = unity_command("eval", code=APPLY_UI_PRESET_PROBE.format(preset=preset), timeout=30)
+            result = applied.get("result", {})
+            if (not applied.get("success") or not result.get("success")
+                    or result.get("hudActive") is not expected_hud
+                    or result.get("pauseActive") is not expected_pause):
+                raise RuntimeError(f"UI preset {preset} produced the wrong fixtures: {json.dumps(applied, indent=2)}")
+            time.sleep(1)
+            capture_runtime_screen_evidence(state, label, group)
+
+        reset = unity_command("eval", code=RESET_UI_FIXTURES_PROBE, timeout=30)
+        if not reset.get("success") or not reset.get("result", {}).get("success"):
+            raise RuntimeError(f"UI fixture reset failed: {json.dumps(reset, indent=2)}")
+        time.sleep(1)
+        capture_runtime_screen_evidence(state, "RESET: Production UI fixtures hidden", group)
+
+        paused = unity_command("eval", code=TOGGLE_UI_PAUSE_PROBE, timeout=30)
+        paused_state = paused.get("result", {})
+        if (not paused.get("success") or not paused_state.get("success")
+                or float(paused_state.get("timeScale", 1)) != 0
+                or paused_state.get("panel") != "Flex"
+                or not paused_state.get("cursorVisible")):
+            raise RuntimeError(f"Pause did not preserve UI interaction: {json.dumps(paused, indent=2)}")
+        resumed = unity_command("eval", code=TOGGLE_UI_PAUSE_PROBE, timeout=30)
+        resumed_state = resumed.get("result", {})
+        if (not resumed.get("success") or not resumed_state.get("success")
+                or float(resumed_state.get("timeScale", 0)) != 1
+                or resumed_state.get("panel") != "None"):
+            raise RuntimeError(f"Resume did not restore simulation state: {json.dumps(resumed, indent=2)}")
+
+        runtime_errors = unity_command("get_console_logs", severity="Error", limit=200)
+        if runtime_errors.get("total", 0):
+            raise RuntimeError(f"UI Toolkit validation produced {runtime_errors['total']} Console errors.")
+        set_check(
+            state,
+            group,
+            "passed",
+            "Panel focus handoff, pause/resume, gameplay HUD, Normal/Stress fixture states, Reset, and composed screenshots passed with zero Console errors.",
+        )
+    except Exception as error:
+        set_check(state, group, "failed", str(error))
+        raise
+    finally:
+        if playing:
+            stop_play_mode()
+
+
 def command_unity_npc_interaction(args: argparse.Namespace) -> None:
     state = load_state()
     group = "npcinteraction-action"
@@ -1053,6 +1306,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "stack/test-campus-movement": MOVEMENT_CHANGELOG,
                 "stack/test-campus-lighting": LIGHTING_CHANGELOG,
                 "stack/test-campus-npc-interaction": NPC_CHANGELOG,
+                "stack/test-campus-ui": UI_CHANGELOG,
             }
             payload["changelog"] = changelogs.get(payload.get("branch"), ())
             body = json.dumps(payload).encode("utf-8")
@@ -1165,7 +1419,7 @@ def parser() -> argparse.ArgumentParser:
 
     tour = subcommands.add_parser("unity-tour", help="Capture an in-game screenshot tour of a loaded campus zone.")
     tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
-    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting", "NPCInteraction"))
+    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting", "NPCInteraction", "UI"))
     tour.add_argument("--expected-scenes", type=int, default=3)
     tour.set_defaults(func=command_unity_tour)
 
@@ -1174,6 +1428,12 @@ def parser() -> argparse.ArgumentParser:
     action_tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
     action_tour.add_argument("--expected-scenes", type=int, default=3)
     action_tour.set_defaults(func=command_unity_action_tour)
+
+    ui_toolkit = subcommands.add_parser(
+        "unity-ui-toolkit", help="Verify and capture UI Toolkit focus and production UI fixture states.")
+    ui_toolkit.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
+    ui_toolkit.add_argument("--expected-scenes", type=int, default=6)
+    ui_toolkit.set_defaults(func=command_unity_ui_toolkit)
 
     npc_interaction = subcommands.add_parser(
         "unity-npc-interaction", help="Verify and capture production Apple pickup and NPC-room Reset.")
