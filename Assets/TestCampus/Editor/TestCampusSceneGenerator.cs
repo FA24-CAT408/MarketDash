@@ -380,20 +380,65 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateNpcInteraction()
         {
             Scene scene = NewZone(TestZoneId.NPCInteraction, "NPC and Interaction Sandbox", new Vector3(-70, 0, -55), new Vector3(45, 1, 60), "NPC",
-                "Exercise production NPC and interaction prefabs across open lanes, obstructions, range tests, and count presets.");
-            MoveDefaultSpawn(scene, new Vector3(-70, 1, -72));
+                "Watch the three production NPC patrol lanes, then walk through the glowing apple line to collect each item. Reset restores every apple.",
+                includePresetProvider: false);
+            MoveDefaultSpawn(scene, new Vector3(-88, 1, -78));
+
+            GameObject npcGroup = new("NPC Patrol Lanes");
+            ParentToActiveZone(npcGroup);
+            string[] npcNames = { "West Patrol NPC", "Obstructed Center Patrol NPC", "East Patrol NPC" };
             for (int i = 0; i < 3; i++)
             {
                 GameObject npc = InstantiatePrefab("Assets/Prefabs/NPC.prefab", scene);
                 if (npc != null)
-                    npc.transform.position = new Vector3(-80 + i * 10, 1, -55);
+                {
+                    npc.name = npcNames[i];
+                    npc.transform.position = new Vector3(-80 + i * 10, 0, -82);
+                    Collider npcCollider = npc.GetComponentInChildren<Collider>();
+                    if (npcCollider != null)
+                        npc.transform.position += Vector3.up * -npcCollider.bounds.min.y;
+                    npc.transform.SetParent(npcGroup.transform, true);
+                    npc.AddComponent<TestResettableActivation>();
+                }
             }
+
+            GameObject itemGroup = new("Collectible Apple Line");
+            ParentToActiveZone(itemGroup);
             for (int i = 0; i < 5; i++)
             {
                 GameObject item = InstantiatePrefab("Assets/Prefabs/Items/Apple.prefab", scene);
-                if (item != null) item.transform.position = new Vector3(-82 + i * 6, 1, -40);
+                if (item == null) continue;
+
+                item.name = $"Collectible Apple {i + 1}";
+                item.transform.position = new Vector3(-82 + i * 6, 1, -40);
+                item.transform.SetParent(itemGroup.transform, true);
+                item.AddComponent<TestResettableActivation>();
+
+                Transform glowObject = null;
+                foreach (Transform child in item.GetComponentsInChildren<Transform>(true))
+                    if (child.name == "Glow") glowObject = child;
+                if (glowObject == null)
+                    throw new System.InvalidOperationException("Apple.prefab must retain its Glow child.");
+                glowObject.gameObject.SetActive(true);
+
+                Component productionItem = item.GetComponent("Item");
+                if (productionItem == null)
+                    throw new System.InvalidOperationException("Apple.prefab must retain its production Item component.");
+
+                SerializedObject serializedItem = new(productionItem);
+                SerializedProperty collectable = serializedItem.FindProperty("isCollectable");
+                SerializedProperty glow = serializedItem.FindProperty("glow");
+                if (collectable == null || glow == null)
+                    throw new System.InvalidOperationException("Production Item must expose isCollectable and glow fields.");
+                collectable.boolValue = true;
+                glow.boolValue = true;
+                serializedItem.ApplyModifiedPropertiesWithoutUndo();
             }
-            Cube("Line of Sight Wall", new Vector3(-70, 2, -48), new Vector3(12, 4, 0.5f), "NPC");
+
+            Cube("Physical Obstruction Wall", new Vector3(-70, 2, -48), new Vector3(12, 4, 0.5f), "NPC");
+            Label("NPC PATROL LANES", new Vector3(-82, 4, -80), Color.white, 0.2f);
+            Label("PHYSICAL OBSTRUCTION", new Vector3(-70, 4.8f, -48.4f), Color.yellow, 0.2f);
+            Label("COLLECTIBLE APPLES — WALK THROUGH", new Vector3(-70, 3, -38), Color.green, 0.2f);
             Save(scene);
         }
 

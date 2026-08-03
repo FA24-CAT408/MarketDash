@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/TestCampus/Scenes/TestCampus_Lighting.unity
     guid: d22abeb832c714ba190d73042279e5e1
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_NPCInteraction.unity
+    guid: 33080b8ce28604e8b843eb368fdff5ca
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: dc6e5ad0aa96e4795b81b665f13eeb52,
       type: 2}
