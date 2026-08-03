@@ -57,6 +57,17 @@ namespace CrazyMarket.TestCampus.Editor
                     if (Object.FindAnyObjectByType<TestCampusController>() != null) errors.Add($"{scene.name} owns a forbidden TestCampusController.");
                     if (Object.FindAnyObjectByType<EventSystem>() != null) errors.Add($"{scene.name} owns a forbidden EventSystem.");
                     if (Object.FindAnyObjectByType<CinemachineBrain>() != null) errors.Add($"{scene.name} owns a forbidden CinemachineBrain.");
+                    if (id == TestZoneId.Integration)
+                    {
+                        if (Object.FindObjectsByType<TestCampusIntegrationScenario>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 1)
+                            errors.Add($"{scene.name} must contain exactly one TestCampusIntegrationScenario.");
+                        if (GameObject.Find("Integration Production Moving Platform") == null)
+                            errors.Add($"{scene.name} must contain its production moving platform inside the route.");
+                        if (GameObject.Find("Integration Route Apple") == null)
+                            errors.Add($"{scene.name} must contain its production collectible interaction.");
+                        if (Object.FindObjectsByType<TestCampusFixtureGuard>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
+                            errors.Add($"{scene.name} contains obsolete TestCampusFixtureGuard components; regenerate it.");
+                    }
                 }
                 else
                 {

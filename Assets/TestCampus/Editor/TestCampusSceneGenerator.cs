@@ -503,21 +503,82 @@ namespace CrazyMarket.TestCampus.Editor
         private static void CreateIntegration()
         {
             Scene scene = NewZone(TestZoneId.Integration, "Integration and Performance Arena", new Vector3(0, 0, -85), new Vector3(60, 1, 70), "Integration",
-                "Follow checkpoints through movement, camera framing, NPC crossings, interactions, lights, moving platforms, and UI updates.");
+                "Follow the numbered route through height changes, production NPC crossings, a collectible, and a moving platform. Low/Normal/Stress scale real NPC, light, and platform load; F1 diagnostics report the active scenario.",
+                includePresetProvider: false);
+            MoveDefaultSpawn(scene, new Vector3(-24, 1, -109));
             for (int i = 0; i < 8; i++)
             {
                 Vector3 p = new(-24 + i * 7, 1 + (i % 3), -105 + i * 6);
                 Cube($"Checkpoint {i + 1}", p, new Vector3(4, 0.5f, 4), "Integration");
                 Label($"{i + 1}", p + Vector3.up * 2, Color.yellow, 0.35f);
             }
+
+            GameObject npcGroup = new("Production NPC Crossings");
+            ParentToActiveZone(npcGroup);
+            List<GameObject> npcs = new();
             for (int i = 0; i < 4; i++)
             {
                 GameObject npc = InstantiatePrefab("Assets/Prefabs/NPC.prefab", scene);
-                if (npc != null)
-                    npc.transform.position = new Vector3(-18 + i * 12, 1, -75);
+                if (npc == null)
+                    throw new FileNotFoundException("Integration requires the production NPC prefab.");
+                npc.name = $"Integration Crossing NPC {i + 1}";
+                npc.transform.position = new Vector3(-18 + i * 12, 0, -75);
+                Collider npcCollider = npc.GetComponentInChildren<Collider>();
+                if (npcCollider != null) npc.transform.position += Vector3.up * -npcCollider.bounds.min.y;
+                npc.transform.SetParent(npcGroup.transform, true);
+                npc.AddComponent<TestResettableActivation>();
+                npcs.Add(npc);
             }
-            InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
+
+            GameObject collectible = InstantiatePrefab("Assets/Prefabs/Items/Apple.prefab", scene);
+            if (collectible == null)
+                throw new FileNotFoundException("Integration requires the production Apple prefab.");
+            collectible.name = "Integration Route Apple";
+            collectible.transform.position = new Vector3(-3, 2, -87);
+            collectible.AddComponent<TestResettableActivation>();
+            ConfigureProductionCollectible(collectible);
+
+            GameObject movingPlatform = InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
+            if (movingPlatform == null)
+                throw new FileNotFoundException("Integration requires the production moving-platform prefab.");
+            movingPlatform.name = "Integration Production Moving Platform";
+            movingPlatform.transform.position = new Vector3(18, 2, -68);
+            movingPlatform.AddComponent<TestResettableActivation>();
+
+            GameObject scenarioObject = new("Integration Scenario");
+            ParentToActiveZone(scenarioObject);
+            List<GameObject> roomLights = new();
+            foreach (Light roomLight in _activeZoneRoot.GetComponentsInChildren<Light>(true))
+                roomLights.Add(roomLight.gameObject);
+            scenarioObject.AddComponent<TestCampusIntegrationScenario>()
+                .Configure(npcs.ToArray(), movingPlatform, roomLights.ToArray(), collectible);
+
+            Label("NPC CROSSINGS", new Vector3(0, 5, -76), Color.green, 0.25f);
+            Label("COLLECTIBLE", new Vector3(-3, 4, -87), Color.cyan, 0.25f);
+            Label("MOVING PLATFORM", new Vector3(18, 5, -68), Color.magenta, 0.25f);
             Save(scene);
+        }
+
+        private static void ConfigureProductionCollectible(GameObject item)
+        {
+            Transform glowObject = null;
+            foreach (Transform child in item.GetComponentsInChildren<Transform>(true))
+                if (child.name == "Glow") glowObject = child;
+            if (glowObject == null)
+                throw new System.InvalidOperationException("Apple.prefab must retain its Glow child.");
+            glowObject.gameObject.SetActive(true);
+
+            Component productionItem = item.GetComponent("Item");
+            if (productionItem == null)
+                throw new System.InvalidOperationException("Apple.prefab must retain its production Item component.");
+            SerializedObject serializedItem = new(productionItem);
+            SerializedProperty collectable = serializedItem.FindProperty("isCollectable");
+            SerializedProperty glow = serializedItem.FindProperty("glow");
+            if (collectable == null || glow == null)
+                throw new System.InvalidOperationException("Production Item must expose isCollectable and glow fields.");
+            collectable.boolValue = true;
+            glow.boolValue = true;
+            serializedItem.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Scene NewZone(TestZoneId id, string displayName, Vector3 center, Vector3 size, string material, string instructions,
