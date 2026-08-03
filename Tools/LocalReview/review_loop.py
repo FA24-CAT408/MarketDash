@@ -93,6 +93,39 @@ LIGHTING_CHANGELOG = (
     },
 )
 
+NPC_CHANGELOG = (
+    {
+        "type": "FIXED",
+        "title": "Apples are real production collectibles",
+        "detail": "Walking through a glowing apple now uses Item's normal trigger pickup, and Reset restores it.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "NPC patrols reset cleanly",
+        "detail": "The production spline walker now owns its enable/disable lifecycle, so campus Reset restarts each patrol without orphaned tweens.",
+        "file": "Assets/Scripts/NPCController.cs · Assets/TestCampus/Runtime/TestResettableActivation.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "The room only promises behavior it provides",
+        "detail": "Fake count presets and line-of-sight claims are gone; labeled groups describe patrol, physical obstruction, and collection fixtures.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "FIXED",
+        "title": "Large NPC colliders start above the floor",
+        "detail": "Placement is calculated from each production collider's bounds instead of a fragile hard-coded height.",
+        "file": "Assets/TestCampus/Editor/TestCampusSceneGenerator.cs",
+    },
+    {
+        "type": "VERIFIED",
+        "title": "NPC interaction passed the local Unity gates",
+        "detail": "The room loads through Core, production patrols move, apple pickup/reset works, and the Console remains clean.",
+        "file": "Tools/LocalReview/review_loop.py",
+    },
+)
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -277,14 +310,19 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
             key_hints = (
                 ("def collect_change_summary", "Changed files and snippets"),
                 ("LIGHTING_CHANGELOG", "Lighting changelog"),
+                ("NPC_CHANGELOG", "NPC interaction changelog"),
                 ("LIGHTING_TOUR_STOPS", "Lighting screenshot tour"),
+                ("NPC_TOUR_STOPS", "NPC interaction screenshot tour"),
                 ("MOVEMENT_TOUR_STOPS", "Movement screenshot tour"),
                 ("changed-files", "Changed-files dashboard"),
                 ("TestCampus_Lighting.unity", "Lighting in Build Settings"),
+                ("TestCampus_NPCInteraction.unity", "NPC interaction in Build Settings"),
                 ("TestCampus_Movement.unity", "Movement in Build Settings"),
                 ("Moving Platform.prefab", "Production moving platform fixture"),
                 ("Distance ", "Non-colliding distance markers"),
                 ("includePresetProvider", "Zone preset capability"),
+                ("TestResettableActivation", "Fixture activation reset"),
+                ("COLLECT_NPC_APPLE_PROBE", "Production Apple pickup proof"),
                 ("TELEPORT_PROBE", "Screenshot zone teleport"),
             )
             hinted = False
@@ -588,6 +626,56 @@ LIGHTING_TOUR_STOPS = (
     ("Warm-neutral spot and warm point bays", 15, 1, 60, 0),
 )
 
+NPC_TOUR_STOPS = (
+    ("NPC room — full patrol and collection overview", -88, 1, -78, 45),
+    ("Production NPC patrol lanes", -87, 1, -76, 45),
+    ("Physical obstruction fixture", -84, 1, -53, 70),
+    ("Glowing production collectible line", -84, 1, -44, 70),
+)
+
+COLLECT_NPC_APPLE_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var apple = System.Array.Find(UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>(),
+    item => item.name == "Collectible Apple 3" && item.scene.isLoaded);
+if (controller == null || controller.PlayerRoot == null || apple == null)
+    return new { success = false, reason = "Player or collectible unavailable" };
+var adapter = controller.PlayerRoot.GetComponent<CrazyMarket.TestCampus.TestCampusPlayerAdapter>();
+if (adapter != null) adapter.TeleportTo(apple.transform.position, UnityEngine.Quaternion.Euler(0f, 70f, 0f));
+else controller.PlayerRoot.SetPositionAndRotation(apple.transform.position, UnityEngine.Quaternion.Euler(0f, 70f, 0f));
+UnityEngine.Physics.SyncTransforms();
+return new { success = true, applePosition = apple.transform.position.ToString() };
+""".strip()
+
+READ_NPC_APPLE_PROBE = """
+var apple = System.Array.Find(UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>(),
+    item => item.name == "Collectible Apple 3" && item.scene.isLoaded);
+return new { success = apple != null, active = apple != null && apple.activeSelf };
+""".strip()
+
+RESET_NPC_INTERACTION_PROBE = """
+var controller = CrazyMarket.TestCampus.TestCampusController.Instance;
+var reset = controller != null && controller.ResetZone(CrazyMarket.TestCampus.TestZoneId.NPCInteraction);
+var apple = System.Array.Find(UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>(),
+    item => item.name == "Collectible Apple 3" && item.scene.isLoaded);
+return new { success = reset && apple != null && apple.activeSelf, restored = apple != null && apple.activeSelf };
+""".strip()
+
+READ_NPC_PATROLS_PROBE = """
+var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.GameObject>();
+var west = System.Array.Find(all, item => item.name == "West Patrol NPC" && item.scene.isLoaded);
+var center = System.Array.Find(all, item => item.name == "Obstructed Center Patrol NPC" && item.scene.isLoaded);
+var east = System.Array.Find(all, item => item.name == "East Patrol NPC" && item.scene.isLoaded);
+if (west == null || center == null || east == null) return new { success = false };
+var westWalker = System.Array.Find(west.GetComponentsInChildren<UnityEngine.MonoBehaviour>(true), item => item.GetType().Name == "NPCSplineWalker");
+var centerWalker = System.Array.Find(center.GetComponentsInChildren<UnityEngine.MonoBehaviour>(true), item => item.GetType().Name == "NPCSplineWalker");
+var eastWalker = System.Array.Find(east.GetComponentsInChildren<UnityEngine.MonoBehaviour>(true), item => item.GetType().Name == "NPCSplineWalker");
+if (westWalker == null || centerWalker == null || eastWalker == null) return new { success = false };
+return new { success = true,
+    westX = westWalker.transform.position.x, westZ = westWalker.transform.position.z,
+    centerX = centerWalker.transform.position.x, centerZ = centerWalker.transform.position.z,
+    eastX = eastWalker.transform.position.x, eastZ = eastWalker.transform.position.z };
+""".strip()
+
 MOVEMENT_ACTION_STOPS = (
     ("NEW: Player balancing on the narrow beam", -72, 3.25, -4, 0),
     ("NEW: Player standing on the tallest step", -60, 3.35, 4, 180),
@@ -782,6 +870,7 @@ def command_unity_tour(args: argparse.Namespace) -> None:
         stops_by_zone = {
             "Movement": MOVEMENT_TOUR_STOPS,
             "Lighting": LIGHTING_TOUR_STOPS,
+            "NPCInteraction": NPC_TOUR_STOPS,
         }
         stops = stops_by_zone.get(args.zone, ())
         if not stops:
@@ -883,6 +972,66 @@ def command_unity_action_tour(args: argparse.Namespace) -> None:
             stop_play_mode()
 
 
+def command_unity_npc_interaction(args: argparse.Namespace) -> None:
+    state = load_state()
+    group = "npcinteraction-action"
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != group]
+    set_check(state, group, "running", "Verifying production Apple pickup and campus Reset.")
+    playing = False
+    try:
+        ensure_editor()
+        stop_play_mode()
+        unity_command("open_scene", path=args.scene, additive=False)
+        unity_command("clear_console")
+        unity_command("set_autotick", enable=True, interval_ms=100)
+        unity_command("editor_play")
+        playing = True
+        if wait_for_loaded_scenes(args.expected_scenes) < args.expected_scenes:
+            raise RuntimeError(f"Expected {args.expected_scenes} loaded scenes.")
+        teleport = unity_command("eval", code=TELEPORT_PROBE.format(zone="NPCInteraction"), timeout=30)
+        if not teleport.get("success") or not teleport.get("result", {}).get("success"):
+            raise RuntimeError(f"NPC room teleport failed: {json.dumps(teleport, indent=2)}")
+        patrol_start = unity_command("eval", code=READ_NPC_PATROLS_PROBE, timeout=30)
+        if not patrol_start.get("success") or not patrol_start.get("result", {}).get("success"):
+            raise RuntimeError(f"NPC patrol fixtures unavailable: {json.dumps(patrol_start, indent=2)}")
+        unity_command("eval", code=MOVE_PLAYER_PROBE.format(x=-84, y=1, z=-44, yaw=70), timeout=30)
+        time.sleep(1)
+        capture_evidence(state, "BEFORE: Glowing production Apple is active", "Game", group=group)
+        collected = unity_command("eval", code=COLLECT_NPC_APPLE_PROBE, timeout=30)
+        if not collected.get("success") or not collected.get("result", {}).get("success"):
+            raise RuntimeError(f"Apple pickup staging failed: {json.dumps(collected, indent=2)}")
+        time.sleep(2)
+        after_pickup = unity_command("eval", code=READ_NPC_APPLE_PROBE, timeout=30)
+        if after_pickup.get("result", {}).get("active", True):
+            raise RuntimeError("Production Apple stayed active after the player entered its trigger.")
+        capture_evidence(state, "AFTER: Production Apple collected through its trigger", "Game", group=group)
+        patrol_end = unity_command("eval", code=READ_NPC_PATROLS_PROBE, timeout=30)
+        start = patrol_start["result"]
+        end = patrol_end.get("result", {})
+        patrol_motion = sum(
+            ((float(end.get(f"{name}X", 0)) - float(start[f"{name}X"])) ** 2
+             + (float(end.get(f"{name}Z", 0)) - float(start[f"{name}Z"])) ** 2) ** 0.5
+            for name in ("west", "center", "east"))
+        if not patrol_end.get("success") or not end.get("success") or patrol_motion < 0.3:
+            raise RuntimeError(f"Production NPC patrols did not move: {json.dumps(patrol_end, indent=2)}")
+        reset = unity_command("eval", code=RESET_NPC_INTERACTION_PROBE, timeout=30)
+        if not reset.get("success") or not reset.get("result", {}).get("success"):
+            raise RuntimeError(f"NPC room Reset did not restore the Apple: {json.dumps(reset, indent=2)}")
+        time.sleep(1)
+        capture_evidence(state, "RESET: Production Apple restored", "Game", group=group)
+        errors = unity_command("get_console_logs", severity="Error", limit=200)
+        if errors.get("total", 0):
+            raise RuntimeError(f"NPC interaction check produced {errors['total']} Console errors.")
+        set_check(state, group, "passed",
+                  f"Apple pickup/Reset and {patrol_motion:.1f} m aggregate NPC patrol motion passed with zero Console errors.")
+    except Exception as error:
+        set_check(state, group, "failed", str(error))
+        raise
+    finally:
+        if playing:
+            stop_play_mode()
+
+
 def command_status(args: argparse.Namespace) -> None:
     state = load_state()
     if args.json:
@@ -903,6 +1052,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             changelogs = {
                 "stack/test-campus-movement": MOVEMENT_CHANGELOG,
                 "stack/test-campus-lighting": LIGHTING_CHANGELOG,
+                "stack/test-campus-npc-interaction": NPC_CHANGELOG,
             }
             payload["changelog"] = changelogs.get(payload.get("branch"), ())
             body = json.dumps(payload).encode("utf-8")
@@ -1015,7 +1165,7 @@ def parser() -> argparse.ArgumentParser:
 
     tour = subcommands.add_parser("unity-tour", help="Capture an in-game screenshot tour of a loaded campus zone.")
     tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
-    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting"))
+    tour.add_argument("--zone", default="Movement", choices=("Movement", "Lighting", "NPCInteraction"))
     tour.add_argument("--expected-scenes", type=int, default=3)
     tour.set_defaults(func=command_unity_tour)
 
@@ -1024,6 +1174,12 @@ def parser() -> argparse.ArgumentParser:
     action_tour.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
     action_tour.add_argument("--expected-scenes", type=int, default=3)
     action_tour.set_defaults(func=command_unity_action_tour)
+
+    npc_interaction = subcommands.add_parser(
+        "unity-npc-interaction", help="Verify and capture production Apple pickup and NPC-room Reset.")
+    npc_interaction.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
+    npc_interaction.add_argument("--expected-scenes", type=int, default=5)
+    npc_interaction.set_defaults(func=command_unity_npc_interaction)
 
     status = subcommands.add_parser("status", help="Print current review-loop state.")
     status.add_argument("--json", action="store_true")

@@ -332,13 +332,14 @@
     }
 
     const evidenceGroups = {
-      "movement-action": document.getElementById("action-evidence"),
+      "feature-action": document.getElementById("action-evidence"),
       "movement-tour": document.getElementById("tour-evidence"),
       validation: document.getElementById("validation-evidence"),
     };
     Object.values(evidenceGroups).forEach(target => target.replaceChildren());
     (state.evidence || []).forEach(capture => {
       const evidence = capture.group?.endsWith("-tour") ? evidenceGroups["movement-tour"]
+        : capture.group?.endsWith("-action") ? evidenceGroups["feature-action"]
         : evidenceGroups[capture.group] || evidenceGroups.validation;
       const figure = document.createElement("figure");
       figure.className = "capture";
@@ -354,7 +355,7 @@
       caption.textContent = capture.label;
       const meta = document.createElement("div");
       meta.className = "capture-meta";
-      const group = capture.group === "movement-action" ? "Action proof · "
+      const group = capture.group?.endsWith("-action") ? "Action proof · "
         : capture.group?.endsWith("-tour") ? `${capture.group.replace("-tour", "")} tour · ` : "";
       meta.textContent = `${group}${capture.view} · ${capture.capturedAt || ""}`;
       link.append(image, caption, meta);
@@ -365,7 +366,7 @@
       if (evidence.children.length) return;
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = group === "movement-action"
+      empty.textContent = group === "feature-action"
         ? "Action screenshots are being captured in Unity."
         : "No screenshots in this section yet.";
       evidence.appendChild(empty);
