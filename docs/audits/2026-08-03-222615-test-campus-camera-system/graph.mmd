@@ -1,0 +1,22 @@
+flowchart LR
+  N0001["Main Camera + Brain"]
+  N0002["Prototype Controller"]
+  N0003["Cinemachine Decollider"]
+  N0004["Ground Guard"]
+  N0005["Selective Occlusion"]
+  N0006["Assisted Orbit v-cam"]
+  N0007["Moving Platform collider"]
+  N0008["Surface Probe"]
+  N0009["Guided Rail v-cam"]
+  N0010["Surface Constraint"]
+  N0002 -->|"configures"| N0006
+  N0002 -->|"reads"| N0007
+  N0002 -->|"configures"| N0009
+  N0003 -->|"reads"| N0007
+  N0004 -->|"calls"| N0008
+  N0006 -->|"writes"| N0001
+  N0006 -->|"owns"| N0003
+  N0006 -->|"owns"| N0004
+  N0006 -->|"owns"| N0010
+  N0009 -->|"writes"| N0001
+  N0010 -->|"calls"| N0008
