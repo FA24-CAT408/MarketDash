@@ -19,18 +19,34 @@ public class NPCSplineWalker : MonoBehaviour, IMoverController
     private float _splinePosition = 0f;
     private bool _movingForward = true;
     private Tween _currentTween;
+    private bool _started;
     
     void Start()
     {
-        // Get references
+        _started = true;
+        RestartMovement();
+    }
+
+    void OnEnable()
+    {
+        if (_started) RestartMovement();
+    }
+
+    void RestartMovement()
+    {
         _mover = GetComponent<PhysicsMover>();
         _mover.MoverController = this;
-        
-        // Initialize position
+        _splinePosition = 0f;
+        _movingForward = true;
         UpdateSplinePosition(_splinePosition);
-        
-        // Start movement
         MoveAlongSpline();
+    }
+
+    void OnDisable()
+    {
+        if (_currentTween != null && _currentTween.IsActive())
+            _currentTween.Kill();
+        _currentTween = null;
     }
     
     void MoveAlongSpline()
@@ -95,9 +111,6 @@ public class NPCSplineWalker : MonoBehaviour, IMoverController
     
     void OnDestroy()
     {
-        if (_currentTween != null && _currentTween.IsActive())
-        {
-            _currentTween.Kill();
-        }
+        OnDisable();
     }
 }

@@ -10,14 +10,11 @@ public class MovingPlatform : MonoBehaviour, IMoverController
     private PhysicsMover _mover;
     private Transform _transform;
     
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         _mover = GetComponent<PhysicsMover>();
         _splineAnimator = GetComponent<SplineAnimate>();
-        
         _transform = transform;
-        
         _mover.MoverController = this;
     }
 

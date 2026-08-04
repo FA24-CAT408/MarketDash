@@ -23,6 +23,27 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Levels/GameOver.unity
     guid: 6e19856cc08a72a4f813aa7c9f3268c2
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Core.unity
+    guid: 673f4fb1659b2435cbb946200ce939b9
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Movement.unity
+    guid: cd509443e94b54985912b62e0745fe4f
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Camera.unity
+    guid: 14fc80cc094744771b261adfef81a27a
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Lighting.unity
+    guid: d22abeb832c714ba190d73042279e5e1
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_NPCInteraction.unity
+    guid: 33080b8ce28604e8b843eb368fdff5ca
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_UI.unity
+    guid: 3cf8dbdce19754ea0a1f794a1c1e5223
+  - enabled: 1
+    path: Assets/TestCampus/Scenes/TestCampus_Integration.unity
+    guid: 0fce7fe4977b9479b9e9a622ca68ae12
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: dc6e5ad0aa96e4795b81b665f13eeb52,
       type: 2}

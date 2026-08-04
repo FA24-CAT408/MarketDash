@@ -1,0 +1,38 @@
+<UXML xmlns="UnityEngine.UIElements">
+    <Style src="TestCampusControlPanel.uss" />
+    <VisualElement name="campus-root" class="campus-root">
+        <VisualElement name="gameplay-hud" class="gameplay-hud">
+            <Label name="gameplay-help" class="gameplay-help" />
+        </VisualElement>
+        <ScrollView name="campus-panel" class="campus-panel" mode="Vertical">
+            <Label text="CRAZYMARKET TEST CAMPUS" class="campus-title" />
+            <Label name="status-label" text="Initializing…" class="campus-status" />
+            <Label name="feedback-label" text="READY — choose a zone or test action" class="campus-feedback" />
+
+            <Label text="ZONES" class="section-title" />
+            <VisualElement name="zone-buttons" class="button-stack" />
+
+            <Label text="CAMPUS" class="section-title" />
+            <Button name="reset-current" text="RESET CURRENT (F2)" />
+            <Button name="reset-campus" text="RESET CAMPUS" />
+            <Button name="return-hub" text="RETURN TO HUB (F3)" />
+
+            <Label text="CURRENT ZONE PRESET" class="section-title" />
+            <VisualElement class="button-row">
+                <Button name="preset-low" text="LOW" />
+                <Button name="preset-normal" text="NORMAL" />
+                <Button name="preset-stress" text="STRESS" />
+            </VisualElement>
+
+            <Label text="CAMERA PROTOTYPE" class="section-title" />
+            <Button name="camera-assisted" text="ASSISTED ORBIT (F6)" />
+            <Button name="camera-guided" text="GUIDED RAIL (F7)" />
+            <Button name="camera-hybrid" text="HYBRID ZONES (F8)" />
+
+            <Label text="TOOLS" class="section-title" />
+            <Button name="diagnostics-toggle" text="TOGGLE DIAGNOSTICS" />
+            <Button name="pause-toggle" text="PAUSE / RESUME (P)" />
+            <Label name="diagnostics-label" class="diagnostics-label" />
+        </ScrollView>
+    </VisualElement>
+</UXML>

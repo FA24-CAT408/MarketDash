@@ -1,0 +1,124 @@
+.campus-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    color: rgb(241, 247, 255);
+}
+
+.gameplay-hud {
+    position: absolute;
+    left: 20px;
+    top: 18px;
+    width: 72%;
+    min-height: 70px;
+    padding: 10px 14px;
+    background-color: rgba(7, 12, 23, 0.86);
+    border-left-width: 3px;
+    border-left-color: rgb(74, 221, 255);
+    border-radius: 8px;
+}
+
+.gameplay-help {
+    color: rgb(241, 247, 255);
+    font-size: 15px;
+    white-space: normal;
+}
+
+.campus-panel {
+    display: none;
+    position: absolute;
+    left: 20px;
+    top: 18px;
+    bottom: 18px;
+    width: 390px;
+    min-width: 330px;
+    max-width: 42%;
+    padding: 16px;
+    background-color: rgba(7, 12, 23, 0.97);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(68, 92, 126);
+    border-right-color: rgb(68, 92, 126);
+    border-top-color: rgb(68, 92, 126);
+    border-bottom-color: rgb(68, 92, 126);
+    border-radius: 12px;
+}
+
+.campus-title {
+    color: rgb(74, 221, 255);
+    font-size: 21px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.campus-status {
+    color: rgb(224, 234, 247);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 7px;
+}
+
+.campus-feedback {
+    color: rgb(118, 233, 255);
+    font-size: 13px;
+    -unity-font-style: italic;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.section-title {
+    color: rgb(154, 170, 194);
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin-top: 12px;
+    margin-bottom: 5px;
+}
+
+.button-stack {
+    flex-direction: column;
+}
+
+.button-row {
+    flex-direction: row;
+}
+
+.button-row > Button {
+    flex-grow: 1;
+}
+
+Button {
+    height: 34px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    color: rgb(244, 248, 255);
+    background-color: rgb(35, 48, 66);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-radius: 6px;
+    -unity-font-style: bold;
+}
+
+Button:hover {
+    background-color: rgb(49, 74, 100);
+}
+
+Button:active {
+    background-color: rgb(43, 157, 187);
+}
+
+.diagnostics-label {
+    display: none;
+    margin-top: 8px;
+    padding: 8px;
+    color: rgb(178, 255, 197);
+    background-color: rgba(18, 34, 29, 0.8);
+    font-size: 11px;
+    white-space: normal;
+}
