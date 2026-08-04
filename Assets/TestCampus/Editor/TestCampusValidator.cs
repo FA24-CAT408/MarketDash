@@ -26,6 +26,10 @@ namespace CrazyMarket.TestCampus.Editor
             List<string> errors = new();
             HashSet<TestZoneId> ids = new();
             HashSet<TestZoneId> available = new();
+            int cameraObstacleLayer = LayerMask.NameToLayer("Camera Obstacle");
+            int cameraSurfaceLayer = LayerMask.NameToLayer("Camera Surface");
+            if (cameraObstacleLayer < 0) errors.Add("Missing required layer: Camera Obstacle.");
+            if (cameraSurfaceLayer < 0) errors.Add("Missing required layer: Camera Surface.");
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId)))
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath(id)) != null)
                     available.Add(id);
@@ -52,6 +56,27 @@ namespace CrazyMarket.TestCampus.Editor
                     errors.Add($"{scene.name} contains legacy TextMesh components; use TextMesh Pro.");
                 if (Object.FindObjectsByType<Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
                     errors.Add($"{scene.name} contains legacy uGUI Text components; use TextMeshProUGUI.");
+                foreach (Collider collider in Object.FindObjectsByType<Collider>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (collider.CompareTag("IGNORE")
+                        && (collider.gameObject.layer == cameraObstacleLayer
+                            || collider.gameObject.layer == cameraSurfaceLayer))
+                        errors.Add($"{scene.name} puts ignored collider '{collider.name}' on a camera collision layer.");
+                foreach (Renderer renderer in Object.FindObjectsByType<Renderer>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (renderer.gameObject.layer == cameraObstacleLayer
+                        || renderer.gameObject.layer == cameraSurfaceLayer)
+                        errors.Add($"{scene.name} puts rendered geometry '{renderer.name}' on a camera-only layer.");
+                if (cameraObstacleLayer >= 0 && cameraSurfaceLayer >= 0)
+                {
+                    for (int layer = 0; layer < 32; layer++)
+                    {
+                        if (!Physics.GetIgnoreLayerCollision(cameraObstacleLayer, layer))
+                            errors.Add($"Camera Obstacle layer must not participate in gameplay physics with layer {layer}.");
+                        if (!Physics.GetIgnoreLayerCollision(cameraSurfaceLayer, layer))
+                            errors.Add($"Camera Surface layer must not participate in gameplay physics with layer {layer}.");
+                    }
+                }
                 if (id != TestZoneId.Hub)
                 {
                     if (Object.FindAnyObjectByType<TestCampusController>() != null) errors.Add($"{scene.name} owns a forbidden TestCampusController.");
@@ -91,6 +116,22 @@ namespace CrazyMarket.TestCampus.Editor
                         errors.Add($"{scene.name} must contain exactly one CinemachineBrain.");
                     if (Object.FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
                         errors.Add($"{scene.name} must contain a CinemachineCamera.");
+                    TestCampusCameraCollisionPolicy policy =
+                        Object.FindAnyObjectByType<TestCampusCameraCollisionPolicy>(FindObjectsInactive.Include);
+                    if (policy == null)
+                        errors.Add($"{scene.name} must contain a TestCampusCameraCollisionPolicy.");
+                    else if (cameraObstacleLayer >= 0 && cameraSurfaceLayer >= 0)
+                    {
+                        int expectedObstacles = (1 << cameraObstacleLayer) | (1 << cameraSurfaceLayer);
+                        int expectedSurfaces = 1 << cameraSurfaceLayer;
+                        if (policy.ObstacleLayers.value != expectedObstacles)
+                            errors.Add($"{scene.name} camera obstacle policy does not match the authored layers.");
+                        if (policy.SurfaceLayers.value != expectedSurfaces)
+                            errors.Add($"{scene.name} camera surface policy does not match the authored layer.");
+                        CinemachineDecollider decollider = policy.GetComponent<CinemachineDecollider>();
+                        if (decollider == null || decollider.Decollision.ObstacleLayers.value != expectedObstacles)
+                            errors.Add($"{scene.name} Decollider does not use the camera collision policy.");
+                    }
                     UIDocument[] documents = Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                     if (documents.Length != 1)
                         errors.Add($"{scene.name} must contain exactly one Test Campus UIDocument; found {documents.Length}.");

@@ -21,6 +21,8 @@ namespace CrazyMarket.TestCampus.Editor
         public const string UiPanelSettingsPath = UiFolder + "/TestCampusPanelSettings.asset";
         public const string UiLayoutPath = UiFolder + "/TestCampusControlPanel.uxml";
         public const string UiThemePath = UiFolder + "/TestCampusRuntimeTheme.tss";
+        private const string CameraObstacleLayer = "Camera Obstacle";
+        private const string CameraSurfaceLayer = "Camera Surface";
 
         private static readonly Dictionary<string, Material> Materials = new();
         private static Transform _activeZoneRoot;
@@ -74,6 +76,7 @@ namespace CrazyMarket.TestCampus.Editor
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(MaterialFolder);
             Directory.CreateDirectory(UiFolder);
+            ConfigureCameraCollisionLayers();
             CreateMaterials();
             CreateUiPanelSettings();
             RenderSettings.skybox = null;
@@ -147,7 +150,7 @@ namespace CrazyMarket.TestCampus.Editor
                 "Navigate physically or use F1. F2 resets the current zone. F3 returns to hub.");
             _activeZoneRoot = hub.transform;
             CreateSpawn(hub, Vector3.zero + Vector3.up, "Default");
-            Cube("Hub Floor", new Vector3(0, -0.5f, 0), new Vector3(40, 1, 40), "Neutral");
+            MarkCameraSurface(Cube("Hub Floor", new Vector3(0, -0.5f, 0), new Vector3(40, 1, 40), "Neutral"));
             CreateInteriorShell(Vector3.zero, new Vector3(40, 12, 40), "Hub");
             for (int i = -20; i <= 20; i += 5)
             {
@@ -210,6 +213,12 @@ namespace CrazyMarket.TestCampus.Editor
             lens.FieldOfView = 58f;
             virtualCamera.Lens = lens;
 
+            TestCampusCameraCollisionPolicy collisionPolicy =
+                rig.AddComponent<TestCampusCameraCollisionPolicy>();
+            collisionPolicy.Configure(
+                (1 << RequireLayer(CameraObstacleLayer)) | (1 << RequireLayer(CameraSurfaceLayer)),
+                1 << RequireLayer(CameraSurfaceLayer));
+
             CinemachineOrbitalFollow orbit = rig.AddComponent<CinemachineOrbitalFollow>();
             orbit.OrbitStyle = CinemachineOrbitalFollow.OrbitStyles.Sphere;
             orbit.Radius = 9.5f;
@@ -251,7 +260,7 @@ namespace CrazyMarket.TestCampus.Editor
             decollider.CameraRadius = TestCampusCameraGroundGuard.DefaultCameraRadius;
             CinemachineDecollider.DecollisionSettings decollision = decollider.Decollision;
             decollision.Enabled = true;
-            decollision.ObstacleLayers = ~0;
+            decollision.ObstacleLayers = collisionPolicy.ObstacleLayers;
             decollision.UseFollowTarget.Enabled = true;
             decollision.UseFollowTarget.YOffset = TestCampusCameraGroundGuard.DefaultTargetYOffset;
             decollision.Damping = 0.35f;
@@ -294,7 +303,8 @@ namespace CrazyMarket.TestCampus.Editor
             Cube("Slope 30 degrees", new Vector3(-67, 3, 25), new Vector3(10, 0.5f, 12), "Movement", Quaternion.Euler(30, 0, 0));
             for (int i = 0; i < 6; i++) Cube($"Jump Target {i + 1}", new Vector3(-84 + i * 4, 1 + i * 0.4f, 43), new Vector3(2.5f, 0.4f, 2.5f), "Movement");
             Cube("Narrow Beam", new Vector3(-72, 2, -2), new Vector3(1, 0.4f, 16), "Movement");
-            Cube("Low Ceiling", new Vector3(-62, 2.5f, -5), new Vector3(8, 0.4f, 12), "Movement");
+            MarkCameraSurface(Cube(
+                "Low Ceiling", new Vector3(-62, 2.5f, -5), new Vector3(8, 0.4f, 12), "Movement"));
             GameObject movingPlatform = InstantiatePrefab("Assets/Prefabs/Environment/Moving Platform.prefab", scene);
             if (movingPlatform != null)
             {
@@ -310,9 +320,9 @@ namespace CrazyMarket.TestCampus.Editor
                 "Walk the marked route to inspect follow composition, obstructions, corridors, height changes, framing, and trigger transitions.");
             for (int i = 0; i < 7; i++)
             {
-                Cube($"Corridor Left {i}", new Vector3(68, 2, -5 + i * 7), new Vector3(1, 4, 6), "Camera")
+                MarkCameraObstacle(Cube($"Corridor Left {i}", new Vector3(68, 2, -5 + i * 7), new Vector3(1, 4, 6), "Camera"))
                     .AddComponent<TestCampusSelectiveOccluder>();
-                Cube($"Corridor Right {i}", new Vector3(82, 2, -5 + i * 7), new Vector3(1, 4, 6), "Camera")
+                MarkCameraObstacle(Cube($"Corridor Right {i}", new Vector3(82, 2, -5 + i * 7), new Vector3(1, 4, 6), "Camera"))
                     .AddComponent<TestCampusSelectiveOccluder>();
             }
             for (int i = 0; i < 5; i++) Cube($"Height Target {i}", new Vector3(60 + i * 7, 1 + i, 42), new Vector3(4, 2 + i * 2, 4), "Camera");
@@ -592,7 +602,7 @@ namespace CrazyMarket.TestCampus.Editor
             if (includePresetProvider)
                 rootObject.AddComponent<TestZonePresetProvider>();
             CreateSpawn(root, center + Vector3.up, "Default");
-            Cube($"{displayName} Floor", center - Vector3.up * 0.5f, size, "Neutral");
+            MarkCameraSurface(Cube($"{displayName} Floor", center - Vector3.up * 0.5f, size, "Neutral"));
             CreateInteriorShell(center, new Vector3(size.x, 12, size.z), material, includeInteriorLights);
             Label(displayName.ToUpperInvariant(), center + new Vector3(0, 5, size.z * 0.42f), Materials[material].color, 0.65f);
             return scene;
@@ -621,7 +631,8 @@ namespace CrazyMarket.TestCampus.Editor
             root.ConfigureSpawn(id, spawn.transform);
         }
         private static void CreateWalkway(Vector3 position, Vector3 scale, float yRotation = 0) =>
-            Cube("Campus Walkway", position, scale, "Grid", Quaternion.Euler(0, yRotation, 0));
+            MarkCameraSurface(Cube(
+                "Campus Walkway", position, scale, "Grid", Quaternion.Euler(0, yRotation, 0)));
 
         private static void CreateInteriorShell(Vector3 center, Vector3 size, string accentMaterial, bool includeInteriorLights = true)
         {
@@ -630,28 +641,30 @@ namespace CrazyMarket.TestCampus.Editor
             float ceilingY = 11.5f;
             const float doorway = 8f;
             CreateCameraApron(center, size);
-            Cube("Interior Ceiling", center + Vector3.up * ceilingY, new Vector3(size.x, 0.5f, size.z), "Ceiling");
+            MarkCameraSurface(Cube(
+                "Interior Ceiling", center + Vector3.up * ceilingY,
+                new Vector3(size.x, 0.5f, size.z), "Ceiling"));
             float horizontalWallWidth = (size.x - doorway) * 0.5f;
             float verticalWallWidth = (size.z - doorway) * 0.5f;
             for (int side = -1; side <= 1; side += 2)
             {
                 float x = center.x + side * (doorway * 0.5f + horizontalWallWidth * 0.5f);
-                Cube("Interior North Wall", new Vector3(x, center.y + 5.5f, center.z + halfZ), new Vector3(horizontalWallWidth, 12, 0.5f), "Wall")
+                MarkCameraObstacle(Cube("Interior North Wall", new Vector3(x, center.y + 5.5f, center.z + halfZ), new Vector3(horizontalWallWidth, 12, 0.5f), "Wall"))
                     .AddComponent<TestCampusSelectiveOccluder>();
-                Cube("Interior South Wall", new Vector3(x, center.y + 5.5f, center.z - halfZ), new Vector3(horizontalWallWidth, 12, 0.5f), "Wall")
+                MarkCameraObstacle(Cube("Interior South Wall", new Vector3(x, center.y + 5.5f, center.z - halfZ), new Vector3(horizontalWallWidth, 12, 0.5f), "Wall"))
                     .AddComponent<TestCampusSelectiveOccluder>();
                 float z = center.z + side * (doorway * 0.5f + verticalWallWidth * 0.5f);
-                Cube("Interior East Wall", new Vector3(center.x + halfX, center.y + 5.5f, z), new Vector3(0.5f, 12, verticalWallWidth), "Wall")
+                MarkCameraObstacle(Cube("Interior East Wall", new Vector3(center.x + halfX, center.y + 5.5f, z), new Vector3(0.5f, 12, verticalWallWidth), "Wall"))
                     .AddComponent<TestCampusSelectiveOccluder>();
-                Cube("Interior West Wall", new Vector3(center.x - halfX, center.y + 5.5f, z), new Vector3(0.5f, 12, verticalWallWidth), "Wall")
+                MarkCameraObstacle(Cube("Interior West Wall", new Vector3(center.x - halfX, center.y + 5.5f, z), new Vector3(0.5f, 12, verticalWallWidth), "Wall"))
                     .AddComponent<TestCampusSelectiveOccluder>();
             }
             for (int i = -1; i <= 1; i++)
             {
                 float z = center.z + i * size.z * 0.28f;
-                Cube("Structural Column", new Vector3(center.x - halfX + 1f, 3f, z), new Vector3(1.2f, 6f, 1.2f), accentMaterial)
+                MarkCameraObstacle(Cube("Structural Column", new Vector3(center.x - halfX + 1f, 3f, z), new Vector3(1.2f, 6f, 1.2f), accentMaterial))
                     .AddComponent<TestCampusSelectiveOccluder>();
-                Cube("Structural Column", new Vector3(center.x + halfX - 1f, 3f, z), new Vector3(1.2f, 6f, 1.2f), accentMaterial)
+                MarkCameraObstacle(Cube("Structural Column", new Vector3(center.x + halfX - 1f, 3f, z), new Vector3(1.2f, 6f, 1.2f), accentMaterial))
                     .AddComponent<TestCampusSelectiveOccluder>();
             }
             if (includeInteriorLights)
@@ -710,6 +723,49 @@ namespace CrazyMarket.TestCampus.Editor
             if (collider != null)
                 collider.isTrigger = true;
             slab.AddComponent<TestCampusCameraGround>();
+            MarkCameraSurface(slab);
+        }
+
+        private static GameObject MarkCameraObstacle(GameObject gameObject) =>
+            AddCameraCollisionProxy(gameObject, RequireLayer(CameraObstacleLayer));
+
+        private static GameObject MarkCameraSurface(GameObject gameObject) =>
+            AddCameraCollisionProxy(gameObject, RequireLayer(CameraSurfaceLayer));
+
+        private static GameObject AddCameraCollisionProxy(GameObject gameObject, int layer)
+        {
+            BoxCollider source = gameObject.GetComponent<BoxCollider>();
+            if (source == null)
+                throw new System.InvalidOperationException(
+                    $"Camera collision geometry requires a BoxCollider: {gameObject.name}");
+
+            GameObject proxy = new($"{gameObject.name} Camera Collision");
+            proxy.layer = layer;
+            proxy.transform.SetParent(gameObject.transform, false);
+            BoxCollider collision = proxy.AddComponent<BoxCollider>();
+            collision.center = source.center;
+            collision.size = source.size;
+            collision.isTrigger = source.isTrigger;
+            return gameObject;
+        }
+
+        private static void ConfigureCameraCollisionLayers()
+        {
+            int obstacleLayer = RequireLayer(CameraObstacleLayer);
+            int surfaceLayer = RequireLayer(CameraSurfaceLayer);
+            for (int layer = 0; layer < 32; layer++)
+            {
+                Physics.IgnoreLayerCollision(obstacleLayer, layer, true);
+                Physics.IgnoreLayerCollision(surfaceLayer, layer, true);
+            }
+        }
+
+        private static int RequireLayer(string name)
+        {
+            int layer = LayerMask.NameToLayer(name);
+            if (layer < 0)
+                throw new System.InvalidOperationException($"Required Test Campus layer is missing: {name}");
+            return layer;
         }
 
         private static void CreateInteriorLight(string name, Vector3 position, float range, Color color)

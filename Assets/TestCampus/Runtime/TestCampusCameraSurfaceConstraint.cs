@@ -6,7 +6,8 @@ namespace CrazyMarket.TestCampus
     /// <summary>Owns floor/ceiling probing and the assisted rig's radial/pitch correction.</summary>
     [DefaultExecutionOrder(10005)]
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(CinemachineCamera), typeof(CinemachineOrbitalFollow))]
+    [RequireComponent(typeof(CinemachineCamera), typeof(CinemachineOrbitalFollow),
+        typeof(TestCampusCameraCollisionPolicy))]
     public sealed class TestCampusCameraSurfaceConstraint : MonoBehaviour
     {
         [SerializeField] private bool constraintEnabled = true;
@@ -14,12 +15,11 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private float radiusTightenSmoothTime = 0.05f;
         [SerializeField] private float radiusRelaxSmoothTime = 0.25f;
         [SerializeField] private float pitchLimitSmoothTime = 0.12f;
-        [SerializeField] private LayerMask groundMask = ~0;
-
         private CinemachineCamera _camera;
         private CinemachineOrbitalFollow _orbit;
         private CinemachineDecollider _decollider;
         private TestCampusCameraGroundGuard _groundGuard;
+        private TestCampusCameraCollisionPolicy _collisionPolicy;
         private float _groundRadiusScale = 1f;
         private float _groundRadiusVelocity;
         private float _smoothedPitchLimit;
@@ -71,6 +71,7 @@ namespace CrazyMarket.TestCampus
             _orbit = GetComponent<CinemachineOrbitalFollow>();
             _decollider = GetComponent<CinemachineDecollider>();
             _groundGuard = GetComponent<TestCampusCameraGroundGuard>();
+            _collisionPolicy = GetComponent<TestCampusCameraCollisionPolicy>();
         }
 
         private void EnsureRadialAxisRange()
@@ -184,7 +185,7 @@ namespace CrazyMarket.TestCampus
                     target, point, cameraRadius,
                     _groundGuard != null ? _groundGuard.GroundClearance : TestCampusCameraGroundGuard.DefaultClearance,
                     _groundGuard != null ? _groundGuard.GroundProbeSlack : TestCampusCameraGroundGuard.DefaultProbeSlack,
-                    groundMask, out float candidate))
+                    SurfaceLayers, out float candidate))
                 return false;
             limitY = Mathf.Max(limitY, candidate);
             return true;
@@ -197,7 +198,7 @@ namespace CrazyMarket.TestCampus
                     target, point, cameraRadius,
                     _groundGuard != null ? _groundGuard.GroundClearance : TestCampusCameraGroundGuard.DefaultClearance,
                     _groundGuard != null ? _groundGuard.GroundProbeSlack : TestCampusCameraGroundGuard.DefaultProbeSlack,
-                    groundMask, out float candidate))
+                    SurfaceLayers, out float candidate))
                 return false;
             limitY = Mathf.Min(limitY, candidate);
             return true;
@@ -267,5 +268,9 @@ namespace CrazyMarket.TestCampus
             if (_orbit != null)
                 _orbit.RadialAxis.Value = _orbit.RadialAxis.ClampValue(1f);
         }
+
+        private int SurfaceLayers => _collisionPolicy != null
+            ? _collisionPolicy.SurfaceLayers.value
+            : 0;
     }
 }
