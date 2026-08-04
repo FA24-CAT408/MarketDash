@@ -1490,7 +1490,108 @@ def command_status(args: argparse.Namespace) -> None:
         print(f"  agent {agent['id']}: {agent['status']} — {agent['task']}")
 
 
+def command_video_evidence(args: argparse.Namespace) -> None:
+    state = load_state()
+    source = Path(args.file).resolve()
+    session_dir = (EVIDENCE_DIR / state["session"]).resolve()
+    if source.parent != session_dir or source.suffix.lower() not in (".mov", ".mp4"):
+        raise RuntimeError(f"Video must be a .mov or .mp4 inside {session_dir}.")
+    if not source.is_file() or source.stat().st_size == 0:
+        raise RuntimeError(f"Video is missing or empty: {source}")
+    state["evidence"] = [item for item in state.get("evidence", []) if item.get("group") != args.group]
+    state["evidence"].append({
+        "label": args.label,
+        "view": "Unity gameplay video",
+        "phase": state.get("currentPhase", "done"),
+        "url": f"/evidence/{state['session']}/{source.name}",
+        "capturedAt": now(),
+        "group": args.group,
+        "media": "video",
+    })
+    save_state(state)
+    print(source)
+
+
 class DashboardHandler(SimpleHTTPRequestHandler):
+    def _evidence_file(self) -> tuple[Path, str] | None:
+        if not self.path.startswith("/evidence/"):
+            return None
+        relative = Path(unquote(self.path.removeprefix("/evidence/")))
+        evidence_root = EVIDENCE_DIR.resolve()
+        evidence_path = (EVIDENCE_DIR / relative).resolve()
+        content_types = {".png": "image/png", ".mov": "video/quicktime", ".mp4": "video/mp4"}
+        if evidence_root not in evidence_path.parents or evidence_path.suffix.lower() not in content_types:
+            return None
+        return evidence_path, content_types[evidence_path.suffix.lower()]
+
+    def _serve_evidence(self, *, head_only: bool = False) -> None:
+        resolved = self._evidence_file()
+        if resolved is None:
+            self.send_error(404)
+            return
+        evidence_path, content_type = resolved
+        try:
+            size = evidence_path.stat().st_size
+        except FileNotFoundError:
+            self.send_error(404)
+            return
+
+        start, end = 0, max(size - 1, 0)
+        range_header = self.headers.get("Range")
+        partial = False
+        if range_header:
+            match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header.strip())
+            if match is None or (not match.group(1) and not match.group(2)):
+                self._range_not_satisfiable(size)
+                return
+            if match.group(1):
+                start = int(match.group(1))
+                end = int(match.group(2)) if match.group(2) else size - 1
+            else:
+                suffix_length = int(match.group(2))
+                if suffix_length == 0:
+                    self._range_not_satisfiable(size)
+                    return
+                start = max(size - suffix_length, 0)
+                end = size - 1
+            if start >= size or start > end:
+                self._range_not_satisfiable(size)
+                return
+            end = min(end, size - 1)
+            partial = True
+
+        length = max(end - start + 1, 0)
+        self.send_response(206 if partial else 200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Accept-Ranges", "bytes")
+        if partial:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        if head_only or length == 0:
+            return
+
+        try:
+            with evidence_path.open("rb") as source:
+                source.seek(start)
+                remaining = length
+                while remaining:
+                    chunk = source.read(min(64 * 1024, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def _range_not_satisfiable(self, size: int) -> None:
+        self.send_response(416)
+        self.send_header("Content-Range", f"bytes */{size}")
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/state":
             payload = load_state(required=False)
@@ -1512,23 +1613,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.wfile.write(body)
             return
         if self.path.startswith("/evidence/"):
-            relative = Path(unquote(self.path.removeprefix("/evidence/")))
-            evidence_root = EVIDENCE_DIR.resolve()
-            image_path = (EVIDENCE_DIR / relative).resolve()
-            if evidence_root not in image_path.parents or image_path.suffix.lower() != ".png":
-                self.send_error(404)
-                return
-            try:
-                body = image_path.read_bytes()
-            except FileNotFoundError:
-                self.send_error(404)
-                return
-            self.send_response(200)
-            self.send_header("Content-Type", "image/png")
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self._serve_evidence()
             return
         if self.path in ("/", "/dashboard.html"):
             body = DASHBOARD_PATH.read_bytes()
@@ -1538,6 +1623,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+            return
+        self.send_error(404)
+
+    def do_HEAD(self) -> None:  # noqa: N802
+        if self.path.startswith("/evidence/"):
+            self._serve_evidence(head_only=True)
+            return
+        if self.path in ("/", "/dashboard.html"):
+            size = DASHBOARD_PATH.stat().st_size
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(size))
+            self.end_headers()
             return
         self.send_error(404)
 
@@ -1644,6 +1743,12 @@ def parser() -> argparse.ArgumentParser:
     status = subcommands.add_parser("status", help="Print current review-loop state.")
     status.add_argument("--json", action="store_true")
     status.set_defaults(func=command_status)
+
+    video = subcommands.add_parser("video-evidence", help="Register a recorded gameplay video in the dashboard.")
+    video.add_argument("--file", required=True)
+    video.add_argument("--label", required=True)
+    video.add_argument("--group", default="feature-video")
+    video.set_defaults(func=command_video_evidence)
 
     dashboard = subcommands.add_parser("dashboard", help="Serve the live local dashboard.")
     dashboard.add_argument("--host", default="127.0.0.1")
