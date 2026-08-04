@@ -10,6 +10,7 @@ namespace CrazyMarket.TestCampus
         public static event Action<Transform, Vector3> PlayerWarped;
 
         private Component _controller;
+        private FieldInfo _movementIntent;
 
         private void Awake()
         {
@@ -44,6 +45,21 @@ namespace CrazyMarket.TestCampus
             _controller.GetType()
                 .GetMethod("SetMovementEnabled", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 ?.Invoke(_controller, new object[] { enabled });
+        }
+
+        public bool TryGetMovementIntent(out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            _controller ??= GetComponent("KCCPlayerController");
+            if (_controller == null) return false;
+
+            _movementIntent ??= _controller.GetType().GetField(
+                "_moveInputVector", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (_movementIntent?.FieldType != typeof(Vector3)) return false;
+
+            direction = (Vector3)_movementIntent.GetValue(_controller);
+            direction.y = 0f;
+            return true;
         }
 
         private void DisableLegacyShadows()

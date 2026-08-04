@@ -127,13 +127,18 @@ namespace CrazyMarket.TestCampus
             if (Time.unscaledDeltaTime > 0f)
                 planarVelocity /= Time.unscaledDeltaTime;
 
+            Vector3 movementIntent = Vector3.zero;
+            bool hasMovementIntent = _playerAdapter != null
+                && _playerAdapter.TryGetMovementIntent(out movementIntent)
+                && movementIntent.sqrMagnitude > 0.0001f;
+
             bool grounded = Physics.Raycast(
                 _player.position + Vector3.up * 0.25f, Vector3.down, 0.65f, ~0, QueryTriggerInteraction.Ignore);
-            if (grounded && planarVelocity.magnitude >= minimumMovementSpeed)
-                _lastGroundedMoveDirection = planarVelocity.normalized;
+            if (grounded && hasMovementIntent && planarVelocity.magnitude >= minimumMovementSpeed)
+                _lastGroundedMoveDirection = movementIntent.normalized;
 
             if (IsOrbitLive())
-                UpdateAssistedOrbit(grounded, planarVelocity.magnitude);
+                UpdateAssistedOrbit(grounded, hasMovementIntent ? planarVelocity.magnitude : 0f);
             else
                 _inputFocus?.ResetInput();
 
