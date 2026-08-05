@@ -1,0 +1,46 @@
+flowchart LR
+  N0001["AudioManager"]
+  N0002["Cinemachine"]
+  N0003["GameManager"]
+  N0004["GroceryListManager"]
+  N0005["Player input actions"]
+  N0006["InputReader"]
+  N0007["InteractionController"]
+  N0008["Item"]
+  N0009["KCC motor"]
+  N0010["KCCPlayerController"]
+  N0011["MainMenuController"]
+  N0012["NPCSplineWalker"]
+  N0013["GameSaveManager"]
+  N0014["SceneEventManager"]
+  N0015["GameSettingsManager"]
+  N0016["SOAP ScriptableSave"]
+  N0017["Splines + DOTween"]
+  N0018["StagingAreaController"]
+  N0019["TimerManager"]
+  N0020["UIManager"]
+  N0001 -->|"depends-on"| N0017
+  N0003 -->|"emits"| N0001
+  N0003 -->|"calls"| N0004
+  N0003 -->|"persists"| N0013
+  N0003 -->|"emits"| N0014
+  N0003 -->|"calls"| N0018
+  N0003 -->|"writes"| N0019
+  N0003 -->|"emits"| N0020
+  N0004 -->|"writes"| N0003
+  N0005 -->|"emits"| N0006
+  N0006 -->|"emits"| N0007
+  N0006 -->|"emits"| N0010
+  N0006 -->|"emits"| N0020
+  N0008 -->|"emits"| N0004
+  N0010 -->|"depends-on"| N0002
+  N0010 -->|"configures"| N0009
+  N0011 -->|"loads"| N0003
+  N0012 -->|"configures"| N0009
+  N0012 -->|"depends-on"| N0017
+  N0013 -->|"depends-on"| N0016
+  N0015 -->|"configures"| N0001
+  N0015 -->|"configures"| N0002
+  N0015 -->|"persists"| N0016
+  N0018 -->|"reads"| N0004
+  N0018 -->|"depends-on"| N0017

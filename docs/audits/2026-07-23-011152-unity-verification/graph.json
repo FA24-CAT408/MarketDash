@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "audit": {
+    "id": "2026-07-23-011152-unity-verification",
+    "title": "CrazyMarket Unity verification",
+    "repository": "CrazyMarket",
+    "revision": "4532a1ee8cd8a5a6ed2a320e292bdb847c9848e2",
+    "generated_at": "2026-07-23T01:11:52Z",
+    "scope": ["Unity CLI and connected Editor diagnostics"],
+    "excluded": ["runtime behavior", "builds"]
+  },
+  "nodes": [
+    {"id":"unity-cli","label":"Unity CLI 1.0.0-beta.2","kind":"entry-point","subsystem":"tooling","summary":"Official CLI resolved from the user Unity bin directory.","evidence":[{"command":"command -v unity && unity --version"}],"tags":["official"],"confidence":"confirmed","finding_ids":[]},
+    {"id":"unity-editor","label":"CrazyMarket Editor 6000.4.1f1","kind":"component","subsystem":"editor","summary":"Connected ready Editor instance on Pipeline port 7800.","evidence":[{"command":"unity --format json status"}],"tags":["live-editor"],"confidence":"confirmed","finding_ids":[]},
+    {"id":"project-scripts","label":"Project scripts","kind":"component","subsystem":"compilation","summary":"Imported script set is up to date with no compile failure.","evidence":[{"command":"unity --format json command recompile_status"}],"tags":["first-party"],"confidence":"confirmed","finding_ids":["V-F001"]},
+    {"id":"unity-tests","label":"Unity tests: 0","kind":"test","subsystem":"tests","summary":"No EditMode or PlayMode tests are registered.","evidence":[{"command":"unity --format json command list_tests --mode all"}],"tags":["test-framework"],"confidence":"confirmed","finding_ids":["V-F002"]}
+  ],
+  "edges": [
+    {"id":"v-cli-editor","source":"unity-cli","target":"unity-editor","kind":"calls","label":"connects","summary":"CLI discovers and targets the ready CrazyMarket Editor.","status":"observed","confidence":"confirmed","evidence":[{"command":"unity --format json status"}],"trace_ids":["V-CLI"],"finding_ids":[]},
+    {"id":"v-editor-scripts","source":"unity-editor","target":"project-scripts","kind":"tests","label":"checks compilation","summary":"Live recompile status reports up_to_date and failed false.","status":"observed","confidence":"confirmed","evidence":[{"command":"unity --format json command recompile_status"}],"trace_ids":["V-COMPILE"],"finding_ids":["V-F001"]},
+    {"id":"v-editor-tests","source":"unity-editor","target":"unity-tests","kind":"tests","label":"discovers tests","summary":"Live Test Framework discovery returns zero tests.","status":"observed","confidence":"confirmed","evidence":[{"command":"unity --format json command list_tests --mode all"}],"trace_ids":["V-TESTS"],"finding_ids":["V-F002"]}
+  ],
+  "traces": [
+    {"id":"V-CLI","label":"CLI to Editor","summary":"Official CLI connects to the ready CrazyMarket Editor.","ordered_edges":["v-cli-editor"]},
+    {"id":"V-COMPILE","label":"Compilation verification","summary":"Editor verifies imported project scripts are up to date.","ordered_edges":["v-editor-scripts"]},
+    {"id":"V-TESTS","label":"Test discovery","summary":"Editor Test Framework discovery returns zero registered tests.","ordered_edges":["v-editor-tests"]}
+  ]
+}

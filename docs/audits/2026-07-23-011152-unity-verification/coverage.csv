@@ -1,0 +1,5 @@
+path,classification,reason,owner,component_ids,trail_ids,disposition
+ProjectSettings/ProjectVersion.txt,first-party-config,Editor version evidence,coordinator,unity-editor,V-CLI,mapped
+Packages/manifest.json,first-party-config,Pipeline and test package capability,coordinator,unity-editor,V-CLI,mapped
+Assets/Scripts/**,first-party-runtime,compiled Assembly-CSharp inputs,coordinator,project-scripts,V-COMPILE,verified-up-to-date
+Assets/Editor/**,first-party-editor,compiled editor assembly inputs,coordinator,project-scripts,V-COMPILE,verified-up-to-date

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -9,8 +9,8 @@ public class DebugController : MonoBehaviour
 {
     public static DebugController Instance { get; private set; }
 
-    [SerializeField] private CinemachineInputProvider playerCameraInputProvider;
-    [SerializeField] private CinemachineFreeLook playerFreeLookCamera;
+    [SerializeField] private CinemachineInputAxisController playerCameraInputController;
+    [SerializeField] private CinemachineCamera playerFreeLookCamera;
     [SerializeField] private InputReader _input;
 
     enum DebugCommandTag
@@ -103,14 +103,25 @@ public class DebugController : MonoBehaviour
 
         INVERT_DEBUG_CAMERA_MODE = new DebugCommand("invert_camera", "Inverts Y axis of the camera", "invert_camera", () =>
         {
-            if (playerFreeLookCamera != null)
+            if (playerCameraInputController != null)
             {
-                playerFreeLookCamera.m_YAxis.m_InvertInput = !playerFreeLookCamera.m_YAxis.m_InvertInput;
-                LogCommandOutput("Inverting camera y", DebugCommandTag.GOOD);
+                // Toggle invert by negating the vertical axis Gain
+                var controllers = playerCameraInputController.Controllers;
+                if (controllers.Count > 1)
+                {
+                    var c = controllers[1]; // Vertical axis
+                    c.Input.Gain = -c.Input.Gain;
+                    controllers[1] = c;
+                    LogCommandOutput("Inverting camera y", DebugCommandTag.GOOD);
+                }
+                else
+                {
+                    LogCommandOutput("No vertical axis controller found", DebugCommandTag.ERROR);
+                }
             }
             else
             {
-                LogCommandOutput("Camera not found", DebugCommandTag.ERROR);
+                LogCommandOutput("Camera input controller not found", DebugCommandTag.ERROR);
             }
         });
 
@@ -120,10 +131,16 @@ public class DebugController : MonoBehaviour
             "set_x_sensitivity <value>",
             (x) =>
             {
-                if (playerFreeLookCamera != null)
+                if (playerCameraInputController != null)
                 {
-                    playerFreeLookCamera.m_XAxis.m_MaxSpeed = x;
-                    LogCommandOutput("X sensitivity set to " + x, DebugCommandTag.GOOD);
+                    var controllers = playerCameraInputController.Controllers;
+                    if (controllers.Count > 0)
+                    {
+                        var c = controllers[0]; // Horizontal axis
+                        c.Input.Gain = x;
+                        controllers[0] = c;
+                        LogCommandOutput("X sensitivity set to " + x, DebugCommandTag.GOOD);
+                    }
                 }
                 else
                 {
@@ -138,10 +155,17 @@ public class DebugController : MonoBehaviour
             "set_y_sensitivity <value>",
             (y) =>
             {
-                if (playerFreeLookCamera != null)
+                if (playerCameraInputController != null)
                 {
-                    playerFreeLookCamera.m_YAxis.m_MaxSpeed = y;
-                    LogCommandOutput("Y sensitivity set to " + y, DebugCommandTag.GOOD);
+                    var controllers = playerCameraInputController.Controllers;
+                    if (controllers.Count > 1)
+                    {
+                        var c = controllers[1]; // Vertical axis
+                        float sign = c.Input.Gain < 0 ? -1f : 1f;
+                        c.Input.Gain = sign * y;
+                        controllers[1] = c;
+                        LogCommandOutput("Y sensitivity set to " + y, DebugCommandTag.GOOD);
+                    }
                 }
                 else
                 {
@@ -156,10 +180,16 @@ public class DebugController : MonoBehaviour
             "add_x_sensitivity <value>",
             (x) =>
             {
-                if (playerFreeLookCamera != null)
+                if (playerCameraInputController != null)
                 {
-                    playerFreeLookCamera.m_XAxis.m_MaxSpeed += x;
-                    LogCommandOutput("X sensitivity increased by " + x, DebugCommandTag.GOOD);
+                    var controllers = playerCameraInputController.Controllers;
+                    if (controllers.Count > 0)
+                    {
+                        var c = controllers[0]; // Horizontal axis
+                        c.Input.Gain += x;
+                        controllers[0] = c;
+                        LogCommandOutput("X sensitivity increased by " + x, DebugCommandTag.GOOD);
+                    }
                 }
                 else
                 {
@@ -174,10 +204,17 @@ public class DebugController : MonoBehaviour
             "add_y_sensitivity <value>",
             (y) =>
             {
-                if (playerFreeLookCamera != null)
+                if (playerCameraInputController != null)
                 {
-                    playerFreeLookCamera.m_YAxis.m_MaxSpeed += y;
-                    LogCommandOutput("Y sensitivity increased by " + y, DebugCommandTag.GOOD);
+                    var controllers = playerCameraInputController.Controllers;
+                    if (controllers.Count > 1)
+                    {
+                        var c = controllers[1]; // Vertical axis
+                        float sign = c.Input.Gain < 0 ? -1f : 1f;
+                        c.Input.Gain += sign * y;
+                        controllers[1] = c;
+                        LogCommandOutput("Y sensitivity increased by " + y, DebugCommandTag.GOOD);
+                    }
                 }
                 else
                 {
@@ -192,10 +229,24 @@ public class DebugController : MonoBehaviour
             "reset_sensitivity",
             () =>
             {
-                if (playerFreeLookCamera != null)
+                if (playerCameraInputController != null)
                 {
-                    playerFreeLookCamera.m_XAxis.m_MaxSpeed = 120f; // Set your default value
-                    playerFreeLookCamera.m_YAxis.m_MaxSpeed = 1f;   // Set your default value
+                    var controllers = playerCameraInputController.Controllers;
+                    if (controllers.Count > 0)
+                    {
+                        // Reset horizontal axis
+                        var cx = controllers[0];
+                        cx.Input.Gain = 120f;
+                        controllers[0] = cx;
+                    }
+                    if (controllers.Count > 1)
+                    {
+                        // Reset vertical axis (preserve invert sign)
+                        var cy = controllers[1];
+                        float sign = cy.Input.Gain < 0 ? -1f : 1f;
+                        cy.Input.Gain = sign * 1f;
+                        controllers[1] = cy;
+                    }
                     LogCommandOutput("Camera sensitivity reset to default", DebugCommandTag.GOOD);
                 }
                 else
@@ -272,7 +323,7 @@ public class DebugController : MonoBehaviour
             GameManager.Instance.UnpauseGame();
         }
 
-        playerCameraInputProvider.enabled = !ShowConsole;
+        playerCameraInputController.enabled = !ShowConsole;
     }
 
     Vector2 scroll;
