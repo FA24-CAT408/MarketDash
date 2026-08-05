@@ -1,0 +1,20 @@
+path,classification,reason,owner,component_ids,trail_ids,disposition
+Assets/TestCampus/Editor/TestCampusSceneGenerator.cs,first-party source,constructs camera rigs,coordinator,"generator;orbit-vcam;rail-vcam","orbit-render;mode-switch",mapped
+Assets/TestCampus/Runtime/TestCampusCameraGround.cs,first-party source,camera-only ground marker,collision reviewer,surface-probe,collision-reaction,mapped
+Assets/TestCampus/Runtime/TestCampusCameraGroundGuard.cs,first-party source,custom Cinemachine extension,collision reviewer,ground-guard,collision-reaction,mapped
+Assets/TestCampus/Runtime/TestCampusCameraInputFocus.cs,first-party source,look input ownership,collision reviewer,input-focus,orbit-render,mapped
+Assets/TestCampus/Runtime/TestCampusCameraMode.cs,first-party source,mode contract,collision reviewer,prototype-controller,mode-switch,mapped
+Assets/TestCampus/Runtime/TestCampusCameraModeZone.cs,first-party source,hybrid trigger,collision reviewer,hybrid-zone,mode-switch,mapped
+Assets/TestCampus/Runtime/TestCampusCameraOcclusionController.cs,first-party source,visual occlusion,collision reviewer,occlusion,orbit-render,mapped
+Assets/TestCampus/Runtime/TestCampusCameraPrototypeController.cs,first-party source,runtime orchestrator,collision reviewer,prototype-controller,"orbit-render;mode-switch",mapped
+Assets/TestCampus/Runtime/TestCampusCameraRigTag.cs,first-party source,rig discovery marker,collision reviewer,prototype-controller,mode-switch,mapped
+Assets/TestCampus/Runtime/TestCampusCameraSurfaceConstraint.cs,first-party source,orbit radius and pitch constraint,collision reviewer,surface-constraint,collision-reaction,mapped
+Assets/TestCampus/Runtime/TestCampusCameraSurfaceProbe.cs,first-party source,physics surface queries,collision reviewer,surface-probe,collision-reaction,mapped
+Assets/TestCampus/Runtime/TestCampusSelectiveOccluder.cs,first-party source,renderer hiding marker,collision reviewer,occlusion,orbit-render,mapped
+Assets/TestCampus/Runtime/TestCampusPlayerAdapter.cs,first-party source,warp notification,collision reviewer,player-adapter,mode-switch,mapped
+Assets/TestCampus/Runtime/TestCampusController.cs,first-party source,player and zone owner,collision reviewer,prototype-controller,mode-switch,mapped
+Assets/TestCampus/Scenes/TestCampus_Core.unity,generated serialized asset,serialized brain and orbit rig,rig reviewer,"main-camera;orbit-vcam","orbit-render;collision-reaction",mapped
+Assets/TestCampus/Scenes/TestCampus_Camera.unity,generated serialized asset,serialized rail rig,rig reviewer,rail-vcam,mode-switch,mapped
+Assets/Prefabs/Environment/Moving Platform.prefab,first-party serialized asset,reported dynamic collider,coordinator,moving-platform,collision-reaction,mapped
+ProjectSettings/TagManager.asset,configuration,physics layer definitions,coordinator,layer-policy,collision-reaction,mapped
+Packages/manifest.json,configuration,Cinemachine 3.1.6 dependency,coordinator,cinemachine,orbit-render,mapped

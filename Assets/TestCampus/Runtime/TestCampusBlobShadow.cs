@@ -15,6 +15,7 @@ namespace CrazyMarket.TestCampus
 
         private Transform _shadow;
         private Material _material;
+        private Mesh _mesh;
         private readonly RaycastHit[] _hits = new RaycastHit[12];
 
         private void Awake()
@@ -23,7 +24,8 @@ namespace CrazyMarket.TestCampus
             _shadow = shadowObject.transform;
             MeshFilter filter = shadowObject.AddComponent<MeshFilter>();
             MeshRenderer renderer = shadowObject.AddComponent<MeshRenderer>();
-            filter.sharedMesh = CreateDisc();
+            _mesh = CreateDisc();
+            filter.sharedMesh = _mesh;
             Shader shader = Shader.Find("Sprites/Default");
             _material = new Material(shader) { name = "Test Campus Blob Shadow (Runtime)" };
             _material.color = new Color(0.02f, 0.025f, 0.035f, groundedAlpha);
@@ -65,6 +67,7 @@ namespace CrazyMarket.TestCampus
         {
             if (_shadow != null) Destroy(_shadow.gameObject);
             if (_material != null) Destroy(_material);
+            if (_mesh != null) Destroy(_mesh);
         }
 
         private static Mesh CreateDisc()

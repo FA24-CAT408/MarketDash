@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Unity.Cinemachine;
+using UnityEngine.UIElements;
 
 namespace CrazyMarket.TestCampus.Editor
 {
@@ -16,7 +17,7 @@ namespace CrazyMarket.TestCampus.Editor
         public static void ValidateMenu()
         {
             IReadOnlyList<string> errors = Validate();
-            if (errors.Count == 0) Debug.Log("Test Campus validation passed: seven scenes and unique zone roots.");
+            if (errors.Count == 0) Debug.Log("Test Campus validation passed: available stack scenes have unique zone roots and matching Core configuration.");
             else foreach (string error in errors) Debug.LogError(error);
         }
 
@@ -24,43 +25,142 @@ namespace CrazyMarket.TestCampus.Editor
         {
             List<string> errors = new();
             HashSet<TestZoneId> ids = new();
-            string original = SceneManager.GetActiveScene().path;
+            HashSet<TestZoneId> available = new();
+            int cameraObstacleLayer = LayerMask.NameToLayer("Camera Obstacle");
+            int cameraSurfaceLayer = LayerMask.NameToLayer("Camera Surface");
+            if (cameraObstacleLayer < 0) errors.Add("Missing required layer: Camera Obstacle.");
+            if (cameraSurfaceLayer < 0) errors.Add("Missing required layer: Camera Surface.");
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId)))
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath(id)) != null)
+                    available.Add(id);
+            if (!available.Contains(TestZoneId.Hub))
+                errors.Add($"Missing scene: {ScenePath(TestZoneId.Hub)}");
+
+            string original = SceneManager.GetActiveScene().path;
+            foreach (TestZoneId id in available)
             {
-                string suffix = id switch
-                {
-                    TestZoneId.Hub => "Core",
-                    TestZoneId.NPCInteraction => "NPCInteraction",
-                    _ => id.ToString()
-                };
-                string path = $"{TestCampusSceneGenerator.SceneFolder}/TestCampus_{suffix}.unity";
-                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null) { errors.Add($"Missing scene: {path}"); continue; }
+                string path = ScenePath(id);
                 Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
                 TestZoneRoot[] roots = Object.FindObjectsByType<TestZoneRoot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 if (roots.Length != 1) errors.Add($"{scene.name} must contain exactly one TestZoneRoot; found {roots.Length}.");
-                else if (!ids.Add(roots[0].ZoneId)) errors.Add($"Duplicate zone identifier: {roots[0].ZoneId}.");
+                else
+                {
+                    if (roots[0].ZoneId != id)
+                        errors.Add($"{scene.name} has zone identifier {roots[0].ZoneId}; expected {id}.");
+                    if (!ids.Add(roots[0].ZoneId))
+                        errors.Add($"Duplicate zone identifier: {roots[0].ZoneId}.");
+                }
                 if (Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
                     errors.Add($"{scene.name} must contain at least one TextMesh Pro label.");
                 if (Object.FindObjectsByType<TextMesh>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
                     errors.Add($"{scene.name} contains legacy TextMesh components; use TextMesh Pro.");
                 if (Object.FindObjectsByType<Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
                     errors.Add($"{scene.name} contains legacy uGUI Text components; use TextMeshProUGUI.");
+                foreach (Collider collider in Object.FindObjectsByType<Collider>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (collider.CompareTag("IGNORE")
+                        && (collider.gameObject.layer == cameraObstacleLayer
+                            || collider.gameObject.layer == cameraSurfaceLayer))
+                        errors.Add($"{scene.name} puts ignored collider '{collider.name}' on a camera collision layer.");
+                foreach (Renderer renderer in Object.FindObjectsByType<Renderer>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (renderer.gameObject.layer == cameraObstacleLayer
+                        || renderer.gameObject.layer == cameraSurfaceLayer)
+                        errors.Add($"{scene.name} puts rendered geometry '{renderer.name}' on a camera-only layer.");
+                if (cameraObstacleLayer >= 0 && cameraSurfaceLayer >= 0)
+                {
+                    for (int layer = 0; layer < 32; layer++)
+                    {
+                        if (!Physics.GetIgnoreLayerCollision(cameraObstacleLayer, layer))
+                            errors.Add($"Camera Obstacle layer must not participate in gameplay physics with layer {layer}.");
+                        if (!Physics.GetIgnoreLayerCollision(cameraSurfaceLayer, layer))
+                            errors.Add($"Camera Surface layer must not participate in gameplay physics with layer {layer}.");
+                    }
+                }
                 if (id != TestZoneId.Hub)
                 {
                     if (Object.FindAnyObjectByType<TestCampusController>() != null) errors.Add($"{scene.name} owns a forbidden TestCampusController.");
                     if (Object.FindAnyObjectByType<EventSystem>() != null) errors.Add($"{scene.name} owns a forbidden EventSystem.");
                     if (Object.FindAnyObjectByType<CinemachineBrain>() != null) errors.Add($"{scene.name} owns a forbidden CinemachineBrain.");
+                    if (id == TestZoneId.Integration)
+                    {
+                        if (Object.FindObjectsByType<TestCampusIntegrationScenario>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 1)
+                            errors.Add($"{scene.name} must contain exactly one TestCampusIntegrationScenario.");
+                        if (GameObject.Find("Integration Production Moving Platform") == null)
+                            errors.Add($"{scene.name} must contain its production moving platform inside the route.");
+                        if (GameObject.Find("Integration Route Apple") == null)
+                            errors.Add($"{scene.name} must contain its production collectible interaction.");
+                        if (Object.FindObjectsByType<TestCampusFixtureGuard>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
+                            errors.Add($"{scene.name} contains obsolete TestCampusFixtureGuard components; regenerate it.");
+                    }
                 }
                 else
                 {
+                    TestCampusController controller = Object.FindAnyObjectByType<TestCampusController>();
+                    if (controller == null)
+                        errors.Add($"{scene.name} must contain a TestCampusController.");
+                    else
+                    {
+                        HashSet<TestZoneId> configured = new();
+                        foreach (TestZoneScene configuredScene in controller.ZoneScenes)
+                        {
+                            configured.Add(configuredScene.Zone);
+                            if (!available.Contains(configuredScene.Zone))
+                                errors.Add($"{scene.name} references missing scene for {configuredScene.Zone}.");
+                        }
+                        foreach (TestZoneId availableId in available)
+                            if (availableId != TestZoneId.Hub && !configured.Contains(availableId))
+                                errors.Add($"{scene.name} does not configure available scene {availableId}.");
+                    }
                     if (Object.FindObjectsByType<CinemachineBrain>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 1)
                         errors.Add($"{scene.name} must contain exactly one CinemachineBrain.");
                     if (Object.FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
                         errors.Add($"{scene.name} must contain a CinemachineCamera.");
+                    TestCampusCameraCollisionPolicy policy =
+                        Object.FindAnyObjectByType<TestCampusCameraCollisionPolicy>(FindObjectsInactive.Include);
+                    if (policy == null)
+                        errors.Add($"{scene.name} must contain a TestCampusCameraCollisionPolicy.");
+                    else if (cameraObstacleLayer >= 0 && cameraSurfaceLayer >= 0)
+                    {
+                        int expectedObstacles = (1 << cameraObstacleLayer) | (1 << cameraSurfaceLayer);
+                        int expectedSurfaces = 1 << cameraSurfaceLayer;
+                        if (policy.ObstacleLayers.value != expectedObstacles)
+                            errors.Add($"{scene.name} camera obstacle policy does not match the authored layers.");
+                        if (policy.SurfaceLayers.value != expectedSurfaces)
+                            errors.Add($"{scene.name} camera surface policy does not match the authored layer.");
+                        CinemachineDecollider decollider = policy.GetComponent<CinemachineDecollider>();
+                        if (decollider == null || decollider.Decollision.ObstacleLayers.value != expectedObstacles)
+                            errors.Add($"{scene.name} Decollider does not use the camera collision policy.");
+                    }
+                    UIDocument[] documents = Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    if (documents.Length != 1)
+                        errors.Add($"{scene.name} must contain exactly one Test Campus UIDocument; found {documents.Length}.");
+                    else
+                    {
+                        if (documents[0].panelSettings == null)
+                            errors.Add($"{scene.name} UIDocument has no PanelSettings.");
+                        if (documents[0].visualTreeAsset == null)
+                            errors.Add($"{scene.name} UIDocument has no UI Toolkit visual tree.");
+                        if (documents[0].GetComponent<TestCampusControlPanel>() == null)
+                            errors.Add($"{scene.name} UIDocument must be owned by TestCampusControlPanel.");
+                    }
+                    if (Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 1)
+                        errors.Add($"{scene.name} must retain exactly one shared EventSystem for production UI fixtures.");
                 }
             }
             if (!string.IsNullOrEmpty(original)) EditorSceneManager.OpenScene(original, OpenSceneMode.Single);
             return errors;
+        }
+
+        private static string ScenePath(TestZoneId id)
+        {
+            string suffix = id switch
+            {
+                TestZoneId.Hub => "Core",
+                TestZoneId.NPCInteraction => "NPCInteraction",
+                _ => id.ToString()
+            };
+            return $"{TestCampusSceneGenerator.SceneFolder}/TestCampus_{suffix}.unity";
         }
     }
 }

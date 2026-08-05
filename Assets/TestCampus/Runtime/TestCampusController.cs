@@ -14,6 +14,7 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private float killPlaneY = -20f;
 
         private readonly Dictionary<TestZoneId, TestZoneRoot> _zones = new();
+        private readonly Dictionary<TestZoneId, HashSet<ITestResettable>> _externalResettables = new();
         private TestZoneId _currentZone = TestZoneId.Hub;
         private string _lastSpawn = "Default";
 
@@ -106,11 +107,42 @@ namespace CrazyMarket.TestCampus
         {
             if (!_zones.TryGetValue(zone, out TestZoneRoot root) || root == null) return false;
             root.ResetZone();
+            if (_externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+            {
+                foreach (ITestResettable resettable in new List<ITestResettable>(resettables))
+                {
+                    if (resettable is Object unityObject && unityObject == null)
+                    {
+                        resettables.Remove(resettable);
+                        continue;
+                    }
+                    resettable.ResetToInitialState();
+                }
+            }
             return true;
+        }
+
+        public void RegisterZoneResettable(TestZoneId zone, ITestResettable resettable)
+        {
+            if (resettable == null) return;
+            if (!_externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+            {
+                resettables = new HashSet<ITestResettable>();
+                _externalResettables.Add(zone, resettables);
+            }
+            resettables.Add(resettable);
+        }
+
+        public void UnregisterZoneResettable(TestZoneId zone, ITestResettable resettable)
+        {
+            if (resettable != null
+                && _externalResettables.TryGetValue(zone, out HashSet<ITestResettable> resettables))
+                resettables.Remove(resettable);
         }
 
         public void ResetCampus()
         {
+            Time.timeScale = 1f;
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId))) ResetZone(id);
             ReturnToHub();
         }
@@ -120,6 +152,13 @@ namespace CrazyMarket.TestCampus
             bool applied = false;
             foreach (TestZoneRoot zone in _zones.Values) applied |= zone.ApplyPreset(presetId);
             if (!applied) Debug.LogWarning($"No test zone accepted preset '{presetId}'.");
+            return applied;
+        }
+
+        public bool ApplyPreset(TestZoneId zone, string presetId)
+        {
+            bool applied = _zones.TryGetValue(zone, out TestZoneRoot root) && root.ApplyPreset(presetId);
+            if (!applied) Debug.LogWarning($"Test zone {zone} did not accept preset '{presetId}'.");
             return applied;
         }
 

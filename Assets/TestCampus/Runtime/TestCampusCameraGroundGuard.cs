@@ -13,29 +13,28 @@ namespace CrazyMarket.TestCampus
     /// transiently break that constraint during fast movement, jumps and step transitions. This
     /// extension enforces the same limit on the final corrected position.
     ///
-    /// It runs at the Body stage, so the CinemachineRotationComposer in the Aim stage re-aims from
-    /// the corrected position automatically and composition is preserved without any manual
-    /// restore. Place it after the CinemachineDecollider on the rig: extension callbacks fire in
-    /// component order. Ordering is not load bearing because this only ever raises the camera and
-    /// the clearance keeps the camera sphere clear of penetration, but keep it deterministic.
+    /// It first runs at the Body stage so the CinemachineRotationComposer can re-aim from the
+    /// corrected position. It runs again at Finalize as an order-independent guarantee after all
+    /// Body-stage extensions have finished, including the CinemachineDecollider.
     /// </remarks>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(TestCampusCameraCollisionPolicy))]
     public sealed class TestCampusCameraGroundGuard : CinemachineExtension
     {
-        [Tooltip("Should match the CinemachineDecollider's Camera Radius on this rig.")]
-        [SerializeField] private float cameraRadius = 0.35f;
+        public const float DefaultMinimumOrbitRadiusScale = 0.7368f;
+        public const float DefaultCameraRadius = 0.35f;
+        public const float DefaultClearance = 0.1f;
+        public const float DefaultProbeSlack = 0.5f;
+        public const float DefaultTargetYOffset = 1.2f;
 
         [Tooltip("Gap held between the camera sphere and the floor below or ceiling above it.")]
-        [SerializeField] private float groundClearance = 0.1f;
+        [SerializeField] private float groundClearance = DefaultClearance;
 
         [Tooltip("Extra probe distance past the camera, so the surface is still found on the "
             + "frame the camera first breaches it.")]
-        [SerializeField] private float groundProbeSlack = 0.5f;
+        [SerializeField] private float groundProbeSlack = DefaultProbeSlack;
 
-        [Tooltip("Should match the CinemachineOrbitalFollow's Target Offset Y on this rig.")]
-        [SerializeField] private float targetYOffset = 1.2f;
-
-        [SerializeField] private LayerMask groundLayers = ~0;
+        private TestCampusCameraCollisionPolicy _collisionPolicy;
 
         // Deliberately undamped: this is the guarantee layer, so it must apply in full on the
         // frame the breach happens. Easing it lets a stale correction bleed into the next
@@ -43,12 +42,14 @@ namespace CrazyMarket.TestCampus
         // controller's job, via its pitch-limit ramps.
         public bool IsLifting { get; private set; }
         public float LastLift { get; private set; }
+        public float GroundClearance => groundClearance;
+        public float GroundProbeSlack => groundProbeSlack;
 
         protected override void PostPipelineStageCallback(
             CinemachineVirtualCameraBase vcam,
             CinemachineCore.Stage stage, ref CameraState state, float deltaTime)
         {
-            if (stage != CinemachineCore.Stage.Body)
+            if (stage != CinemachineCore.Stage.Body && stage != CinemachineCore.Stage.Finalize)
                 return;
 
             Transform follow = vcam != null ? vcam.Follow : null;
@@ -58,27 +59,37 @@ namespace CrazyMarket.TestCampus
                 return;
             }
 
-            Vector3 target = follow.position + Vector3.up * targetYOffset;
+            CinemachineOrbitalFollow orbit = vcam.GetComponent<CinemachineOrbitalFollow>();
+            CinemachineDecollider decollider = vcam.GetComponent<CinemachineDecollider>();
+            _collisionPolicy ??= GetComponent<TestCampusCameraCollisionPolicy>();
+            int surfaceLayers = _collisionPolicy != null ? _collisionPolicy.SurfaceLayers.value : 0;
+            Vector3 targetOffset = orbit != null
+                ? orbit.TargetOffset
+                : Vector3.up * DefaultTargetYOffset;
+            float cameraRadius = decollider != null
+                ? decollider.CameraRadius
+                : DefaultCameraRadius;
+            Vector3 target = follow.position + targetOffset;
             Vector3 camera = state.GetCorrectedPosition();
 
             float correction = 0f;
-            if (TestCampusCameraGround.TryGetMinimumCameraY(
+            if (TestCampusCameraSurfaceProbe.TryGetMinimumCameraY(
                     target, camera, cameraRadius, groundClearance, groundProbeSlack,
-                    groundLayers, out float minimumY)
+                    surfaceLayers, out float minimumY)
                 && camera.y < minimumY)
             {
                 correction = minimumY - camera.y;
             }
-            else if (TestCampusCameraGround.TryGetMaximumCameraY(
+            else if (TestCampusCameraSurfaceProbe.TryGetMaximumCameraY(
                          target, camera, cameraRadius, groundClearance, groundProbeSlack,
-                         groundLayers, out float maximumY)
+                         surfaceLayers, out float maximumY)
                      && camera.y > maximumY)
             {
                 // Never push down past the surface the player is standing on: in a space too tight
                 // to satisfy both, clipping a ceiling reads far better than falling out of the level.
-                float floorY = TestCampusCameraGround.TryGetMinimumCameraY(
+                float floorY = TestCampusCameraSurfaceProbe.TryGetMinimumCameraY(
                     target, new Vector3(camera.x, target.y - 0.001f, camera.z), cameraRadius,
-                    groundClearance, groundProbeSlack, groundLayers, out float standingY)
+                    groundClearance, groundProbeSlack, surfaceLayers, out float standingY)
                     ? standingY
                     : float.NegativeInfinity;
                 correction = Mathf.Max(maximumY, floorY) - camera.y;
@@ -86,8 +97,11 @@ namespace CrazyMarket.TestCampus
 
             if (Mathf.Abs(correction) < 0.0001f)
             {
-                IsLifting = false;
-                LastLift = 0f;
+                if (stage == CinemachineCore.Stage.Body)
+                {
+                    IsLifting = false;
+                    LastLift = 0f;
+                }
                 return;
             }
 

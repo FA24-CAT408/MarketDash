@@ -68,14 +68,11 @@ namespace CrazyMarket.TestCampus
             _resettables.Clear();
             _presetProviders.Clear();
             _diagnosticsProviders.Clear();
-            foreach (GameObject sceneRoot in gameObject.scene.GetRootGameObjects())
+            foreach (MonoBehaviour behaviour in GetComponentsInChildren<MonoBehaviour>(true))
             {
-                foreach (MonoBehaviour behaviour in sceneRoot.GetComponentsInChildren<MonoBehaviour>(true))
-                {
-                    if (behaviour is ITestResettable resettable) _resettables.Add(resettable);
-                    if (behaviour is ITestPresetProvider preset) _presetProviders.Add(preset);
-                    if (behaviour is ITestDiagnosticsProvider diagnostics) _diagnosticsProviders.Add(diagnostics);
-                }
+                if (behaviour is ITestResettable resettable) _resettables.Add(resettable);
+                if (behaviour is ITestPresetProvider preset) _presetProviders.Add(preset);
+                if (behaviour is ITestDiagnosticsProvider diagnostics) _diagnosticsProviders.Add(diagnostics);
             }
             CaptureInitialState();
         }

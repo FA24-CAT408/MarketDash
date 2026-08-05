@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "run_id": "2026-08-03-222615-test-campus-camera-system",
+  "repository": "CrazyMarket Local Review",
+  "repository_root": "/Users/abrahamrubio/Documents/Unity Projects/CrazyMarket Local Review",
+  "revision": "e790517110a3a530d23286ec0038b6bc204a5266",
+  "worktree_status": "M .vscode/settings.json\n M Assets/TestCampus/Scenes/TestCampus_Core.unity\n M Assets/Vfx/Glow.vfx\n M ProjectSettings/EditorBuildSettings.asset\n M ProjectSettings/ProjectSettings.asset\n M Tools/LocalReview/dashboard.html\n M Tools/LocalReview/review_loop.py",
+  "scope": [
+    "test-campus-camera-system"
+  ],
+  "excluded": [
+    "Library/** except version-matched Cinemachine source used as vendored evidence",
+    "Temp/**",
+    "unrelated gameplay, UI, lighting, and NPC systems"
+  ],
+  "safe_commands": [
+    "rg source and serialized assets",
+    "git status and revision inspection",
+    "Cinemachine package source inspection"
+  ],
+  "external_limits": [
+    "No network research",
+    "No source mutation",
+    "No Unity execution required for this read-only architecture diagnosis"
+  ],
+  "status": "complete",
+  "gaps": [
+    "Rail collision behavior is an unresolved product decision, not a missing source trail."
+  ]
+}

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Reflection;
 
@@ -6,7 +7,10 @@ namespace CrazyMarket.TestCampus
     [DisallowMultipleComponent]
     public sealed class TestCampusPlayerAdapter : MonoBehaviour
     {
+        public static event Action<Transform, Vector3> PlayerWarped;
+
         private Component _controller;
+        private FieldInfo _movementIntent;
 
         private void Awake()
         {
@@ -21,13 +25,41 @@ namespace CrazyMarket.TestCampus
 
         private void OnEnable()
         {
-            EnableMovement();
+            SetMovementEnabled(true);
         }
 
-        private void EnableMovement()
+        private void EnableMovement() => SetMovementEnabled(true);
+
+        public void SetMovementEnabled(bool enabled)
         {
-            if (_controller != null)
-                _controller.SendMessage("SetMovementEnabled", true, SendMessageOptions.RequireReceiver);
+            _controller ??= GetComponent("KCCPlayerController");
+            if (_controller == null) return;
+
+            FieldInfo canMove = _controller.GetType().GetField("canMove", BindingFlags.Instance | BindingFlags.Public);
+            if (canMove?.FieldType == typeof(bool))
+            {
+                canMove.SetValue(_controller, enabled);
+                return;
+            }
+
+            _controller.GetType()
+                .GetMethod("SetMovementEnabled", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                ?.Invoke(_controller, new object[] { enabled });
+        }
+
+        public bool TryGetMovementIntent(out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            _controller ??= GetComponent("KCCPlayerController");
+            if (_controller == null) return false;
+
+            _movementIntent ??= _controller.GetType().GetField(
+                "_moveInputVector", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (_movementIntent?.FieldType != typeof(Vector3)) return false;
+
+            direction = (Vector3)_movementIntent.GetValue(_controller);
+            direction.y = 0f;
+            return true;
         }
 
         private void DisableLegacyShadows()
@@ -41,18 +73,30 @@ namespace CrazyMarket.TestCampus
 
         public void TeleportTo(Vector3 position, Quaternion rotation)
         {
+            Vector3 previousPosition = transform.position;
             _controller ??= GetComponent("KCCPlayerController");
             object motor = _controller?.GetType().GetField("Motor", BindingFlags.Instance | BindingFlags.Public)?.GetValue(_controller);
             if (motor != null)
             {
-                motor.GetType().GetMethod("SetPositionAndRotation", new[] { typeof(Vector3), typeof(Quaternion), typeof(bool) })
-                    ?.Invoke(motor, new object[] { position, rotation, true });
-                motor.GetType().GetField("BaseVelocity", BindingFlags.Instance | BindingFlags.Public)
-                    ?.SetValue(motor, Vector3.zero);
-                return;
+                MethodInfo teleport = motor.GetType().GetMethod(
+                    "SetPositionAndRotation",
+                    new[] { typeof(Vector3), typeof(Quaternion), typeof(bool) });
+                if (teleport != null)
+                {
+                    teleport.Invoke(motor, new object[] { position, rotation, true });
+                    motor.GetType().GetField("BaseVelocity", BindingFlags.Instance | BindingFlags.Public)
+                        ?.SetValue(motor, Vector3.zero);
+                }
+                else
+                {
+                    Debug.LogWarning("KCC motor has no compatible teleport method; using Transform fallback.", this);
+                    transform.SetPositionAndRotation(position, rotation);
+                }
             }
+            else
+                transform.SetPositionAndRotation(position, rotation);
 
-            transform.SetPositionAndRotation(position, rotation);
+            PlayerWarped?.Invoke(transform, transform.position - previousPosition);
         }
     }
 }
