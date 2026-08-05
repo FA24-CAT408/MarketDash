@@ -54,6 +54,7 @@ public class GameManager : MonoBehaviour
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
         else
         {
@@ -67,12 +68,13 @@ public class GameManager : MonoBehaviour
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        SetGroceryListManager(null);
     }
     
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         // Find references to scene-specific components
-        _groceryListManager = FindObjectOfType<GroceryListManager>();
+        SetGroceryListManager(FindObjectOfType<GroceryListManager>());
         _timerManager = FindObjectOfType<TimerManager>();
         _sceneEventManager = FindObjectOfType<SceneEventManager>();
         
@@ -137,7 +139,7 @@ public class GameManager : MonoBehaviour
     {
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
-            player.canMove = false;
+            player.SetMovementEnabled(false);
     }
     
     public void EnterPreGameState()
@@ -147,7 +149,7 @@ public class GameManager : MonoBehaviour
         
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
-            player.canMove = true;
+            player.SetMovementEnabled(true);
 
         Debug.Log("Entered PreGame");
     }
@@ -176,7 +178,8 @@ public class GameManager : MonoBehaviour
     {
         UpdateCursorVisible(false);
 
-        _groceryListManager.CreateAndShowList();
+        if (_groceryListManager != null)
+            _groceryListManager.CreateAndShowList();
         
         if (_timerManager != null)
             _timerManager.StartTimer();
@@ -194,7 +197,7 @@ public class GameManager : MonoBehaviour
         
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
-            player.canMove = false;
+            player.SetMovementEnabled(false);
             
         if (_timerManager != null)
             _timerManager.StopTimer();
@@ -227,7 +230,7 @@ public class GameManager : MonoBehaviour
         
         var player = FindObjectOfType<KCCPlayerController>();
         if (player != null)
-            player.canMove = false;
+            player.SetMovementEnabled(false);
         
         if (_timerManager != null)
             _timerManager.StopTimer();
@@ -258,7 +261,7 @@ public class GameManager : MonoBehaviour
             var player = FindObjectOfType<KCCPlayerController>();
             
             if (player != null)
-                player.canMove = true;
+                player.SetMovementEnabled(true);
             
             UpdateCursorVisible(false);
             
@@ -311,6 +314,26 @@ public class GameManager : MonoBehaviour
     public void UnregisterSceneEvents()
     {
         _sceneEventManager = null;
+    }
+
+    private void SetGroceryListManager(GroceryListManager manager)
+    {
+        if (_groceryListManager != null)
+        {
+            _groceryListManager.OrderCompleted -= HandleOrderCompleted;
+        }
+
+        _groceryListManager = manager;
+
+        if (_groceryListManager != null)
+        {
+            _groceryListManager.OrderCompleted += HandleOrderCompleted;
+        }
+    }
+
+    private void HandleOrderCompleted()
+    {
+        ChangeState(GameState.EndGame);
     }
 
     public void UpdateCursorVisible(bool visible)

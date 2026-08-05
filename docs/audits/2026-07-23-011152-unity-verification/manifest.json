@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "run_id": "2026-07-23-011152-unity-verification",
+  "repository": "CrazyMarket",
+  "revision": "4532a1ee8cd8a5a6ed2a320e292bdb847c9848e2",
+  "worktree_state": "dirty before verification",
+  "scope": ["Unity CLI availability", "connected Editor status", "script compilation status", "registered tests", "Editor error console"],
+  "excluded": ["runtime behavior", "Play Mode", "builds", "serialized-binding reconstruction"],
+  "safe_commands": ["unity --version", "unity status", "unity list", "unity command list_tests", "unity command get_console_logs", "unity command recompile", "unity command recompile_status"],
+  "external_limits": ["no dependency installation", "no build", "no scene or asset mutation"],
+  "status": "complete",
+  "gaps": []
+}

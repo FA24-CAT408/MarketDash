@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "run_id": "2026-07-23-000358-full",
+  "repository": "CrazyMarket",
+  "revision": "4532a1ee8cd8a5a6ed2a320e292bdb847c9848e2",
+  "worktree_state": "dirty before audit; extensive pre-existing moves, deletions, and untracked files",
+  "scope": ["active first-party code", "built scenes and relevant prefab bindings", "immediate vendor boundaries"],
+  "excluded": ["Library/**", "Temp/**", "Logs/**", "obj/**", "UserSettings/**", "Assets/ThirdParty/** except boundary inspection", "Assets/Scripts/_Archive/**", "old and testing scenes except contextual evidence"],
+  "safe_commands": ["static source and YAML inspection", "git status and history", "unity status when available"],
+  "external_limits": ["no dependency installation", "no builds", "no production or external service access"],
+  "delegation": ["state/scene/UI lifecycle", "input/player/camera/interaction", "items/persistence/audio/NPC/tooling"],
+  "status": "incomplete",
+  "gaps": [
+    "The documented unity executable was unavailable, so compilation and runtime behavior were not verified.",
+    "Serialized UnityEvent and prefab overrides were sampled deeply but not reconstructed for every active scene object.",
+    "The EndGame to GameOver handoff is serialized and was not fully decoded end-to-end.",
+    "No first-party tests were found for the traced connections.",
+    "The dirty worktree makes current-tree versus HEAD provenance ambiguous for relocated vendor content."
+  ]
+}

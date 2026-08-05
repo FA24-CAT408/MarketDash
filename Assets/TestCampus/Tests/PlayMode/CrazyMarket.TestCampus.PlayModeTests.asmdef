@@ -1,0 +1,11 @@
+{
+  "name": "CrazyMarket.TestCampus.PlayModeTests",
+  "rootNamespace": "CrazyMarket.TestCampus.Tests",
+  "references": [
+    "CrazyMarket.TestCampus.Runtime",
+    "Unity.Cinemachine"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
