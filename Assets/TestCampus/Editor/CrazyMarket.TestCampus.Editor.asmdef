@@ -1,0 +1,15 @@
+{
+  "name": "CrazyMarket.TestCampus.Editor",
+  "rootNamespace": "CrazyMarket.TestCampus.Editor",
+  "references": [
+    "CrazyMarket.TestCampus.Runtime",
+    "Unity.Cinemachine",
+    "Unity.Mathematics",
+    "Unity.UGUI",
+    "Unity.TextMeshPro",
+    "Unity.Splines"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

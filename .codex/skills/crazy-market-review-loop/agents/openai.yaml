@@ -1,0 +1,4 @@
+interface:
+  display_name: "CrazyMarket Review Loop"
+  short_description: "Review and validate local Unity stacks"
+  default_prompt: "Use $crazy-market-review-loop to review and validate the current local stack branch."

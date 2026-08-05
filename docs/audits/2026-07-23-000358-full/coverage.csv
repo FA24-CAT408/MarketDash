@@ -1,0 +1,47 @@
+path,classification,reason,owner,component_ids,trail_ids,disposition
+Assets/Input/PlayerControls.inputactions,first-party-source,input map,player,input-actions,T-MOVE;T-INTERACT,mapped
+Assets/Input/PlayerControls.cs,generated,generated from inputactions,player,input-actions,T-MOVE,excluded-from-quality-findings
+Assets/Scripts/Input/InputReader.cs,first-party-runtime,input adapter,player,input-reader,T-MOVE;T-PAUSE;T-INTERACT,mapped
+Assets/Scripts/Player/Kinematic Player Controller/KCCPlayerController.cs,first-party-runtime,active player controller,player,kcc-player,T-MOVE,mapped
+Assets/Scripts/Player/PlayerCollisionManager.cs,first-party-runtime,collision adapter,player,player-collision,,mapped
+Assets/Scripts/Player/RespawnComponent.cs,first-party-runtime,respawn adapter,player,respawn,,mapped
+Assets/Scripts/Camera/CameraSystem.cs,first-party-runtime,camera coordinator,player,camera-system,T-MOVE,mapped
+Assets/Scripts/Camera/CameraTrigger.cs,first-party-runtime,camera trigger,player,camera-system,,mapped
+Assets/Scripts/Camera/DollyCartTweener.cs,first-party-runtime,cutscene adapter,player,camera-system,,mapped
+Assets/Scripts/Interaction/IInteractable.cs,first-party-runtime,interaction contract,player,interaction,T-INTERACT,orphaned
+Assets/Scripts/Interaction/InteractionController.cs,first-party-runtime,interaction scanner,player,interaction,T-INTERACT,disconnected
+Assets/Scripts/Managers/GameManager.cs,first-party-runtime,persistent state coordinator,lifecycle,game-manager,T-PLAY;T-COMPLETE;T-PAUSE,mapped
+Assets/Scripts/Managers/SceneEventManager.cs,first-party-runtime,serialized state bridge,lifecycle,scene-events,T-PLAY,mapped
+Assets/Scripts/Managers/UIManager.cs,first-party-runtime,scene UI projection,lifecycle,ui-manager,T-PLAY;T-PAUSE;T-COMPLETE,mapped
+Assets/Scripts/Managers/TimerManager.cs,first-party-runtime,timer state,lifecycle,timer,T-PLAY;T-COMPLETE,mapped
+Assets/Scripts/Managers/MainMenuController.cs,first-party-runtime,menu and scene entry,lifecycle,main-menu,T-PLAY,mapped
+Assets/Scripts/Managers/EndScreenManager.cs,first-party-runtime,post-run UI,lifecycle,end-screen,T-COMPLETE,mapped
+Assets/Scripts/Managers/AudioManager.cs,first-party-runtime,persistent audio,gameplay,audio,T-SETTINGS-AUDIO,mapped
+Assets/Scripts/Gameplay/EntranceController.cs,first-party-runtime,state trigger,lifecycle,entrance,T-PLAY,mapped
+Assets/Scripts/Gameplay/GameStateTrigger.cs,first-party-runtime,generic state trigger,lifecycle,state-trigger,T-COMPLETE,mapped-with-unresolved-binding
+Assets/Scripts/Gameplay/GroceryListManager.cs,first-party-runtime,order state,gameplay,grocery-list,T-COMPLETE,mapped
+Assets/Scripts/Gameplay/StagingAreaController.cs,first-party-runtime,completion presentation,gameplay,staging,T-COMPLETE,mapped
+Assets/Scripts/Gameplay/MovingPlatform.cs,first-party-runtime,KCC mover adapter,gameplay,moving-platform,,mapped
+Assets/Scripts/Item Scripts/Item.cs,first-party-runtime,collectible,gameplay,item,T-COMPLETE,mapped
+Assets/Scripts/Item Scripts/ShelfItemSpawner.cs,first-party-runtime,manual spline population,gameplay,shelf-spawner,,mapped-dormant-startup
+Assets/Scripts/NPC/NPCController.cs,first-party-runtime,spline/KCC NPC adapter,gameplay,npc,T-NPC,mapped
+Assets/Scripts/SOAP/Game Data/GameSaveData.cs,first-party-runtime,save schema,gameplay,save,T-COMPLETE,mapped
+Assets/Scripts/SOAP/Game Data/GameSaveManager.cs,first-party-runtime,save service,gameplay,save,T-COMPLETE,mapped
+Assets/Scripts/SOAP/Game Data/LevelSaveData.cs,first-party-runtime,unused save schema,gameplay,level-save,,orphaned
+Assets/Scripts/SOAP/Game Data/LevelTimeEntry.cs,first-party-runtime,save entry schema,gameplay,save,T-COMPLETE,mapped
+Assets/Scripts/SOAP/Game Settings/GameSettingsData.cs,first-party-runtime,settings schema,gameplay,settings,T-SETTINGS-AUDIO,mapped
+Assets/Scripts/SOAP/Game Settings/GameSettingsManager.cs,first-party-runtime,settings service,gameplay,settings,T-SETTINGS-AUDIO,mapped
+Assets/Scripts/Tools/DebugCommandBase.cs,first-party-runtime,debug command model,gameplay,debug,,mapped
+Assets/Scripts/Tools/DebugController.cs,first-party-runtime,debug console,gameplay,debug,,mapped
+Assets/Scripts/Tools/Editor/CustomEditorTools.cs,first-party-editor,project editor window,gameplay,editor-tools,,mapped
+Assets/Scripts/Tools/Editor/ItemCreationPopup.cs,first-party-editor,item creation window,gameplay,editor-tools,,mapped
+Assets/Editor/GameSaveManagerEditor.cs,first-party-editor,save inspector,gameplay,editor-tools,,mapped
+Assets/Editor/GameSettingsManagerEditor.cs,first-party-editor,settings inspector,gameplay,editor-tools,,mapped
+Assets/Scripts/Utility/SceneTransitioner.cs,first-party-runtime,empty transition scaffold,lifecycle,scene-transitioner,,orphaned
+Assets/Scripts/Utility/ShadowDecal.cs,first-party-runtime,visual utility,gameplay,shadow-decal,,mapped-leaf
+Assets/Scripts/_Archive/**,first-party-archive,explicit archive,coordinator,,,excluded
+Assets/ThirdParty/**,vendor,vendored dependencies,coordinator,external-boundaries,,boundary-only
+Library/**,generated-cache,Unity generated cache,coordinator,,,excluded
+Temp/**,generated-cache,Unity temporary output,coordinator,,,excluded
+Logs/**,generated-output,Unity logs,coordinator,,,excluded
+obj/**,generated-output,IDE/build intermediates,coordinator,,,excluded

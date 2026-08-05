@@ -21,6 +21,26 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
         }
     }
 
+    private void OnDisable()
+    {
+        if (_playerControls != null)
+        {
+            _playerControls.Player.Disable();
+
+            if (Application.isPlaying)
+            {
+                _playerControls.Dispose();
+            }
+            else
+            {
+                // Prevent the finalizer from calling Destroy() in edit mode
+                System.GC.SuppressFinalize(_playerControls);
+            }
+
+            _playerControls = null;
+        }
+    }
+
     public void SetPlayerControls()
     {
         _playerControls.Player.Enable();
@@ -68,7 +88,10 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
 
     public void OnInteract(InputAction.CallbackContext context)
     {
-        InteractEvent?.Invoke();
+        if (context.performed)
+        {
+            InteractEvent?.Invoke();
+        }
     }
 
     public void OnRestart(InputAction.CallbackContext context)
@@ -77,7 +100,10 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
 
     public void OnToggleDebug(InputAction.CallbackContext context)
     {
-        ToggleDebugModeEvent?.Invoke();
+        if (context.performed)
+        {
+            ToggleDebugModeEvent?.Invoke();
+        }
     }
 
     public void OnPause(InputAction.CallbackContext context)
@@ -98,7 +124,10 @@ public class InputReader : ScriptableObject, PlayerControls.IPlayerActions
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
-        CrouchEvent?.Invoke();
+        if (context.performed)
+        {
+            CrouchEvent?.Invoke();
+        }
     }
 
     public void OnSwapTargets(InputAction.CallbackContext context)

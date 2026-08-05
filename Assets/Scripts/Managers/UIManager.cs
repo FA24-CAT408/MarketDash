@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using DG.Tweening;
 using Obvious.Soap;
 using TMPro;
@@ -40,8 +40,9 @@ public class UIManager : MonoBehaviour
     
     [Header("Player")]
     [SerializeField] private InputReader _inputReader;
-    [SerializeField] private CinemachineFreeLook playerFreeLook;
+    [SerializeField] private CinemachineCamera playerCamera;
     
+    private CinemachineInputAxisController _cameraInputController;
     private Tween _currentFadeTween;
     private TimerManager _timerManager;
 
@@ -64,6 +65,12 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         _timerManager = FindObjectOfType<TimerManager>();
+        
+        // Cache the input axis controller from the camera
+        if (playerCamera != null)
+        {
+            _cameraInputController = playerCamera.GetComponent<CinemachineInputAxisController>();
+        }
         
         // Initialize UI state based on current game state
         if (GameManager.Instance != null)
@@ -128,11 +135,10 @@ public class UIManager : MonoBehaviour
             musicVolumeText.text = musicVolumeSlider.value.ToString("F2");
         }
         
-        CinemachineInputProvider cinemachineInputProvider = playerFreeLook.transform.GetComponent<CinemachineInputProvider>();
-
-        if (cinemachineInputProvider != null)
+        // Disable/enable camera input when pausing/unpausing
+        if (_cameraInputController != null)
         {
-            cinemachineInputProvider.enabled = !uiIsPaused;
+            _cameraInputController.enabled = !uiIsPaused;
         }
     }
     
@@ -351,16 +357,29 @@ public class UIManager : MonoBehaviour
         if (_gameSettingsManager != null)
             _gameSettingsManager.Sensitivity = value;
         
-        if (playerFreeLook != null)
+        // Update camera sensitivity via CinemachineInputAxisController Gain
+        if (_cameraInputController != null)
         {
-            playerFreeLook.m_XAxis.m_MaxSpeed = 120f * value;
-            playerFreeLook.m_YAxis.m_MaxSpeed = 1f * value;
+            var controllers = _cameraInputController.Controllers;
+            for (int i = 0; i < controllers.Count; i++)
+            {
+                var c = controllers[i];
+                if (i == 0) // Horizontal axis
+                {
+                    c.Input.Gain = 120f * value;
+                    controllers[i] = c;
+                }
+                else if (i == 1) // Vertical axis
+                {
+                    float sign = c.Input.Gain < 0 ? -1f : 1f;
+                    c.Input.Gain = sign * value;
+                    controllers[i] = c;
+                }
+            }
         }
 
         if (sensitivityText != null)
         {
-            // float normalized = 0.1f + ((value - 0.1f) / (2f - 0.1f)) * (1f - 0.1f);
-            // normalized = Mathf.Clamp(normalized, 0.1f, 1f);
             sensitivityText.text = value.ToString("F2");
         }
     }
@@ -381,9 +400,16 @@ public class UIManager : MonoBehaviour
         if (_gameSettingsManager != null)
             _gameSettingsManager.InvertCamera = value;
         
-        if (playerFreeLook != null)
+        // Invert the vertical axis by negating the Gain on the second controller
+        if (_cameraInputController != null)
         {
-            playerFreeLook.m_YAxis.m_InvertInput = value;
+            var controllers = _cameraInputController.Controllers;
+            if (controllers.Count > 1)
+            {
+                var c = controllers[1]; // Vertical axis
+                c.Input.Gain = value ? -Mathf.Abs(c.Input.Gain) : Mathf.Abs(c.Input.Gain);
+                controllers[1] = c;
+            }
         }
     }
 
