@@ -40,6 +40,9 @@ namespace CrazyMarket.TestCampus
 
         private IEnumerator Start()
         {
+            if (playerRoot != null && !playerRoot.gameObject.activeSelf)
+                playerRoot.gameObject.SetActive(true);
+
             yield return null;
             foreach (TestZoneRoot root in FindObjectsByType<TestZoneRoot>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 RegisterZone(root);

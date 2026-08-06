@@ -170,6 +170,7 @@ namespace CrazyMarket.TestCampus.Editor
             _activeZoneRoot = null;
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/KCC Player Controller.prefab");
             GameObject player = playerPrefab != null ? (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, scene) : Capsule("Test Player", Vector3.up);
+            player.SetActive(true);
             player.transform.position = Vector3.up;
             player.AddComponent<TestCampusPlayerAdapter>();
             controller.PlayerRoot = player.transform;
