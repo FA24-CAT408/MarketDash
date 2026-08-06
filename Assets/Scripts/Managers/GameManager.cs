@@ -87,7 +87,6 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("GAME MANAGER START METHOD");
 
-        ApplyCursorState();
         ChangeState(GameState.LoadingIn);
 
         AssignSaveData();
