@@ -12,6 +12,7 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private List<TestZoneScene> zoneScenes = new();
         [SerializeField] private Transform playerRoot;
         [SerializeField] private float killPlaneY = -20f;
+        [SerializeField] private bool disablePointLightShadows = true;
 
         private readonly Dictionary<TestZoneId, TestZoneRoot> _zones = new();
         private readonly Dictionary<TestZoneId, HashSet<ITestResettable>> _externalResettables = new();
@@ -46,6 +47,7 @@ namespace CrazyMarket.TestCampus
                 foreach (TestZoneScene zone in zoneScenes)
                     if (zone.LoadByDefault && !IsSceneLoaded(zone.SceneName))
                         yield return LoadZone(zone.Zone);
+            ApplyAdditionalLightShadowBudget();
         }
 
         private void Update()
@@ -88,6 +90,7 @@ namespace CrazyMarket.TestCampus
             }
             if (!IsSceneLoaded(config.SceneName))
                 yield return SceneManager.LoadSceneAsync(config.SceneName, LoadSceneMode.Additive);
+            ApplyAdditionalLightShadowBudget();
         }
 
         public IEnumerator UnloadZone(TestZoneId zone)
@@ -192,6 +195,21 @@ namespace CrazyMarket.TestCampus
             if (string.IsNullOrEmpty(sceneName)) return false;
             Scene scene = SceneManager.GetSceneByName(sceneName);
             return scene.IsValid() && scene.isLoaded;
+        }
+
+        private void ApplyAdditionalLightShadowBudget()
+        {
+            if (!disablePointLightShadows) return;
+
+            // Each point light consumes six atlas tiles. Test Campus keeps spot-light
+            // shadows and disables point-light shadows so the 512px URP atlas does
+            // not repeatedly resize twenty shadow maps while additive zones load.
+            foreach (Light light in FindObjectsByType<Light>(
+                         FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (light.type == LightType.Point && light.shadows != LightShadows.None)
+                    light.shadows = LightShadows.None;
+            }
         }
     }
 }
