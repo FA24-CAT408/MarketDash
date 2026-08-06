@@ -16,7 +16,6 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private float controllerPitchSpeed = 95f;
 
         private InputAction _mouseLookAction;
-        private TestCampusPlayerAdapter _playerAdapter;
         private Vector2 _pendingMouseLookDelta;
         private bool _uiHasFocus;
 
@@ -63,19 +62,12 @@ namespace CrazyMarket.TestCampus
 
         private void OnApplicationFocus(bool focused) => ApplyCursorState();
 
-        public void SetPlayerAdapter(TestCampusPlayerAdapter playerAdapter)
-        {
-            _playerAdapter = playerAdapter;
-            _playerAdapter?.SetMovementEnabled(!_uiHasFocus);
-        }
-
         public void SetUiFocus(bool hasFocus)
         {
             _uiHasFocus = hasFocus;
             InputSource = hasFocus ? "UI focus" : "Waiting for look input";
             ResetInput();
             ApplyCursorState();
-            _playerAdapter?.SetMovementEnabled(!hasFocus);
         }
 
         public Vector2 ConsumeLookInput()
