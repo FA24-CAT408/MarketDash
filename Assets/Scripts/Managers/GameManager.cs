@@ -86,7 +86,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         Debug.Log("GAME MANAGER START METHOD");
-        
+
+        ApplyCursorState();
         ChangeState(GameState.LoadingIn);
 
         AssignSaveData();
@@ -95,9 +96,6 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Cursor.visible = setCursorVisible;
-        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
-        
         if (SceneManager.GetActiveScene().name == "Main Menu") currentLevel = 0;
     }
     
@@ -339,6 +337,13 @@ public class GameManager : MonoBehaviour
     public void UpdateCursorVisible(bool visible)
     {
         setCursorVisible = visible;
+        ApplyCursorState();
+    }
+
+    private void ApplyCursorState()
+    {
+        Cursor.visible = setCursorVisible;
+        Cursor.lockState = setCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     void AssignSaveData()
