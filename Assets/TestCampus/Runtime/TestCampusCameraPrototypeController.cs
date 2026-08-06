@@ -2,21 +2,15 @@ using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace CrazyMarket.TestCampus
 {
     [DefaultExecutionOrder(10000)]
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(TestCampusCameraInputFocus))]
     public sealed class TestCampusCameraPrototypeController : MonoBehaviour
     {
         [Header("Assisted orbit")]
-        [SerializeField] private float mouseSensitivity = 0.08f;
-        [SerializeField] private float legacyMouseSensitivity = 0.8f;
-        [SerializeField] private float controllerYawSpeed = 140f;
-        [SerializeField] private float controllerPitchSpeed = 95f;
         [SerializeField] private float recenterDelay = 2.5f;
         [SerializeField] private float recenterSmoothTime = 1.2f;
         [SerializeField] private float maximumRecenterSpeed = 65f;
@@ -58,18 +52,16 @@ namespace CrazyMarket.TestCampus
         private CinemachineCamera _railCamera;
         private CinemachineOrbitalFollow _orbit;
         private CinemachineDecollider _decollider;
+        private TestCampusCameraInputFocus _inputFocus;
         private Transform _player;
         private Transform _movementReference;
         private Vector3 _previousPlayerPosition;
         private Vector3 _lastGroundedMoveDirection = Vector3.forward;
-        private InputAction _mouseLookAction;
-        private Vector2 _pendingMouseLookDelta;
         private float _lastManualInputTime = float.NegativeInfinity;
         private float _recenterVelocity;
         private float _latchedRecenterHeading;
         private Vector2 _lastLookDelta;
         private string _lookInputSource = "Waiting for look input";
-        private bool _uiHasFocus;
         private bool _guidedZoneActive;
         private bool _autoRecenterActive;
         private bool _recenterConsumedForMovement;
@@ -87,14 +79,13 @@ namespace CrazyMarket.TestCampus
 
         public static TestCampusCameraPrototypeController Instance { get; private set; }
         public TestCampusCameraMode Mode => _mode;
-        public bool UiHasFocus => _uiHasFocus;
+        public bool UiHasFocus => _inputFocus != null && _inputFocus.UiHasFocus;
         public bool IsRecentering => _autoRecenterActive;
         public Vector2 LastLookDelta => _lastLookDelta;
         public string LookInputSource => _lookInputSource;
         public float Yaw => _orbit != null ? _orbit.HorizontalAxis.Value : 0f;
         public float Pitch => _orbit != null ? _orbit.VerticalAxis.Value : 0f;
-        public bool PointerLookActive =>
-            Cursor.lockState == CursorLockMode.Confined && !Cursor.visible;
+        public bool PointerLookActive => _inputFocus != null && _inputFocus.PointerLookActive;
         public float OrbitRadius => _orbit != null ? _orbit.Radius * _orbit.RadialAxis.Value : 0f;
         public bool FloorLimitActive => _floorLimitActive;
         public float FloorPitchLimit => _smoothedPitchLimit;
@@ -110,38 +101,16 @@ namespace CrazyMarket.TestCampus
             + $" | {_lookInputSource}"
             + (_autoRecenterActive ? " | RECENTERING" : "");
 
-        private string FocusStatus => _uiHasFocus
-            ? "UI INPUT"
-            : PointerLookActive ? "CONFINED MOUSE LOOK" : "POINTER VISIBLE";
+        private string FocusStatus => _inputFocus != null
+            ? _inputFocus.FocusStatus
+            : "POINTER INPUT UNAVAILABLE";
 
         private void Awake()
         {
             Instance = this;
+            _inputFocus = GetComponent<TestCampusCameraInputFocus>();
             _movementReference = new GameObject("Camera Movement Reference").transform;
             _movementReference.SetParent(transform, false);
-        }
-
-        private void OnEnable()
-        {
-            _mouseLookAction = new InputAction(
-                "Test Campus Mouse Look",
-                InputActionType.PassThrough,
-                "<Mouse>/delta",
-                expectedControlType: "Vector2");
-            _mouseLookAction.performed += AccumulateMouseLook;
-            _mouseLookAction.Enable();
-        }
-
-        private void OnDisable()
-        {
-            if (_mouseLookAction == null)
-                return;
-
-            _mouseLookAction.performed -= AccumulateMouseLook;
-            _mouseLookAction.Disable();
-            _mouseLookAction.Dispose();
-            _mouseLookAction = null;
-            _pendingMouseLookDelta = Vector2.zero;
         }
 
         private void Start()
@@ -161,8 +130,6 @@ namespace CrazyMarket.TestCampus
             RestoreOccluders();
             if (Instance == this)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
                 Instance = null;
             }
         }
@@ -171,14 +138,6 @@ namespace CrazyMarket.TestCampus
         {
             if (_player == null || _assistedCamera == null || _orbit == null || _railCamera == null)
                 RefreshRigs();
-
-            bool wantsPointerLook = !_uiHasFocus && HasGameplayPointerFocus();
-            if (wantsPointerLook
-                && (Cursor.lockState != CursorLockMode.Confined || Cursor.visible))
-                ApplyCursorState();
-            else if (!wantsPointerLook
-                     && (Cursor.lockState != CursorLockMode.None || !Cursor.visible))
-                ApplyCursorState();
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null)
@@ -206,7 +165,7 @@ namespace CrazyMarket.TestCampus
             if (IsOrbitLive())
                 UpdateAssistedOrbit(grounded, planarVelocity.magnitude);
             else
-                _pendingMouseLookDelta = Vector2.zero;
+                _inputFocus?.ResetInput();
 
             ApplyGroundConstraint();
             UpdateMovementReference();
@@ -217,7 +176,7 @@ namespace CrazyMarket.TestCampus
         public void SetMode(TestCampusCameraMode mode)
         {
             _mode = mode;
-            _pendingMouseLookDelta = Vector2.zero;
+            _inputFocus?.ResetInput();
             ApplyMode();
         }
 
@@ -230,45 +189,11 @@ namespace CrazyMarket.TestCampus
 
         public void SetUiFocus(bool hasFocus)
         {
-            _uiHasFocus = hasFocus;
             _lookInputSource = hasFocus ? "UI focus" : "Waiting for look input";
-            _pendingMouseLookDelta = Vector2.zero;
-            ApplyCursorState();
+            _inputFocus?.SetUiFocus(hasFocus);
             if (_player != null)
                 _player.SendMessage(
                     "SetMovementEnabled", !hasFocus, SendMessageOptions.DontRequireReceiver);
-        }
-
-        private void OnApplicationFocus(bool focused)
-        {
-            ApplyCursorState();
-        }
-
-        private void ApplyCursorState()
-        {
-            // Confined keeps the pointer inside the Game view without warping it
-            // back to the center like CursorLockMode.Locked.
-            bool wantsPointerLook = !_uiHasFocus && HasGameplayPointerFocus();
-            Cursor.lockState = wantsPointerLook ? CursorLockMode.Confined : CursorLockMode.None;
-            Cursor.visible = !wantsPointerLook;
-        }
-
-        private void AccumulateMouseLook(InputAction.CallbackContext context)
-        {
-            if (!PointerLookActive)
-                return;
-
-            _pendingMouseLookDelta += context.ReadValue<Vector2>();
-        }
-
-        private static bool HasGameplayPointerFocus()
-        {
-#if UNITY_EDITOR
-            EditorWindow focusedWindow = EditorWindow.focusedWindow;
-            return focusedWindow != null && focusedWindow.GetType().Name == "GameView";
-#else
-            return Application.isFocused;
-#endif
         }
 
         public void RecenterNow()
@@ -336,50 +261,12 @@ namespace CrazyMarket.TestCampus
 
         private void UpdateAssistedOrbit(bool grounded, float speed)
         {
-            Vector2 input = Vector2.zero;
-
-            if (!_uiHasFocus)
-            {
-                Vector2 actionMouseDelta = _pendingMouseLookDelta;
-                _pendingMouseLookDelta = Vector2.zero;
-                if (actionMouseDelta.sqrMagnitude > 0.0001f)
-                {
-                    input += actionMouseDelta * mouseSensitivity;
-                    _lookInputSource = "Input Action mouse delta";
-                }
-
-                if (input.sqrMagnitude <= 0.0001f && Mouse.current != null)
-                {
-                    Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-                    if (mouseDelta.sqrMagnitude > 0.0001f)
-                    {
-                        input += mouseDelta * mouseSensitivity;
-                        _lookInputSource = "Input System mouse";
-                    }
-                }
-
-                if (input.sqrMagnitude <= 0.0001f)
-                {
-                    Vector2 legacyDelta = new(
-                        Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
-                    if (legacyDelta.sqrMagnitude > 0.0001f)
-                    {
-                        input += legacyDelta * legacyMouseSensitivity;
-                        _lookInputSource = "Legacy mouse fallback";
-                    }
-                }
-
-                if (Gamepad.current != null)
-                {
-                    Vector2 stick = Gamepad.current.rightStick.ReadValue();
-                    input.x += stick.x * controllerYawSpeed * Time.unscaledDeltaTime;
-                    input.y += stick.y * controllerPitchSpeed * Time.unscaledDeltaTime;
-                    if (stick.sqrMagnitude > 0.0001f)
-                        _lookInputSource = "Gamepad right stick";
-                }
-            }
-            else if (_uiHasFocus)
-                _lookInputSource = "UI focus";
+            Vector2 input = _inputFocus != null
+                ? _inputFocus.ConsumeLookInput()
+                : Vector2.zero;
+            _lookInputSource = _inputFocus != null
+                ? _inputFocus.InputSource
+                : "Pointer input unavailable";
 
             if (input.sqrMagnitude > 0.0001f)
             {
