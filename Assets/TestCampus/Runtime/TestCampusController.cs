@@ -16,6 +16,7 @@ namespace CrazyMarket.TestCampus
 
         private readonly Dictionary<TestZoneId, TestZoneRoot> _zones = new();
         private readonly Dictionary<TestZoneId, HashSet<ITestResettable>> _externalResettables = new();
+        private readonly Dictionary<Light, LightShadows> _overriddenPointLightShadows = new();
         private TestZoneId _currentZone = TestZoneId.Hub;
         private string _lastSpawn = "Default";
 
@@ -60,6 +61,7 @@ namespace CrazyMarket.TestCampus
 
         private void OnDestroy()
         {
+            RestoreAdditionalLightShadows();
             if (Instance == this) Instance = null;
         }
 
@@ -210,9 +212,29 @@ namespace CrazyMarket.TestCampus
             foreach (Light light in FindObjectsByType<Light>(
                          FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (light.type == LightType.Point && light.shadows != LightShadows.None)
-                    light.shadows = LightShadows.None;
+                if (!IsTestCampusScene(light.gameObject.scene)
+                    || light.type != LightType.Point
+                    || light.shadows == LightShadows.None)
+                    continue;
+
+                _overriddenPointLightShadows.TryAdd(light, light.shadows);
+                light.shadows = LightShadows.None;
             }
+        }
+
+        private bool IsTestCampusScene(Scene scene)
+        {
+            if (!scene.IsValid()) return false;
+            if (scene == gameObject.scene) return true;
+            return zoneScenes.Exists(zone => zone != null && zone.SceneName == scene.name);
+        }
+
+        private void RestoreAdditionalLightShadows()
+        {
+            foreach ((Light light, LightShadows shadows) in _overriddenPointLightShadows)
+                if (light != null)
+                    light.shadows = shadows;
+            _overriddenPointLightShadows.Clear();
         }
     }
 }
