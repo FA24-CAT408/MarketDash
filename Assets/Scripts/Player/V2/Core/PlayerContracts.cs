@@ -51,7 +51,7 @@ namespace CrazyMarket.Player.V2
         public bool IsValid => !string.IsNullOrEmpty(Value);
         public PlayerProfileId(string value) { Value = value ?? string.Empty; }
         public override bool Equals(object obj) => obj is PlayerProfileId && Value == ((PlayerProfileId)obj).Value;
-        public override int GetHashCode() => Value.GetHashCode();
+        public override int GetHashCode() => Value == null ? 0 : Value.GetHashCode();
         public override string ToString() => Value;
     }
 
@@ -61,7 +61,7 @@ namespace CrazyMarket.Player.V2
         public bool IsValid => !string.IsNullOrEmpty(Value);
         public RuntimeProfileId(string value) { Value = value ?? string.Empty; }
         public override bool Equals(object obj) => obj is RuntimeProfileId && Value == ((RuntimeProfileId)obj).Value;
-        public override int GetHashCode() => Value.GetHashCode();
+        public override int GetHashCode() => Value == null ? 0 : Value.GetHashCode();
         public override string ToString() => Value;
     }
 
@@ -71,7 +71,7 @@ namespace CrazyMarket.Player.V2
         public bool IsValid => !string.IsNullOrEmpty(Value);
         public PlayerModifierId(string value) { Value = value ?? string.Empty; }
         public override bool Equals(object obj) => obj is PlayerModifierId && Value == ((PlayerModifierId)obj).Value;
-        public override int GetHashCode() => Value.GetHashCode();
+        public override int GetHashCode() => Value == null ? 0 : Value.GetHashCode();
         public override string ToString() => Value;
     }
 
@@ -133,6 +133,9 @@ namespace CrazyMarket.Player.V2
         public LocomotionMode Mode { get; }
         public Vector3 TargetPlanarVelocity { get; }
         public float AirAcceleration { get; }
+        public float StableMovementSharpness { get; }
+        public float OrientationSharpness { get; }
+        public float Drag { get; }
         public Vector3 Gravity { get; }
         public bool ApplyGrounding { get; }
         public bool HasJumpInfluence { get; }
@@ -144,13 +147,17 @@ namespace CrazyMarket.Player.V2
         public bool ResetVelocity { get; }
 
         internal LocomotionOutput(LocomotionMode mode, Vector3 targetPlanarVelocity, float airAcceleration,
-            Vector3 gravity, bool applyGrounding, bool hasJumpInfluence, float jumpVerticalVelocity,
+            float stableMovementSharpness, float orientationSharpness, float drag, Vector3 gravity,
+            bool applyGrounding, bool hasJumpInfluence, float jumpVerticalVelocity,
             PlayerActionFlags actionFlags, bool hasTeleport, Vector3 teleportPosition,
             Quaternion teleportRotation, bool resetVelocity)
         {
             Mode = mode;
             TargetPlanarVelocity = targetPlanarVelocity;
             AirAcceleration = airAcceleration;
+            StableMovementSharpness = stableMovementSharpness;
+            OrientationSharpness = orientationSharpness;
+            Drag = drag;
             Gravity = gravity;
             ApplyGrounding = applyGrounding;
             HasJumpInfluence = hasJumpInfluence;
@@ -163,7 +170,7 @@ namespace CrazyMarket.Player.V2
         }
 
         public static LocomotionOutput Empty => new LocomotionOutput(
-            LocomotionMode.Disabled, Vector3.zero, 0f, Vector3.zero, false, false, 0f,
+            LocomotionMode.Disabled, Vector3.zero, 0f, 0f, 0f, 0f, Vector3.zero, false, false, 0f,
             PlayerActionFlags.None, false, Vector3.zero, Quaternion.identity, false);
     }
 
