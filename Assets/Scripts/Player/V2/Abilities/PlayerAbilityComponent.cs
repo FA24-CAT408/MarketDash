@@ -48,7 +48,6 @@ namespace CrazyMarket.Player.V2
     public abstract class PlayerAbilityComponent : MonoBehaviour
     {
         public bool IsParticipating => isActiveAndEnabled;
-        public abstract int RemainingCharges { get; }
         public abstract void Reset();
         public abstract void Cancel(AbilityCancellationReason reason);
         public abstract PlayerAbilityResult Evaluate(PlayerAbilityContext context);

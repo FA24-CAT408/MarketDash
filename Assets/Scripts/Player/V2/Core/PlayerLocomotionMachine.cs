@@ -50,7 +50,7 @@ namespace CrazyMarket.Player.V2
             wasStable = Stable(initial);
             mode = ResolveMode(false, wasStable);
             coyote = wasStable ? profile.Locomotion.CoyoteTime : 0f;
-            snapshot = new PlayerSnapshot(0, initial, initial.Velocity, mode, 0, Remaining(), coyote, 0f,
+            snapshot = new PlayerSnapshot(0, initial, initial.Velocity, mode, 0, coyote, 0f,
                 profile.ProfileId, profile.Id, wasStable ? PlayerActionFlags.Grounded : PlayerActionFlags.None);
             presentation = Present(initial.Velocity, Vector2.zero, snapshot.ActionFlags, wasStable);
         }
@@ -151,7 +151,7 @@ namespace CrazyMarket.Player.V2
             if (jumped) velocity.y = jumpVelocity;
             if (output.HasTeleport && output.ResetVelocity) velocity = Vector3.zero;
             revision++;
-            snapshot = new PlayerSnapshot(revision, observation, velocity, mode, blocks.Count, Remaining(), coyote,
+            snapshot = new PlayerSnapshot(revision, observation, velocity, mode, blocks.Count, coyote,
                 jumpBuffer, profile.ProfileId, profile.Id, flags | requestFlags);
             presentation = Present(velocity, move, snapshot.ActionFlags, stable && !jumped);
             wasStable = stable && !jumped;
@@ -279,16 +279,6 @@ namespace CrazyMarket.Player.V2
             {
                 if (abilities[i].IsParticipating) abilities[i].Cancel(reason);
             }
-        }
-
-        private int Remaining()
-        {
-            int total = 0;
-            for (int i = 0; i < abilities.Count; i++)
-            {
-                if (abilities[i].IsParticipating) total += abilities[i].RemainingCharges;
-            }
-            return total;
         }
 
         private float Resolve(PlayerStat stat, float baseValue)
