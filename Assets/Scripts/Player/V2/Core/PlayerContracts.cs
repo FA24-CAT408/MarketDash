@@ -10,11 +10,6 @@ namespace CrazyMarket.Player.V2
         Airborne
     }
 
-    public enum PlayerAbilityId
-    {
-        DoubleJump
-    }
-
     public enum PlayerModifierOperation
     {
         Additive,

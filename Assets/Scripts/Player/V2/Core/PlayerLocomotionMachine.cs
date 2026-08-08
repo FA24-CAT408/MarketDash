@@ -16,12 +16,10 @@ namespace CrazyMarket.Player.V2
         private readonly HashSet<string> blocks = new HashSet<string>(StringComparer.Ordinal);
         private readonly Dictionary<PlayerModifierId, Dictionary<PlayerStat, Modifier>> modifiers =
             new Dictionary<PlayerModifierId, Dictionary<PlayerStat, Modifier>>();
-        private readonly List<IPlayerAbilityRuntime> abilities = new List<IPlayerAbilityRuntime>();
-        private readonly LocomotionRoot root = new LocomotionRoot();
+        private readonly List<PlayerAbilityComponent> abilities = new List<PlayerAbilityComponent>();
         private PlayerRuntimeProfile profile;
         private PlayerRuntimeProfile pendingProfile;
         private TeleportRequest pendingTeleport;
-        private LocomotionNode state;
         private LocomotionMode mode;
         private bool wasStable;
         private float coyote;
@@ -33,17 +31,24 @@ namespace CrazyMarket.Player.V2
         public PlayerSnapshot Snapshot => snapshot;
         public PlayerPresentationState Presentation => presentation;
 
-        public PlayerLocomotionMachine(PlayerProfile selected, PlayerBodyObservation initial)
+        public PlayerLocomotionMachine(PlayerProfile selected, PlayerBodyObservation initial,
+            IEnumerable<PlayerAbilityComponent> composedAbilities)
         {
             profile = selected == null ? PlayerProfile.CreateProductionRuntimeProfile() : selected.CreateRuntimeProfile();
-            if (!TryBuild(profile))
+            if (!IsValidProfile(profile))
             {
                 profile = PlayerProfile.CreateProductionRuntimeProfile();
-                TryBuild(profile);
             }
+            if (composedAbilities != null)
+            {
+                foreach (PlayerAbilityComponent ability in composedAbilities)
+                {
+                    if (ability != null && !abilities.Contains(ability)) abilities.Add(ability);
+                }
+            }
+            ResetAbilities();
             wasStable = Stable(initial);
-            state = root.Resolve(false, wasStable);
-            mode = state.Mode;
+            mode = ResolveMode(false, wasStable);
             coyote = wasStable ? profile.Locomotion.CoyoteTime : 0f;
             snapshot = new PlayerSnapshot(0, initial, initial.Velocity, mode, 0, Remaining(), coyote, 0f,
                 profile.ProfileId, profile.Id, wasStable ? PlayerActionFlags.Grounded : PlayerActionFlags.None);
@@ -79,8 +84,7 @@ namespace CrazyMarket.Player.V2
                 if (wasStable) coyote = tuning.CoyoteTime;
                 coyote = Mathf.Max(0f, coyote - dt);
             }
-            state = root.Resolve(blocked, stable);
-            mode = state.Mode;
+            mode = ResolveMode(blocked, stable);
 
             if (blocked)
             {
@@ -99,8 +103,7 @@ namespace CrazyMarket.Player.V2
                     mode == LocomotionMode.Airborne && coyote > 0f;
                 if (baseJump)
                 {
-                    state = root.Controllable.Airborne;
-                    mode = state.Mode;
+                    mode = LocomotionMode.Airborne;
                     jumped = true;
                     jumpVelocity = MotorSafe(tuning.JumpSpeed);
                     coyote = jumpBuffer = 0f;
@@ -184,7 +187,7 @@ namespace CrazyMarket.Player.V2
         public PlayerOperationResult SelectProfile(PlayerProfile selected)
         {
             PlayerRuntimeProfile candidate = selected == null ? null : selected.CreateRuntimeProfile();
-            if (!CanBuild(candidate)) return PlayerOperationResult.RejectedInvalidProfile;
+            if (!IsValidProfile(candidate)) return PlayerOperationResult.RejectedInvalidProfile;
             pendingProfile = candidate;
             return PlayerOperationResult.Accepted;
         }
@@ -192,7 +195,7 @@ namespace CrazyMarket.Player.V2
 
         public PlayerOperationResult ReplaceRuntimeProfile(PlayerRuntimeProfile replacement)
         {
-            if (!CanBuild(replacement)) return PlayerOperationResult.RejectedInvalidProfile;
+            if (!IsValidProfile(replacement)) return PlayerOperationResult.RejectedInvalidProfile;
             pendingProfile = replacement.Clone();
             return PlayerOperationResult.Accepted;
         }
@@ -233,13 +236,10 @@ namespace CrazyMarket.Player.V2
                 PlayerRuntimeProfile replacement = pendingProfile;
                 pendingProfile = null;
                 CancelAbilities(AbilityCancellationReason.ProfileChanged);
-                if (TryBuild(replacement))
-                {
-                    profile = replacement;
-                    if (!Stable(observation)) CancelAbilities(AbilityCancellationReason.ProfileChanged);
-                    coyote = jumpBuffer = 0f;
-                    flags |= PlayerActionFlags.ProfileChanged;
-                }
+                profile = replacement;
+                if (!Stable(observation)) CancelAbilities(AbilityCancellationReason.ProfileChanged);
+                coyote = jumpBuffer = 0f;
+                flags |= PlayerActionFlags.ProfileChanged;
             }
             if (pendingTeleport != null)
             {
@@ -256,51 +256,40 @@ namespace CrazyMarket.Player.V2
         {
             for (int i = 0; i < abilities.Count; i++)
             {
+                if (!abilities[i].IsParticipating) continue;
                 PlayerAbilityResult result = abilities[i].Evaluate(context);
                 if (result.Accepted) return result;
             }
             return PlayerAbilityResult.Rejected;
         }
 
-        private bool TryBuild(PlayerRuntimeProfile source)
+        private static bool IsValidProfile(PlayerRuntimeProfile source) => source != null && source.IsValid;
+
+        private void ResetAbilities()
         {
-            if (!CanBuild(source)) return false;
-            var created = new List<IPlayerAbilityRuntime>();
-            IReadOnlyList<PlayerAbilityData> data = source.AbilityLoadout.AbilityData;
-            for (int i = 0; i < data.Count; i++)
+            for (int i = 0; i < abilities.Count; i++)
             {
-                IPlayerAbilityRuntime runtime = CreateRuntime(data[i]);
-                if (runtime == null) return false;
-                created.Add(runtime);
+                if (abilities[i].IsParticipating) abilities[i].Reset();
             }
-            abilities.Clear();
-            abilities.AddRange(created);
-            return true;
         }
 
-        private static IPlayerAbilityRuntime CreateRuntime(PlayerAbilityData data)
+        private void CancelAbilities(AbilityCancellationReason reason)
         {
-            return data.Id == PlayerAbilityId.DoubleJump ?
-                (IPlayerAbilityRuntime)new DoubleJumpAbilityRuntime() : null;
-        }
-
-        private static bool CanBuild(PlayerRuntimeProfile source)
-        {
-            if (source == null || !source.IsValid || source.AbilityLoadout == null ||
-                source.AbilityLoadout.AbilityData == null) return false;
-            IReadOnlyList<PlayerAbilityData> ids = source.AbilityLoadout.AbilityData;
-            bool doubleJumpSeen = false;
-            for (int i = 0; i < ids.Count; i++)
+            for (int i = 0; i < abilities.Count; i++)
             {
-                if (!ids[i].IsValid || ids[i].Id != PlayerAbilityId.DoubleJump || doubleJumpSeen) return false;
-                doubleJumpSeen = true;
+                if (abilities[i].IsParticipating) abilities[i].Cancel(reason);
             }
-            return true;
         }
 
-        private void ResetAbilities() { for (int i = 0; i < abilities.Count; i++) abilities[i].Reset(); }
-        private void CancelAbilities(AbilityCancellationReason reason) { for (int i = 0; i < abilities.Count; i++) abilities[i].Cancel(reason); }
-        private int Remaining() { int total = 0; for (int i = 0; i < abilities.Count; i++) total += abilities[i].RemainingCharges; return total; }
+        private int Remaining()
+        {
+            int total = 0;
+            for (int i = 0; i < abilities.Count; i++)
+            {
+                if (abilities[i].IsParticipating) total += abilities[i].RemainingCharges;
+            }
+            return total;
+        }
 
         private float Resolve(PlayerStat stat, float baseValue)
         {
@@ -346,44 +335,12 @@ namespace CrazyMarket.Player.V2
             return true;
         }
 
-        private abstract class LocomotionNode
+        // Hierarchy remains explicit in the resolver: Disabled is the root branch;
+        // otherwise Controllable selects its Grounded or Airborne child.
+        private static LocomotionMode ResolveMode(bool blocked, bool stable)
         {
-            public abstract LocomotionMode Mode { get; }
-        }
-
-        private sealed class DisabledNode : LocomotionNode
-        {
-            public override LocomotionMode Mode => LocomotionMode.Disabled;
-        }
-
-        private sealed class GroundedNode : LocomotionNode
-        {
-            public override LocomotionMode Mode => LocomotionMode.Grounded;
-        }
-
-        private sealed class AirborneNode : LocomotionNode
-        {
-            public override LocomotionMode Mode => LocomotionMode.Airborne;
-        }
-
-        private sealed class ControllableNode : LocomotionNode
-        {
-            public readonly GroundedNode Grounded = new GroundedNode();
-            public readonly AirborneNode Airborne = new AirborneNode();
-            public LocomotionNode Child { get; private set; }
-            public override LocomotionMode Mode => Child.Mode;
-            public void Reconcile(bool stable) { Child = stable ? Grounded : Airborne; }
-        }
-
-        private sealed class LocomotionRoot
-        {
-            public readonly DisabledNode Disabled = new DisabledNode();
-            public readonly ControllableNode Controllable = new ControllableNode();
-            public LocomotionNode Resolve(bool blocked, bool stable)
-            {
-                Controllable.Reconcile(stable);
-                return blocked ? Disabled : Controllable.Child;
-            }
+            if (blocked) return LocomotionMode.Disabled;
+            return stable ? LocomotionMode.Grounded : LocomotionMode.Airborne;
         }
 
         private readonly struct Modifier
