@@ -809,6 +809,7 @@
           airJumpsRemaining: 1,
           controlBlocks: [],
           grappleActive: false,
+          ledgeJumpActive: false,
           verticalVelocity: 0,
           locomotionOutput: output(
             "Hold stable ground",
@@ -863,6 +864,9 @@
           return output(speed > 0 ? "Ground movement" : "Hold stable ground", speed > 0 ? "Grounded resolves Player Intent using the current movement tuning." : "Grounded owns final body movement. KCC keeps stable contact.", [0, 0, speed]);
         }
         if (state.mode === MODES.AIRBORNE) {
+          if (state.ledgeJumpActive) {
+            return output("Ledge Jump", "Airborne owns the wall-kick result. The refreshed Double Jump remains available for a later request.", [-5, state.verticalVelocity, 0]);
+          }
           const pull = state.grappleActive ? 6 : 0;
           return output(state.grappleActive ? "Air movement + Grapple influence" : "Air movement", state.grappleActive ? "Airborne remains authoritative and combines gravity, air control, and the Grapple influence." : "Airborne resolves air control and gravity.", [pull, state.verticalVelocity, state.moveIntent === "Forward" ? 4 : 0]);
         }
@@ -877,6 +881,7 @@
         const state = copy(previousState);
         state.revision += 1;
         state.lastIntent = action.type.replaceAll("_", " ");
+        state.ledgeJumpActive = false;
 
         switch (action.type) {
           case "MOVE_START":
@@ -902,6 +907,12 @@
               state.stableGrounded = false;
               state.verticalVelocity = 12;
               transition(state, MODES.AIRBORNE, "Grounded accepted the base Jump request.", "optional action");
+            } else if (state.mode === MODES.LEDGE_HANG) {
+              state.ledgeInReach = false;
+              state.stableGrounded = false;
+              state.verticalVelocity = 12;
+              state.ledgeJumpActive = true;
+              transition(state, MODES.AIRBORNE, "Ledge Hang accepted a contextual Ledge Jump. The wall-kick did not consume the refreshed Double Jump.", "optional action");
             } else if (state.mode === MODES.AIRBORNE && state.airJumpsRemaining > 0) {
               state.airJumpsRemaining -= 1;
               state.verticalVelocity = 12;
@@ -963,8 +974,9 @@
               reject(state, "Ledge Grab", "No reachable ledge is currently observed.");
             } else {
               state.grappleActive = false;
+              state.airJumpsRemaining = 1;
               state.verticalVelocity = 0;
-              transition(state, MODES.LEDGE_HANG, "Ledge Grab requested an exclusive Locomotion Mode and the transition policy accepted it.", "optional Ability");
+              transition(state, MODES.LEDGE_HANG, "Ledge Grab requested an exclusive Locomotion Mode and the transition policy accepted it. Stable ledge contact refreshed the Double Jump.", "optional Ability");
             }
             break;
 
@@ -1047,17 +1059,19 @@
             break;
           }
 
-          case "CONFLICT":
+          case "CONFLICT": {
+            const priorMode = state.mode;
             if (!state.controlBlocks.includes("Game State")) state.controlBlocks.push("Game State");
             state.moveIntent = "None";
             state.grappleActive = false;
             state.mode = MODES.DISABLED;
-            state.latestAccepted = "Airborne → Disabled. The Game State Control Block won at system-forced priority.";
+            state.latestAccepted = `${priorMode} → Disabled. The Game State Control Block won at system-forced priority.`;
             state.latestRejection = "Ledge Grab and Grapple were rejected in the same step because optional Ability requests rank below system-forced Disabled.";
             state.resolutionSummary = "Conflict resolved: Disabled won; two optional Ability requests were rejected.";
             appendEvent(state, state.latestAccepted, "accepted");
             appendEvent(state, state.latestRejection, "rejected");
             break;
+          }
 
           default:
             reject(state, action.type, "The prototype does not recognize this action.");
@@ -1105,6 +1119,22 @@
           ["Request Ledge Hang", { type: "GRAB_LEDGE" }],
           ["Request Climbing", { type: "START_CLIMB" }],
           ["Finish climbing", { type: "FINISH_CLIMB" }]
+        ]
+      },
+      {
+        id: "ledge-jump",
+        label: "Ledge Jump",
+        title: "Kick away, then Double Jump",
+        description: "Spend the Double Jump first. Stable ledge contact refreshes it, and a contextual Ledge Jump leaves Ledge Hang without spending it, so one Double Jump remains available afterward.",
+        steps: [
+          ["Request base Jump", { type: "JUMP" }],
+          ["Spend the first Double Jump", { type: "JUMP" }],
+          ["Put a ledge in reach", { type: "SEE_LEDGE" }],
+          ["Request Ledge Hang", { type: "GRAB_LEDGE" }],
+          ["Request contextual Ledge Jump", { type: "JUMP" }],
+          ["Request the refreshed Double Jump", { type: "JUMP" }],
+          ["Request one jump too many", { type: "JUMP" }],
+          ["Land on stable ground", { type: "LAND" }]
         ]
       },
       {
