@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using UnityEngine;
 
 namespace CrazyMarket.Player.V2
@@ -191,13 +192,13 @@ namespace CrazyMarket.Player.V2
 
     public sealed class PlayerRuntimeAbilityLoadout
     {
-        private readonly List<PlayerAbilityId> abilityIds;
+        private readonly ReadOnlyCollection<PlayerAbilityId> abilityIds;
 
         public IReadOnlyList<PlayerAbilityId> AbilityIds => abilityIds;
 
         internal PlayerRuntimeAbilityLoadout(IList<PlayerAbilityId> ids)
         {
-            abilityIds = ids == null ? null : new List<PlayerAbilityId>(ids);
+            abilityIds = ids == null ? null : new List<PlayerAbilityId>(ids).AsReadOnly();
         }
 
         internal PlayerRuntimeAbilityLoadout Clone()
