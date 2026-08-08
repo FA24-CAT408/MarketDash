@@ -180,8 +180,11 @@ namespace CrazyMarket.TestCampus
         {
             Transform spawn = ResolveSpawn(zone, spawnId);
             if (spawn == null || playerRoot == null) return false;
+            ITestCampusPlayerController controller = playerRoot.GetComponent(typeof(ITestCampusPlayerController))
+                as ITestCampusPlayerController;
             TestCampusPlayerAdapter adapter = playerRoot.GetComponent<TestCampusPlayerAdapter>();
-            if (adapter != null) adapter.TeleportTo(spawn.position, spawn.rotation);
+            if (controller != null) controller.TeleportTo(spawn.position, spawn.rotation);
+            else if (adapter != null) adapter.TeleportTo(spawn.position, spawn.rotation);
             else playerRoot.SetPositionAndRotation(spawn.position, spawn.rotation);
             _currentZone = zone;
             _lastSpawn = spawnId;

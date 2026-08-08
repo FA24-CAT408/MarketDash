@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bce6f983ce13ce0419f847f43e8166ff, type: 3}
+  m_Name: PlayerProfileV2_Production
+  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.PlayerProfile
+  profileId: Production
+  data:
+    locomotion:
+      StableMoveSpeed: 10
+      AirMoveSpeed: 15
+      AirAcceleration: 60
+      StableMovementSharpness: 15
+      OrientationSharpness: 10
+      JumpSpeed: 12
+      JumpBufferTime: 0.15
+      CoyoteTime: 0.2
+      Gravity: -30
+      FallGravityMultiplier: 2
+      Drag: 0.1
+    abilityLoadout:
+      abilityIds: 00000000
+      definitions:
+      - {fileID: 11400000, guid: 576d2c5ebc40f924bad1c573a74a8f70, type: 2}
