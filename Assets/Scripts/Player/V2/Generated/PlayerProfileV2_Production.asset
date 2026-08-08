@@ -16,7 +16,7 @@ MonoBehaviour:
   data:
     locomotion:
       StableMoveSpeed: 10
-      AirMoveSpeed: 15
+      AirMoveSpeed: 8
       AirAcceleration: 60
       StableMovementSharpness: 15
       OrientationSharpness: 10
@@ -26,7 +26,3 @@ MonoBehaviour:
       Gravity: -30
       FallGravityMultiplier: 2
       Drag: 0.1
-    abilityLoadout:
-      abilityIds: 00000000
-      definitions:
-      - {fileID: 11400000, guid: 576d2c5ebc40f924bad1c573a74a8f70, type: 2}

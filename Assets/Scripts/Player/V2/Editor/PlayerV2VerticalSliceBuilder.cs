@@ -18,7 +18,7 @@ namespace CrazyMarket.Player.V2.Editor
         private const string OutputPrefab = "Assets/Prefabs/Player/V2/Player Controller V2.prefab";
         private const string SourceScene = "Assets/TestCampus/Scenes/TestCampus_Core.unity";
         private const string OutputScene = "Assets/TestCampus/Scenes/TestCampus_Core_PlayerV2.unity";
-        private const string AbilityPath = "Assets/Scripts/Player/V2/Generated/DoubleJumpAbilityV2.asset";
+        private const string ObsoleteAbilityPath = "Assets/Scripts/Player/V2/Generated/DoubleJumpAbilityV2.asset";
         private const string ProfilePath = "Assets/Scripts/Player/V2/Generated/PlayerProfileV2_Production.asset";
         private const string InputPath = "Assets/Scripts/Input/Input.asset";
 
@@ -28,8 +28,11 @@ namespace CrazyMarket.Player.V2.Editor
             EnsureFolder("Assets/Scripts/Player/V2", "Generated");
             EnsureFolder("Assets/Prefabs/Player", "V2");
 
-            DoubleJumpAbilityDefinition ability = BuildAbility();
-            PlayerProfile profile = BuildProfile(ability);
+            // The old ability definition was an unnecessary hidden loadout. The
+            // replacement is the DoubleJumpAbility component on the prefab.
+            AssetDatabase.DeleteAsset(ObsoleteAbilityPath);
+
+            PlayerProfile profile = BuildProfileFromCurrentLegacyPrefab();
             GameObject prefab = BuildPrefab(profile);
             BuildScene(prefab);
             AssetDatabase.SaveAssets();
@@ -38,19 +41,9 @@ namespace CrazyMarket.Player.V2.Editor
             Debug.Log("Built Player Controller V2 vertical slice assets and TestCampus scene copy.");
         }
 
-        private static DoubleJumpAbilityDefinition BuildAbility()
+        private static PlayerProfile BuildProfileFromCurrentLegacyPrefab()
         {
-            DoubleJumpAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<DoubleJumpAbilityDefinition>(AbilityPath);
-            if (ability == null)
-            {
-                ability = ScriptableObject.CreateInstance<DoubleJumpAbilityDefinition>();
-                AssetDatabase.CreateAsset(ability, AbilityPath);
-            }
-            return ability;
-        }
-
-        private static PlayerProfile BuildProfile(DoubleJumpAbilityDefinition ability)
-        {
+            LocomotionTuning tuning = ReadLegacyLocomotionTuning();
             PlayerProfile profile = AssetDatabase.LoadAssetAtPath<PlayerProfile>(ProfilePath);
             if (profile == null)
             {
@@ -60,17 +53,52 @@ namespace CrazyMarket.Player.V2.Editor
 
             SerializedObject serialized = new SerializedObject(profile);
             serialized.FindProperty("profileId").stringValue = "Production";
-            SerializedProperty data = serialized.FindProperty("data");
-            SerializedProperty loadout = data.FindPropertyRelative("abilityLoadout");
-            SerializedProperty ids = loadout.FindPropertyRelative("abilityIds");
-            ids.arraySize = 1;
-            ids.GetArrayElementAtIndex(0).enumValueIndex = (int)PlayerAbilityId.DoubleJump;
-            SerializedProperty definitions = loadout.FindPropertyRelative("definitions");
-            definitions.arraySize = 1;
-            definitions.GetArrayElementAtIndex(0).objectReferenceValue = ability;
+            SerializedProperty locomotion = serialized.FindProperty("data").FindPropertyRelative("locomotion");
+            SetFloat(locomotion, "StableMoveSpeed", tuning.StableMoveSpeed);
+            SetFloat(locomotion, "AirMoveSpeed", tuning.AirMoveSpeed);
+            SetFloat(locomotion, "AirAcceleration", tuning.AirAcceleration);
+            SetFloat(locomotion, "StableMovementSharpness", tuning.StableMovementSharpness);
+            SetFloat(locomotion, "OrientationSharpness", tuning.OrientationSharpness);
+            SetFloat(locomotion, "JumpSpeed", tuning.JumpSpeed);
+            SetFloat(locomotion, "JumpBufferTime", tuning.JumpBufferTime);
+            SetFloat(locomotion, "CoyoteTime", tuning.CoyoteTime);
+            SetFloat(locomotion, "Gravity", tuning.Gravity);
+            SetFloat(locomotion, "FallGravityMultiplier", tuning.FallGravityMultiplier);
+            SetFloat(locomotion, "Drag", tuning.Drag);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
+        }
+
+        private static LocomotionTuning ReadLegacyLocomotionTuning()
+        {
+            GameObject root = null;
+            try
+            {
+                root = PrefabUtility.LoadPrefabContents(SourcePrefab);
+                KCCPlayerController legacy = root.GetComponent<KCCPlayerController>();
+                if (legacy == null)
+                    throw new BuildFailedException("Missing legacy KCCPlayerController on " + SourcePrefab + ".");
+
+                return new LocomotionTuning
+                {
+                    StableMoveSpeed = legacy.MaxStableMoveSpeed,
+                    AirMoveSpeed = legacy.MaxAirMoveSpeed,
+                    AirAcceleration = legacy.AirAccelerationSpeed,
+                    StableMovementSharpness = legacy.StableMovementSharpness,
+                    OrientationSharpness = legacy.OrientationSharpness,
+                    JumpSpeed = legacy.JumpUpSpeed,
+                    JumpBufferTime = legacy.JumpPreGroundingGraceTime,
+                    CoyoteTime = legacy.CoyoteTimeDuration,
+                    Gravity = legacy.Gravity.y,
+                    FallGravityMultiplier = legacy.IncreasedGravityMultiplier,
+                    Drag = legacy.Drag
+                };
+            }
+            finally
+            {
+                if (root != null) PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static GameObject BuildPrefab(PlayerProfile profile)
@@ -84,27 +112,38 @@ namespace CrazyMarket.Player.V2.Editor
             GameObject root = null;
             try
             {
+                // Always load the current legacy prefab. This preserves its current
+                // KCC settings and child hierarchy, including intentional shadow edits.
                 root = PrefabUtility.LoadPrefabContents(SourcePrefab);
                 KCCPlayerController legacy = root.GetComponent<KCCPlayerController>();
-                ParticleSystem legacyJumpParticles = legacy == null ? null : legacy.JumpParticles;
-                List<Collider> legacyIgnoredColliders = legacy == null || legacy.IgnoredColliders == null
+                if (legacy == null)
+                    throw new BuildFailedException("Missing legacy KCCPlayerController on " + SourcePrefab + ".");
+
+                ParticleSystem legacyJumpParticles = legacy.JumpParticles;
+                List<Collider> legacyIgnoredColliders = legacy.IgnoredColliders == null
                     ? new List<Collider>()
                     : new List<Collider>(legacy.IgnoredColliders);
 
-                if (legacy != null) Object.DestroyImmediate(legacy, true);
-                TestCampusPlayerAdapter legacyAdapter = root.GetComponent<TestCampusPlayerAdapter>();
-                if (legacyAdapter != null) Object.DestroyImmediate(legacyAdapter, true);
+                RemoveComponents<KCCPlayerController>(root);
+                RemoveComponents<TestCampusPlayerAdapter>(root);
+                RemoveComponents<TestCampusPlayerV2Bridge>(root);
+                RemoveComponents<PlayerCollisionManager>(root);
+                RemoveComponents<PlayerControllerV2>(root);
+                RemoveComponents<DoubleJumpAbility>(root);
+                RemoveComponents<PlayerAnimationPresenter>(root);
 
-                PlayerControllerV2 controller = root.GetComponent<PlayerControllerV2>();
-                if (controller == null) controller = root.AddComponent<PlayerControllerV2>();
-                TestCampusPlayerV2Bridge bridge = root.GetComponent<TestCampusPlayerV2Bridge>();
-                if (bridge == null) bridge = root.AddComponent<TestCampusPlayerV2Bridge>();
-                PlayerAnimationPresenter presenter = root.GetComponent<PlayerAnimationPresenter>();
-                if (presenter == null) presenter = root.AddComponent<PlayerAnimationPresenter>();
+                KinematicCharacterMotor motor = root.GetComponent<KinematicCharacterMotor>();
+                if (motor == null)
+                    throw new BuildFailedException("The source player prefab has no KinematicCharacterMotor.");
+
+                DoubleJumpAbility doubleJump = root.AddComponent<DoubleJumpAbility>();
+                PlayerControllerV2 controller = root.AddComponent<PlayerControllerV2>();
+                PlayerAnimationPresenter presenter = root.AddComponent<PlayerAnimationPresenter>();
+
                 SerializedObject serialized = new SerializedObject(controller);
                 serialized.FindProperty("profile").objectReferenceValue = profile;
                 serialized.FindProperty("input").objectReferenceValue = input;
-                serialized.FindProperty("motor").objectReferenceValue = root.GetComponent<KinematicCharacterMotor>();
+                serialized.FindProperty("motor").objectReferenceValue = motor;
                 serialized.FindProperty("jumpParticles").objectReferenceValue = legacyJumpParticles;
                 SerializedProperty ignored = serialized.FindProperty("ignoredColliders");
                 ignored.arraySize = legacyIgnoredColliders.Count;
@@ -112,15 +151,14 @@ namespace CrazyMarket.Player.V2.Editor
                     ignored.GetArrayElementAtIndex(i).objectReferenceValue = legacyIgnoredColliders[i];
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
-                SerializedObject integration = new SerializedObject(bridge);
-                integration.FindProperty("controller").objectReferenceValue = controller;
-                integration.ApplyModifiedPropertiesWithoutUndo();
-
                 SerializedObject presentation = new SerializedObject(presenter);
                 presentation.FindProperty("controller").objectReferenceValue = controller;
                 presentation.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();
                 presentation.ApplyModifiedPropertiesWithoutUndo();
 
+                // Keep the ability component as a visible, editable prefab component.
+                // Its defaults are intentionally serialized by Unity, not hidden here.
+                EditorUtility.SetDirty(doubleJump);
                 return PrefabUtility.SaveAsPrefabAsset(root, OutputPrefab);
             }
             finally
@@ -148,6 +186,17 @@ namespace CrazyMarket.Player.V2.Editor
             GameObject replacement = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
             replacement.name = playerName;
             replacement.transform.SetPositionAndRotation(position, rotation);
+
+            // Test Campus behavior belongs to the scene integration, not the
+            // reusable player prefab. This also leaves the canonical prefab with
+            // exactly its three production behavior components.
+            TestCampusPlayerV2Bridge bridge = replacement.GetComponent<TestCampusPlayerV2Bridge>();
+            if (bridge == null) bridge = replacement.AddComponent<TestCampusPlayerV2Bridge>();
+            PlayerControllerV2 controller = replacement.GetComponent<PlayerControllerV2>();
+            SerializedObject integration = new SerializedObject(bridge);
+            integration.FindProperty("controller").objectReferenceValue = controller;
+            integration.ApplyModifiedPropertiesWithoutUndo();
+
             Undo.RegisterCreatedObjectUndo(replacement, "Create Player Controller V2 instance");
             campus.PlayerRoot = replacement.transform;
             Undo.DestroyObjectImmediate(oldPlayer.gameObject);
@@ -155,6 +204,20 @@ namespace CrazyMarket.Player.V2.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             if (scene.path != OutputScene || !EditorSceneManager.SaveScene(scene))
                 throw new BuildFailedException("Refused to save generated scene outside " + OutputScene + ".");
+        }
+
+        private static void RemoveComponents<T>(GameObject root) where T : Component
+        {
+            foreach (T component in root.GetComponentsInChildren<T>(true))
+                Object.DestroyImmediate(component, true);
+        }
+
+        private static void SetFloat(SerializedProperty parent, string name, float value)
+        {
+            SerializedProperty property = parent.FindPropertyRelative(name);
+            if (property == null)
+                throw new BuildFailedException("PlayerProfile is missing locomotion field '" + name + "'.");
+            property.floatValue = value;
         }
 
         private static void EnsureFolder(string parent, string child)

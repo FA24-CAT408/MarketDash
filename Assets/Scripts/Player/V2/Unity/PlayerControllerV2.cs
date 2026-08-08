@@ -55,7 +55,11 @@ namespace CrazyMarket.Player.V2.Unity
             }
 
             PlayerBodyObservation initial = ObserveBody();
-            locomotion = new PlayerLocomotionMachine(profile, initial);
+            // Abilities are deliberately ordinary components on this same object.
+            // That keeps the composition visible in the Inspector and lets a prefab
+            // own its complete behavior without hiding the loadout in an asset.
+            PlayerAbilityComponent[] composedAbilities = GetComponents<PlayerAbilityComponent>();
+            locomotion = new PlayerLocomotionMachine(profile, initial, composedAbilities);
             orientationSharpness = locomotion.CaptureRuntimeProfile().Locomotion.OrientationSharpness;
             motor.CharacterController = this;
 
