@@ -38,6 +38,16 @@ namespace CrazyMarket.TestCampus
         IEnumerable<TestDiagnostic> GetDiagnostics();
     }
 
+    // The Test Campus can drive a player without knowing which player assembly
+    // owns the implementation. The predefined player assembly may reference
+    // this small contract; this assembly intentionally does not reference V2.
+    public interface ITestCampusPlayerController
+    {
+        void SetMovementEnabled(bool enabled);
+        bool TryGetMovementIntent(out Vector3 direction);
+        void TeleportTo(Vector3 position, Quaternion rotation);
+    }
+
     [Serializable]
     public sealed class TestZoneScene
     {
