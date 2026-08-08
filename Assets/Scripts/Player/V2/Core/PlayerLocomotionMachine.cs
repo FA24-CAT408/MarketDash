@@ -130,7 +130,8 @@ namespace CrazyMarket.Player.V2
             float orientationSharpness = Resolve(PlayerStat.OrientationSharpness,
                 baseTuning.OrientationSharpness);
             float drag = Resolve(PlayerStat.Drag, baseTuning.Drag);
-            Vector2 move = Vector2.ClampMagnitude(intent.Move, 1f);
+            Vector2 move = Finite(intent.Move) ? intent.Move : Vector2.zero;
+            move = Vector2.ClampMagnitude(move, 1f);
             float speed = mode == LocomotionMode.Grounded ? stableSpeed : airSpeed;
             Vector3 target = blocked ? Vector3.zero : new Vector3(move.x, 0f, move.y) * speed;
             bool falling = !stable && observation.Velocity.y < 0f;
@@ -152,7 +153,7 @@ namespace CrazyMarket.Player.V2
             snapshot = new PlayerSnapshot(revision, observation, velocity, mode, blocks.Count, Remaining(), coyote,
                 jumpBuffer, profile.ProfileId, profile.Id, flags | requestFlags);
             presentation = Present(velocity, move, snapshot.ActionFlags);
-            wasStable = stable;
+            wasStable = stable && !jumped;
             if (output.HasTeleport) pendingTeleport = null;
             return new LocomotionOutput(output.Mode, output.TargetPlanarVelocity, output.AirAcceleration,
                 output.StableMovementSharpness, output.OrientationSharpness, output.Drag, output.Gravity,
@@ -327,6 +328,7 @@ namespace CrazyMarket.Player.V2
         private static Vector3 Sanitize(Vector3 value) => new Vector3(Safe(value.x, 0f), Safe(value.y, 0f), Safe(value.z, 0f));
         private static float Duration(float value) => Mathf.Max(0f, Safe(value, 0f));
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+        private static bool Finite(Vector2 value) => Finite(value.x) && Finite(value.y);
         private static bool Finite(Vector3 value) => Finite(value.x) && Finite(value.y) && Finite(value.z);
         private static bool Finite(Quaternion value) => Finite(value.x) && Finite(value.y) && Finite(value.z) && Finite(value.w);
         private static float Safe(float value, float fallback) => Finite(value) ? value : fallback;
