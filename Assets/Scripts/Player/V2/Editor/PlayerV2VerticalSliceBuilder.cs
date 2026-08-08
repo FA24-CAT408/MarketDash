@@ -97,6 +97,8 @@ namespace CrazyMarket.Player.V2.Editor
 
                 PlayerControllerV2 controller = root.GetComponent<PlayerControllerV2>();
                 if (controller == null) controller = root.AddComponent<PlayerControllerV2>();
+                TestCampusPlayerV2Bridge bridge = root.GetComponent<TestCampusPlayerV2Bridge>();
+                if (bridge == null) bridge = root.AddComponent<TestCampusPlayerV2Bridge>();
                 PlayerAnimationPresenter presenter = root.GetComponent<PlayerAnimationPresenter>();
                 if (presenter == null) presenter = root.AddComponent<PlayerAnimationPresenter>();
                 SerializedObject serialized = new SerializedObject(controller);
@@ -109,6 +111,10 @@ namespace CrazyMarket.Player.V2.Editor
                 for (int i = 0; i < legacyIgnoredColliders.Count; i++)
                     ignored.GetArrayElementAtIndex(i).objectReferenceValue = legacyIgnoredColliders[i];
                 serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                SerializedObject integration = new SerializedObject(bridge);
+                integration.FindProperty("controller").objectReferenceValue = controller;
+                integration.ApplyModifiedPropertiesWithoutUndo();
 
                 SerializedObject presentation = new SerializedObject(presenter);
                 presentation.FindProperty("controller").objectReferenceValue = controller;

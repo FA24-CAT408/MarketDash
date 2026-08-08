@@ -3157,80 +3157,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1149687439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &695271927
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_Name
-      value: KCC Player Controller
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 541302cb08857404088c78bc75016156, type: 3}
---- !u!4 &695271928 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 695271927}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &747480266
 GameObject:
   m_ObjectHideFlags: 0
@@ -3620,6 +3546,80 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 788477385}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &796144405
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_Name
+      value: KCC Player Controller
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 541302cb08857404088c78bc75016156, type: 3}
+--- !u!4 &796144406 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+    type: 3}
+  m_PrefabInstance: {fileID: 796144405}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &805467758
 GameObject:
   m_ObjectHideFlags: 0
@@ -5229,7 +5229,7 @@ MonoBehaviour:
   - Zone: 6
     SceneName: TestCampus_Integration
     LoadByDefault: 1
-  playerRoot: {fileID: 695271928}
+  playerRoot: {fileID: 796144406}
   killPlaneY: -20
   disablePointLightShadows: 1
 --- !u!4 &1149687439
@@ -9738,4 +9738,4 @@ SceneRoots:
   - {fileID: 1916917471}
   - {fileID: 1715537784}
   - {fileID: 1271185508}
-  - {fileID: 695271927}
+  - {fileID: 796144405}

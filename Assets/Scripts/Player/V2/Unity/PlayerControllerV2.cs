@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using CrazyMarket.Player.V2;
-using CrazyMarket.TestCampus;
 using KinematicCharacterController;
 using UnityEngine;
 
 namespace CrazyMarket.Player.V2.Unity
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController,
-        ITestCampusPlayerController
+    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController
     {
         [Header("V2 composition")]
         [SerializeField] private PlayerProfile profile;
@@ -29,6 +27,7 @@ namespace CrazyMarket.Player.V2.Unity
         private bool stepProducedOutput;
         private LocomotionOutput output;
         private Vector3 movementDirection;
+        private float orientationSharpness;
 
         private const float MotorSafetyMagnitude = 1000000f;
 
@@ -57,6 +56,7 @@ namespace CrazyMarket.Player.V2.Unity
 
             PlayerBodyObservation initial = ObserveBody();
             locomotion = new PlayerLocomotionMachine(profile, initial);
+            orientationSharpness = locomotion.CaptureRuntimeProfile().Locomotion.OrientationSharpness;
             motor.CharacterController = this;
 
             if (profile == null)
@@ -168,7 +168,7 @@ namespace CrazyMarket.Player.V2.Unity
             if (direction.sqrMagnitude <= 0.0001f || Presentation.Mode == LocomotionMode.Disabled)
                 return;
 
-            float sharpness = output.OrientationSharpness;
+            float sharpness = orientationSharpness;
             if (sharpness <= 0f) return;
             float safeDeltaTime = SafeDeltaTime(deltaTime);
             Vector3 smoothed = Vector3.Slerp(motor.CharacterForward, direction.normalized,
@@ -184,6 +184,7 @@ namespace CrazyMarket.Player.V2.Unity
             PlayerBodyObservation observation = ObserveBody(currentVelocity);
             PlayerIntent intent = BuildIntent();
             output = locomotion.Step(intent, observation, safeDeltaTime);
+            orientationSharpness = output.OrientationSharpness;
             stepProducedOutput = true;
 
             if (output.HasTeleport)
