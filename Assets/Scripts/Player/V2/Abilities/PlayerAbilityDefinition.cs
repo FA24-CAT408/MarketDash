@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-
 namespace CrazyMarket.Player.V2
 {
     public enum AbilityCancellationReason
@@ -53,10 +52,21 @@ namespace CrazyMarket.Player.V2
         PlayerAbilityResult Evaluate(PlayerAbilityContext context);
     }
 
+    public readonly struct PlayerAbilityData
+    {
+        public PlayerAbilityId Id { get; }
+        public bool IsValid => Id == PlayerAbilityId.DoubleJump;
+
+        public PlayerAbilityData(PlayerAbilityId id)
+        {
+            Id = id;
+        }
+    }
+
     public abstract class PlayerAbilityDefinition : ScriptableObject
     {
         public abstract PlayerAbilityId Id { get; }
-        public abstract IPlayerAbilityRuntime CreateRuntime();
+        public abstract PlayerAbilityData CreateRuntimeData();
     }
 
     [CreateAssetMenu(menuName = "CrazyMarket/Player/V2/Double Jump Ability",
@@ -64,9 +74,8 @@ namespace CrazyMarket.Player.V2
     public sealed class DoubleJumpAbilityDefinition : PlayerAbilityDefinition
     {
         public override PlayerAbilityId Id => PlayerAbilityId.DoubleJump;
-        public override IPlayerAbilityRuntime CreateRuntime() => new DoubleJumpAbilityRuntime();
-
-        internal static IPlayerAbilityRuntime CreateDefaultRuntime() => new DoubleJumpAbilityRuntime();
+        public override PlayerAbilityData CreateRuntimeData() =>
+            new PlayerAbilityData(PlayerAbilityId.DoubleJump);
     }
 
     internal sealed class DoubleJumpAbilityRuntime : IPlayerAbilityRuntime
