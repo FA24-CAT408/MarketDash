@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace CrazyMarket.Player.V2.Unity
 {
+    // Keeps Test Campus concerns at the scene-integration boundary. The player
+    // controller itself remains usable without a reference to Test Campus.
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerControllerV2))]
     public sealed class TestCampusPlayerV2Bridge : MonoBehaviour, IPlayerSceneControl

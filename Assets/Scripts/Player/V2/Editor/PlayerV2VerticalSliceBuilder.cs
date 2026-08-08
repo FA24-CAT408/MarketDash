@@ -109,6 +109,10 @@ namespace CrazyMarket.Player.V2.Editor
                     ignored.GetArrayElementAtIndex(i).objectReferenceValue = legacyIgnoredColliders[i];
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
+                SerializedObject integration = new SerializedObject(bridge);
+                integration.FindProperty("controller").objectReferenceValue = controller;
+                integration.ApplyModifiedPropertiesWithoutUndo();
+
                 SerializedObject presentation = new SerializedObject(presenter);
                 presentation.FindProperty("controller").objectReferenceValue = controller;
                 presentation.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();

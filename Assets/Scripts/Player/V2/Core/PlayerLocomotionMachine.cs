@@ -47,7 +47,7 @@ namespace CrazyMarket.Player.V2
             coyote = wasStable ? profile.Locomotion.CoyoteTime : 0f;
             snapshot = new PlayerSnapshot(0, initial, initial.Velocity, mode, 0, Remaining(), coyote, 0f,
                 profile.ProfileId, profile.Id, wasStable ? PlayerActionFlags.Grounded : PlayerActionFlags.None);
-            presentation = Present(initial.Velocity, Vector2.zero, snapshot.ActionFlags);
+            presentation = Present(initial.Velocity, Vector2.zero, snapshot.ActionFlags, wasStable);
         }
         public LocomotionOutput Step(PlayerIntent intent, PlayerBodyObservation observation, float deltaTime)
         {
@@ -150,7 +150,7 @@ namespace CrazyMarket.Player.V2
             revision++;
             snapshot = new PlayerSnapshot(revision, observation, velocity, mode, blocks.Count, Remaining(), coyote,
                 jumpBuffer, profile.ProfileId, profile.Id, flags | requestFlags);
-            presentation = Present(velocity, move, snapshot.ActionFlags);
+            presentation = Present(velocity, move, snapshot.ActionFlags, stable && !jumped);
             wasStable = stable && !jumped;
             if (output.HasTeleport) pendingTeleport = null;
             return new LocomotionOutput(output.Mode, output.TargetPlanarVelocity, output.AirAcceleration,
@@ -316,8 +316,9 @@ namespace CrazyMarket.Player.V2
         }
 
         private static bool Stable(PlayerBodyObservation observation) => observation.StableGrounded && observation.WalkableGround;
-        private PlayerPresentationState Present(Vector3 velocity, Vector2 move, PlayerActionFlags flags) =>
-            new PlayerPresentationState(mode, mode == LocomotionMode.Grounded,
+        private PlayerPresentationState Present(Vector3 velocity, Vector2 move, PlayerActionFlags flags,
+            bool grounded) =>
+            new PlayerPresentationState(mode, grounded,
                 new Vector3(velocity.x, 0f, velocity.z).magnitude, velocity.y, move, flags);
         // Final motor-output safety boundary; ordinary negative and large authoring values remain valid before this cap.
         private const float EngineSafetyMagnitude = 1000000f;
