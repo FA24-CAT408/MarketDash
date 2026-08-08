@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CrazyMarket Locomotion Workbench</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: oklch(96% 0.012 145);
+      --paper-deep: oklch(92% 0.018 145);
+      --surface: oklch(98% 0.009 145);
+      --surface-raised: oklch(99% 0.006 145);
+      --ink: oklch(24% 0.025 150);
+      --ink-soft: oklch(42% 0.026 150);
+      --ink-faint: oklch(57% 0.02 150);
+      --line: oklch(78% 0.028 145);
+      --line-strong: oklch(63% 0.04 145);
+      --accent: oklch(48% 0.09 151);
+      --accent-soft: oklch(88% 0.05 151);
+      --accent-deep: oklch(35% 0.075 151);
+      --warning: oklch(51% 0.11 72);
+      --warning-soft: oklch(91% 0.045 72);
+      --reject: oklch(48% 0.12 28);
+      --reject-soft: oklch(91% 0.045 28);
+      --shadow-sm: 0 1px 1px oklch(30% 0.02 150 / 0.08), 0 3px 9px oklch(30% 0.02 150 / 0.06);
+      --shadow-press: inset 0 2px 4px oklch(30% 0.02 150 / 0.14);
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 0.75rem;
+      --space-lg: 1rem;
+      --space-xl: 1.5rem;
+      --space-2xl: 2rem;
+      --space-3xl: 3rem;
+      --radius-sm: 0.35rem;
+      --radius-md: 0.65rem;
+      --font-display: "Afacad Flux", Bahnschrift, "Arial Narrow", sans-serif;
+      --font-body: "Atkinson Hyperlegible Next", Aptos, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--paper-deep); }
+
+    body {
+      margin: 0;
+      min-width: 20rem;
+      color: var(--ink);
+      background:
+        linear-gradient(oklch(98% 0.008 145 / 0.76), oklch(96% 0.012 145 / 0.88)),
+        repeating-linear-gradient(90deg, transparent 0 31px, oklch(68% 0.03 145 / 0.055) 31px 32px),
+        repeating-linear-gradient(0deg, transparent 0 31px, oklch(68% 0.03 145 / 0.055) 31px 32px);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.5;
+      font-kerning: normal;
+    }
+
+    button { font: inherit; }
+
+    .skip-link {
+      position: fixed;
+      top: var(--space-sm);
+      left: var(--space-sm);
+      z-index: 10;
+      transform: translateY(-180%);
+      padding: var(--space-sm) var(--space-md);
+      color: var(--surface);
+      background: var(--accent-deep);
+      border-radius: var(--radius-sm);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .page-shell {
+      width: min(100%, 96rem);
+      margin-inline: auto;
+      padding: var(--space-xl);
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 0.75fr);
+      gap: var(--space-3xl);
+      align-items: end;
+      padding-block: var(--space-lg) var(--space-2xl);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .eyebrow,
+    .section-label,
+    .field-label {
+      margin: 0;
+      color: var(--ink-soft);
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      max-width: 14ch;
+      margin-top: var(--space-sm);
+      font-family: var(--font-display);
+      font-size: clamp(2.35rem, 5vw, 5.6rem);
+      font-weight: 650;
+      letter-spacing: -0.045em;
+      line-height: 0.9;
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 650;
+      letter-spacing: -0.018em;
+      line-height: 1.1;
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 650;
+      line-height: 1.2;
+    }
+
+    .question {
+      display: grid;
+      gap: var(--space-md);
+      max-width: 48ch;
+      color: var(--ink-soft);
+      font-size: 1.05rem;
+    }
+
+    .question strong { color: var(--ink); }
+
+    .revision-strip {
+      display: flex;
+      gap: var(--space-lg);
+      align-items: center;
+      padding-block: var(--space-md);
+      color: var(--ink-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 0.875rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .live-dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      background: var(--accent);
+      border: 2px solid var(--surface);
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(22rem, 0.9fr) minmax(32rem, 1.5fr);
+      grid-template-areas:
+        "state controls"
+        "state walkthroughs";
+      gap: var(--space-3xl);
+      align-items: start;
+      padding-block: var(--space-2xl) var(--space-3xl);
+    }
+
+    .state-column {
+      grid-area: state;
+      position: sticky;
+      top: var(--space-xl);
+      display: grid;
+      gap: var(--space-xl);
+      min-width: 0;
+    }
+
+    .control-column { grid-area: controls; }
+    .walkthrough-column { grid-area: walkthroughs; }
+
+    .section-heading {
+      display: flex;
+      gap: var(--space-lg);
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .mode-readout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-lg);
+      align-items: center;
+      padding: var(--space-xl);
+      background: var(--accent-soft);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mode-mark {
+      display: grid;
+      width: 3rem;
+      height: 3rem;
+      place-items: center;
+      color: var(--surface);
+      background: var(--accent-deep);
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .mode-path {
+      margin-top: var(--space-xs);
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .hierarchy {
+      display: grid;
+      gap: var(--space-sm);
+      padding: var(--space-lg) 0;
+      border-block: 1px solid var(--line);
+    }
+
+    .tree-row {
+      display: grid;
+      grid-template-columns: 1.25rem 1fr auto;
+      gap: var(--space-sm);
+      align-items: center;
+      min-height: 2rem;
+      padding: 0 var(--space-sm);
+      color: var(--ink-faint);
+      border-radius: var(--radius-sm);
+    }
+
+    .tree-row.child { padding-left: var(--space-xl); }
+    .tree-row.prototype-child { padding-left: var(--space-2xl); }
+
+    .tree-row.active {
+      color: var(--accent-deep);
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+
+    .tree-node {
+      width: 0.65rem;
+      height: 0.65rem;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+    }
+
+    .tree-row.active .tree-node { background: currentColor; }
+
+    .prototype-tag {
+      padding: 0.1rem 0.4rem;
+      color: var(--ink-soft);
+      background: var(--paper-deep);
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .instrument-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    .instrument {
+      min-width: 0;
+      padding: var(--space-md);
+      background: var(--surface);
+    }
+
+    .field-value {
+      display: block;
+      overflow-wrap: anywhere;
+      margin-top: var(--space-xs);
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .output-panel {
+      display: grid;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      background: var(--surface-raised);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .output-topline {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .output-kind {
+      color: var(--accent-deep);
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .output-vector {
+      padding: var(--space-xs) var(--space-sm);
+      color: var(--ink-soft);
+      background: var(--paper-deep);
+      border-radius: var(--radius-sm);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .status-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+    }
+
+    .status-message {
+      min-height: 7.25rem;
+      padding: var(--space-md);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    .status-message.accepted { background: var(--accent-soft); }
+    .status-message.rejected { background: var(--reject-soft); }
+    .status-message.rejected .field-label { color: var(--reject); }
+
+    .status-copy {
+      margin-top: var(--space-sm);
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+    }
+
+    .control-column,
+    .walkthrough-column {
+      display: grid;
+      gap: var(--space-xl);
+      min-width: 0;
+    }
+
+    .control-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+      gap: var(--space-xl) var(--space-2xl);
+    }
+
+    .control-group {
+      display: grid;
+      align-content: start;
+      gap: var(--space-sm);
+    }
+
+    .control-group h3 {
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .action-button,
+    .tab-button,
+    .step-button,
+    .reset-button {
+      min-height: 2.75rem;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--ink);
+      background: var(--surface-raised);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 2px 0 var(--line-strong), var(--shadow-sm);
+      cursor: pointer;
+      font-weight: 650;
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    .action-button:hover,
+    .tab-button:hover,
+    .step-button:hover,
+    .reset-button:hover { background: var(--paper); }
+
+    .action-button:active,
+    .tab-button:active,
+    .step-button:active,
+    .reset-button:active,
+    .action-button.is-pressed {
+      transform: translateY(2px);
+      box-shadow: var(--shadow-press);
+    }
+
+    button:focus { outline: none; }
+
+    button:focus-visible,
+    [role="tab"]:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    button:disabled {
+      color: var(--ink-faint);
+      background: var(--paper-deep);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .action-button.system { background: var(--warning-soft); }
+    .action-button.danger { background: var(--reject-soft); }
+
+    .reset-button {
+      min-height: 2.5rem;
+      padding-inline: var(--space-lg);
+      color: var(--surface);
+      background: var(--accent-deep);
+      border-color: var(--accent-deep);
+      box-shadow: 0 2px 0 oklch(25% 0.06 151), var(--shadow-sm);
+      text-align: center;
+    }
+
+    .reset-button:hover { color: var(--surface); background: var(--accent); }
+
+    .tabs {
+      display: flex;
+      gap: var(--space-xs);
+      overflow-x: auto;
+      padding: var(--space-xs) var(--space-xs) var(--space-md);
+      scrollbar-color: var(--line-strong) transparent;
+    }
+
+    .tab-button {
+      flex: 0 0 auto;
+      min-height: 2.5rem;
+      padding-inline: var(--space-lg);
+      box-shadow: none;
+      color: var(--ink-soft);
+      background: transparent;
+      border-color: transparent;
+      text-align: center;
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: var(--surface);
+      background: var(--accent-deep);
+      border-color: var(--accent-deep);
+    }
+
+    .walkthrough {
+      display: grid;
+      grid-template-columns: minmax(12rem, 0.5fr) minmax(18rem, 1fr);
+      gap: var(--space-2xl);
+      padding: var(--space-xl);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .walkthrough-copy {
+      display: grid;
+      align-content: start;
+      gap: var(--space-md);
+    }
+
+    .walkthrough-description { color: var(--ink-soft); }
+
+    .progress-label {
+      color: var(--ink-soft);
+      font-size: 0.875rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .steps {
+      display: grid;
+      gap: var(--space-sm);
+      align-content: start;
+      counter-reset: walkthrough-step;
+    }
+
+    .step-button {
+      display: grid;
+      grid-template-columns: 1.7rem 1fr;
+      gap: var(--space-sm);
+      align-items: center;
+      counter-increment: walkthrough-step;
+    }
+
+    .step-button::before {
+      content: counter(walkthrough-step);
+      display: grid;
+      width: 1.55rem;
+      height: 1.55rem;
+      place-items: center;
+      color: var(--ink-soft);
+      background: var(--paper-deep);
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .step-button.completed {
+      color: var(--accent-deep);
+      background: var(--accent-soft);
+      box-shadow: none;
+    }
+
+    .step-button.completed::before {
+      content: "✓";
+      color: var(--surface);
+      background: var(--accent);
+    }
+
+    .step-button.current { border-color: var(--accent); }
+
+    .event-log {
+      display: grid;
+      gap: var(--space-sm);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--line);
+    }
+
+    .event-list {
+      display: grid;
+      gap: var(--space-xs);
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .event-item {
+      display: grid;
+      grid-template-columns: 3.5rem 1fr;
+      gap: var(--space-sm);
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+    }
+
+    .event-revision {
+      color: var(--ink-faint);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .footer-note {
+      display: flex;
+      gap: var(--space-lg);
+      justify-content: space-between;
+      padding-block: var(--space-lg) var(--space-2xl);
+      color: var(--ink-soft);
+      border-top: 1px solid var(--line-strong);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 68rem) {
+      .masthead { grid-template-columns: 1fr; gap: var(--space-xl); }
+      .question { max-width: 68ch; }
+      .workbench {
+        grid-template-columns: 1fr;
+        grid-template-areas: "state" "controls" "walkthroughs";
+      }
+      .state-column { position: static; }
+      .instrument-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 46rem) {
+      .page-shell { padding: var(--space-lg); }
+      .instrument-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .status-pair,
+      .walkthrough { grid-template-columns: 1fr; }
+      .footer-note { flex-direction: column; }
+      .workbench { gap: var(--space-2xl); }
+    }
+
+    @media (max-width: 28rem) {
+      .button-row { grid-template-columns: 1fr; }
+      .control-groups { grid-template-columns: 1fr; }
+      .mode-readout { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#workbench">Skip to workbench</a>
+  <div class="page-shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">CrazyMarket · throwaway logic prototype</p>
+        <h1>Locomotion workbench</h1>
+      </div>
+      <div class="question">
+        <p class="section-label">Question under test</p>
+        <p><strong>Can one authoritative locomotion HSM</strong> resolve movement, Ability influences, exclusive-mode requests, Control Blocks, and conflicting transitions without two systems fighting over the player body?</p>
+      </div>
+    </header>
+
+    <div class="revision-strip" aria-live="polite">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span>Pure in-memory model</span>
+      <span>Revision <strong id="revision">0</strong></span>
+      <span id="resolution-summary">Ready for Player Intent</span>
+    </div>
+
+    <main id="workbench" class="workbench">
+      <section class="state-column" aria-labelledby="state-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Full relevant state</p>
+            <h2 id="state-heading">Player Snapshot</h2>
+          </div>
+          <button id="reset-all" class="reset-button" type="button">Reset model</button>
+        </div>
+
+        <div class="mode-readout">
+          <span id="mode-mark" class="mode-mark" aria-hidden="true">G</span>
+          <div>
+            <span class="field-label">Active hierarchy</span>
+            <p id="mode-path" class="mode-path">Controllable / Grounded</p>
+          </div>
+        </div>
+
+        <div id="hierarchy" class="hierarchy" aria-label="Player Locomotion hierarchy"></div>
+
+        <div class="instrument-grid">
+          <div class="instrument">
+            <span class="field-label">Player Intent</span>
+            <span id="intent" class="field-value">None</span>
+          </div>
+          <div class="instrument">
+            <span class="field-label">Ground observation</span>
+            <span id="grounding" class="field-value">Stable &amp; walkable</span>
+          </div>
+          <div class="instrument">
+            <span class="field-label">Air jumps</span>
+            <span id="air-jumps" class="field-value">1 available</span>
+          </div>
+          <div class="instrument">
+            <span class="field-label">Control Blocks</span>
+            <span id="control-blocks" class="field-value">None</span>
+          </div>
+          <div class="instrument">
+            <span class="field-label">Ability activity</span>
+            <span id="ability" class="field-value">None</span>
+          </div>
+          <div class="instrument">
+            <span class="field-label">Ledge observation</span>
+            <span id="ledge" class="field-value">Not in reach</span>
+          </div>
+        </div>
+
+        <div class="output-panel">
+          <div class="output-topline">
+            <div>
+              <span class="field-label">Locomotion Output</span>
+              <p id="output-kind" class="output-kind">Hold stable ground</p>
+            </div>
+            <span id="output-vector" class="output-vector">(0.0, 0.0, 0.0)</span>
+          </div>
+          <p id="output-description" class="status-copy">Grounded owns final body movement. KCC keeps stable contact.</p>
+        </div>
+
+        <div class="status-pair">
+          <div class="status-message accepted">
+            <span class="field-label">Latest accepted decision</span>
+            <p id="accepted-message" class="status-copy">The model is ready.</p>
+          </div>
+          <div class="status-message rejected" aria-live="polite">
+            <span class="field-label">Latest rejection</span>
+            <p id="rejected-message" class="status-copy">No request has been rejected.</p>
+          </div>
+        </div>
+
+        <div class="event-log">
+          <p class="section-label">Recent decisions</p>
+          <ol id="event-list" class="event-list"></ol>
+        </div>
+      </section>
+
+      <section class="control-column" aria-labelledby="controls-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Free play</p>
+            <h2 id="controls-heading">Push the model</h2>
+          </div>
+          <p class="progress-label">Every control remains available so illegal requests stay testable.</p>
+        </div>
+
+        <div id="free-play-controls" class="control-groups">
+          <div class="control-group">
+            <h3>Player Intent</h3>
+            <div class="button-row">
+              <button class="action-button" type="button" data-action="MOVE_START">Move forward</button>
+              <button class="action-button" type="button" data-action="MOVE_STOP">Stop moving</button>
+              <button class="action-button" type="button" data-action="JUMP">Request Jump</button>
+              <button class="action-button" type="button" data-action="TICK">Advance gravity</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <h3>Environment</h3>
+            <div class="button-row">
+              <button class="action-button" type="button" data-action="LEAVE_GROUND">Leave ground</button>
+              <button class="action-button" type="button" data-action="LAND">Land on stable ground</button>
+              <button class="action-button" type="button" data-action="SEE_LEDGE">Put ledge in reach</button>
+              <button class="action-button danger" type="button" data-action="LOSE_LEDGE">Lose ledge contact</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <h3>Abilities</h3>
+            <div class="button-row">
+              <button class="action-button" type="button" data-action="GRAB_LEDGE">Request Ledge Hang</button>
+              <button class="action-button" type="button" data-action="START_CLIMB">Request Climbing</button>
+              <button class="action-button" type="button" data-action="FINISH_CLIMB">Finish climbing</button>
+              <button class="action-button" type="button" data-action="GRAPPLE">Apply Grapple influence</button>
+              <button class="action-button" type="button" data-action="RELEASE_GRAPPLE">Release Grapple</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <h3>System control</h3>
+            <div class="button-row">
+              <button class="action-button system" type="button" data-action="ADD_BLOCK" data-source="Game State">Block: Game State</button>
+              <button class="action-button system" type="button" data-action="ADD_BLOCK" data-source="Cutscene">Block: Cutscene</button>
+              <button class="action-button" type="button" data-action="REMOVE_BLOCK" data-source="Game State">Release: Game State</button>
+              <button class="action-button" type="button" data-action="REMOVE_BLOCK" data-source="Cutscene">Release: Cutscene</button>
+              <button class="action-button danger" type="button" data-action="CONFLICT">Resolve three-way conflict</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="walkthrough-column" aria-labelledby="walkthrough-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Guided walkthroughs</p>
+            <h2 id="walkthrough-heading">Awkward cases</h2>
+          </div>
+          <p class="progress-label">Selecting a tab resets the model.</p>
+        </div>
+
+        <div id="scenario-tabs" class="tabs" role="tablist" aria-label="Prototype scenarios"></div>
+        <div class="walkthrough">
+          <div class="walkthrough-copy">
+            <p class="section-label">Scenario</p>
+            <h3 id="scenario-title">Jump and land</h3>
+            <p id="scenario-description" class="walkthrough-description"></p>
+            <p id="scenario-progress" class="progress-label"></p>
+          </div>
+          <div id="scenario-steps" class="steps" role="tabpanel" tabindex="0"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-note">
+      <span>Prototype only · no Unity physics · no persistence</span>
+      <span>The mode decides. Unity applies.</span>
+    </footer>
+  </div>
+
+  <script>
+    const PlayerLocomotionMachine = (() => {
+      const MODES = Object.freeze({
+        DISABLED: "Disabled",
+        GROUNDED: "Grounded",
+        AIRBORNE: "Airborne",
+        LEDGE_HANG: "Ledge Hang",
+        CLIMBING: "Climbing"
+      });
+
+      const copy = value => JSON.parse(JSON.stringify(value));
+
+      function output(kind, description, vector = [0, 0, 0]) {
+        return { kind, description, vector };
+      }
+
+      function createInitialState() {
+        return {
+          revision: 0,
+          mode: MODES.GROUNDED,
+          stableGrounded: true,
+          ledgeInReach: false,
+          moveIntent: "None",
+          lastIntent: "None",
+          airJumpsRemaining: 1,
+          controlBlocks: [],
+          grappleActive: false,
+          verticalVelocity: 0,
+          locomotionOutput: output(
+            "Hold stable ground",
+            "Grounded owns final body movement. KCC keeps stable contact."
+          ),
+          latestAccepted: "The model is ready.",
+          latestRejection: "No request has been rejected.",
+          resolutionSummary: "Ready for Player Intent",
+          events: []
+        };
+      }
+
+      function pathFor(mode) {
+        if (mode === MODES.DISABLED) return "Disabled";
+        return `Controllable / ${mode}`;
+      }
+
+      function appendEvent(state, message, kind = "accepted") {
+        state.events.unshift({ revision: state.revision, message, kind });
+        state.events = state.events.slice(0, 6);
+      }
+
+      function accept(state, message) {
+        state.latestAccepted = message;
+        state.latestRejection = "No request was rejected in this step.";
+        state.resolutionSummary = message;
+        appendEvent(state, message, "accepted");
+      }
+
+      function reject(state, request, reason) {
+        const message = `${request} was rejected. ${reason}`;
+        state.latestRejection = message;
+        state.resolutionSummary = message;
+        appendEvent(state, message, "rejected");
+      }
+
+      function transition(state, nextMode, reason, priority) {
+        const prior = state.mode;
+        state.mode = nextMode;
+        accept(state, `${prior} → ${nextMode}. ${reason} Priority: ${priority}.`);
+      }
+
+      function naturalOutput(state) {
+        if (state.mode === MODES.DISABLED) {
+          if (state.stableGrounded) {
+            return output("Control blocked; settle", "Player Intent and Ability activation are ignored. KCC keeps stable contact.");
+          }
+          return output("Control blocked; fall naturally", "Player Intent and Ability activation are ignored. KCC continues gravity and collision.", [0, state.verticalVelocity, 0]);
+        }
+        if (state.mode === MODES.GROUNDED) {
+          const speed = state.moveIntent === "Forward" ? 10 : 0;
+          return output(speed > 0 ? "Ground movement" : "Hold stable ground", speed > 0 ? "Grounded resolves Player Intent using the current movement tuning." : "Grounded owns final body movement. KCC keeps stable contact.", [0, 0, speed]);
+        }
+        if (state.mode === MODES.AIRBORNE) {
+          const pull = state.grappleActive ? 6 : 0;
+          return output(state.grappleActive ? "Air movement + Grapple influence" : "Air movement", state.grappleActive ? "Airborne remains authoritative and combines gravity, air control, and the Grapple influence." : "Airborne resolves air control and gravity.", [pull, state.verticalVelocity, state.moveIntent === "Forward" ? 4 : 0]);
+        }
+        if (state.mode === MODES.LEDGE_HANG) {
+          return output("Hold ledge", "Ledge Hang owns movement and keeps the body attached to the observed ledge.");
+        }
+        return output("Climb along ledge", "Climbing owns movement along the wall toward stable ground.", [0, 3, 0]);
+      }
+
+      function reduce(previousState, action) {
+        if (action.type === "RESET") return createInitialState();
+        const state = copy(previousState);
+        state.revision += 1;
+        state.lastIntent = action.type.replaceAll("_", " ");
+
+        switch (action.type) {
+          case "MOVE_START":
+            if (state.mode === MODES.DISABLED) {
+              reject(state, "Move", "A Control Block prevents Player Intent from reaching locomotion.");
+            } else if (state.mode === MODES.LEDGE_HANG) {
+              reject(state, "Move", "Ledge Hang ignores ordinary movement until another mode is accepted.");
+            } else {
+              state.moveIntent = "Forward";
+              accept(state, `${state.mode} accepted forward Player Intent.`);
+            }
+            break;
+
+          case "MOVE_STOP":
+            state.moveIntent = "None";
+            accept(state, "Forward Player Intent was released.");
+            break;
+
+          case "JUMP":
+            if (state.mode === MODES.DISABLED) {
+              reject(state, "Jump", "A Control Block prevents Ability and action activation.");
+            } else if (state.mode === MODES.GROUNDED) {
+              state.stableGrounded = false;
+              state.verticalVelocity = 12;
+              transition(state, MODES.AIRBORNE, "Grounded accepted the base Jump request.", "optional action");
+            } else if (state.mode === MODES.AIRBORNE && state.airJumpsRemaining > 0) {
+              state.airJumpsRemaining -= 1;
+              state.verticalVelocity = 12;
+              accept(state, "Double Jump Ability supplied one airborne jump influence. Airborne remained authoritative.");
+            } else if (state.mode === MODES.AIRBORNE) {
+              reject(state, "Double Jump", "The Ability has no airborne jumps remaining.");
+            } else {
+              reject(state, "Jump", `${state.mode} does not accept a normal Jump request.`);
+            }
+            break;
+
+          case "TICK":
+            if (!state.stableGrounded && ![MODES.LEDGE_HANG, MODES.CLIMBING].includes(state.mode)) {
+              state.verticalVelocity -= 3;
+              accept(state, state.mode === MODES.DISABLED ? "KCC continued natural gravity while control remained blocked." : "Airborne advanced gravity for one simulation step.");
+            } else {
+              accept(state, `${state.mode} produced a stable Locomotion Output for one simulation step.`);
+            }
+            break;
+
+          case "LEAVE_GROUND":
+            state.stableGrounded = false;
+            if (state.mode === MODES.GROUNDED) {
+              state.verticalVelocity = 0;
+              transition(state, MODES.AIRBORNE, "KCC no longer observed stable, walkable ground.", "safety");
+            } else if (state.mode === MODES.DISABLED) {
+              accept(state, "Ground contact was lost while Disabled. KCC will continue gravity without Player Intent.");
+            } else {
+              reject(state, "Leave ground", `${state.mode} was already detached from stable ground.`);
+            }
+            break;
+
+          case "LAND":
+            state.stableGrounded = true;
+            state.verticalVelocity = 0;
+            state.airJumpsRemaining = 1;
+            state.grappleActive = false;
+            state.ledgeInReach = false;
+            if (state.mode === MODES.DISABLED) {
+              accept(state, "KCC observed stable, walkable ground while Disabled. Airborne jumps reset, but control stays blocked.");
+            } else if (state.mode === MODES.GROUNDED) {
+              accept(state, "Stable grounding was confirmed. Airborne jumps reset.");
+            } else {
+              transition(state, MODES.GROUNDED, "KCC observed stable, walkable ground. Airborne jumps reset.", "safety");
+            }
+            break;
+
+          case "SEE_LEDGE":
+            state.ledgeInReach = true;
+            accept(state, "The environment reported a reachable ledge.");
+            break;
+
+          case "GRAB_LEDGE":
+            if (state.mode === MODES.DISABLED) {
+              reject(state, "Ledge Grab", "A Control Block prevents Ability activation.");
+            } else if (state.mode !== MODES.AIRBORNE) {
+              reject(state, "Ledge Grab", "The request requires Airborne locomotion.");
+            } else if (!state.ledgeInReach) {
+              reject(state, "Ledge Grab", "No reachable ledge is currently observed.");
+            } else {
+              state.grappleActive = false;
+              state.verticalVelocity = 0;
+              transition(state, MODES.LEDGE_HANG, "Ledge Grab requested an exclusive Locomotion Mode and the transition policy accepted it.", "optional Ability");
+            }
+            break;
+
+          case "START_CLIMB":
+            if (state.mode === MODES.DISABLED) {
+              reject(state, "Climbing", "A Control Block prevents Ability activation.");
+            } else if (state.mode !== MODES.LEDGE_HANG) {
+              reject(state, "Climbing", "Only Ledge Hang can request the Climbing mode.");
+            } else {
+              transition(state, MODES.CLIMBING, "The climb request was valid while holding a ledge.", "optional Ability");
+            }
+            break;
+
+          case "FINISH_CLIMB":
+            if (state.mode !== MODES.CLIMBING) {
+              reject(state, "Finish climbing", "The player is not currently Climbing.");
+            } else {
+              state.stableGrounded = true;
+              state.ledgeInReach = false;
+              state.airJumpsRemaining = 1;
+              state.verticalVelocity = 0;
+              transition(state, MODES.GROUNDED, "KCC observed stable, walkable ground at the top of the climb.", "safety");
+            }
+            break;
+
+          case "LOSE_LEDGE":
+            state.ledgeInReach = false;
+            if ([MODES.LEDGE_HANG, MODES.CLIMBING].includes(state.mode)) {
+              state.stableGrounded = false;
+              state.verticalVelocity = 0;
+              transition(state, MODES.AIRBORNE, "Required ledge contact was lost.", "safety");
+            } else {
+              reject(state, "Lose ledge contact", `${state.mode} does not depend on ledge contact.`);
+            }
+            break;
+
+          case "GRAPPLE":
+            if (state.mode === MODES.DISABLED) {
+              reject(state, "Grapple", "A Control Block prevents Ability activation.");
+            } else if (state.mode !== MODES.AIRBORNE) {
+              reject(state, "Grapple", "This prototype allows Grapple influence only during Airborne locomotion.");
+            } else {
+              state.grappleActive = true;
+              accept(state, "Grapple supplied a movement influence. Airborne retained final body-movement authority.");
+            }
+            break;
+
+          case "RELEASE_GRAPPLE":
+            if (!state.grappleActive) {
+              reject(state, "Release Grapple", "No Grapple influence is active.");
+            } else {
+              state.grappleActive = false;
+              accept(state, "Grapple removed its movement influence. Airborne remains authoritative.");
+            }
+            break;
+
+          case "ADD_BLOCK": {
+            if (!state.controlBlocks.includes(action.source)) state.controlBlocks.push(action.source);
+            state.moveIntent = "None";
+            state.grappleActive = false;
+            if (state.mode === MODES.DISABLED) {
+              accept(state, `${action.source} added its Control Block. Control remains Disabled by ${state.controlBlocks.length} source${state.controlBlocks.length === 1 ? "" : "s"}.`);
+            } else {
+              transition(state, MODES.DISABLED, `${action.source} added a source-owned Control Block. Natural KCC motion continues.`, "system-forced");
+            }
+            break;
+          }
+
+          case "REMOVE_BLOCK": {
+            const existed = state.controlBlocks.includes(action.source);
+            state.controlBlocks = state.controlBlocks.filter(source => source !== action.source);
+            if (!existed) {
+              reject(state, `Release ${action.source}`, "That source does not own a Control Block.");
+            } else if (state.controlBlocks.length > 0) {
+              accept(state, `${action.source} released its Control Block. Control remains Disabled by ${state.controlBlocks.join(", ")}.`);
+            } else {
+              const restored = state.stableGrounded ? MODES.GROUNDED : MODES.AIRBORNE;
+              transition(state, restored, `The final Control Block was released. KCC observation selected ${restored}.`, "system reconciliation");
+            }
+            break;
+          }
+
+          case "CONFLICT":
+            if (!state.controlBlocks.includes("Game State")) state.controlBlocks.push("Game State");
+            state.moveIntent = "None";
+            state.grappleActive = false;
+            state.mode = MODES.DISABLED;
+            state.latestAccepted = "Airborne → Disabled. The Game State Control Block won at system-forced priority.";
+            state.latestRejection = "Ledge Grab and Grapple were rejected in the same step because optional Ability requests rank below system-forced Disabled.";
+            state.resolutionSummary = "Conflict resolved: Disabled won; two optional Ability requests were rejected.";
+            appendEvent(state, state.latestAccepted, "accepted");
+            appendEvent(state, state.latestRejection, "rejected");
+            break;
+
+          default:
+            reject(state, action.type, "The prototype does not recognize this action.");
+        }
+
+        state.locomotionOutput = naturalOutput(state);
+        return state;
+      }
+
+      return Object.freeze({ MODES, createInitialState, pathFor, reduce });
+    })();
+
+    const scenarios = [
+      {
+        id: "jump-land",
+        label: "Jump & land",
+        title: "Grounded, jump, then land",
+        description: "Watch the base Jump request move authority from Grounded to Airborne, then let stable KCC grounding restore Grounded and the Double Jump resource.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Advance gravity", { type: "TICK" }],
+          ["Land on stable ground", { type: "LAND" }]
+        ]
+      },
+      {
+        id: "double-jump",
+        label: "Double Jump",
+        title: "Spend and reject airborne jumps",
+        description: "Double Jump supplies an influence without taking body authority. A third Jump request must be rejected with a useful reason.",
+        steps: [
+          ["Request base Jump", { type: "JUMP" }],
+          ["Request Double Jump", { type: "JUMP" }],
+          ["Request one jump too many", { type: "JUMP" }],
+          ["Land and restore the Ability", { type: "LAND" }]
+        ]
+      },
+      {
+        id: "ledge-climb",
+        label: "Ledge climb",
+        title: "Ability requests exclusive modes",
+        description: "Ledge Grab requests Ledge Hang. Climbing becomes legal only after that request is accepted. Stable ground completes the sequence.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Put a ledge in reach", { type: "SEE_LEDGE" }],
+          ["Request Ledge Hang", { type: "GRAB_LEDGE" }],
+          ["Request Climbing", { type: "START_CLIMB" }],
+          ["Finish climbing", { type: "FINISH_CLIMB" }]
+        ]
+      },
+      {
+        id: "lost-ledge",
+        label: "Lost ledge",
+        title: "Safety outranks an active mode",
+        description: "Once required ledge contact disappears, the safety transition returns body authority to Airborne without waiting for an Ability decision.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Put a ledge in reach", { type: "SEE_LEDGE" }],
+          ["Request Ledge Hang", { type: "GRAB_LEDGE" }],
+          ["Lose ledge contact", { type: "LOSE_LEDGE" }]
+        ]
+      },
+      {
+        id: "grapple",
+        label: "Grapple",
+        title: "Influence without stolen authority",
+        description: "Grapple contributes pull while Airborne keeps the final Locomotion Output. Releasing it removes only that influence.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Apply Grapple influence", { type: "GRAPPLE" }],
+          ["Advance gravity", { type: "TICK" }],
+          ["Release Grapple", { type: "RELEASE_GRAPPLE" }]
+        ]
+      },
+      {
+        id: "disabled",
+        label: "Control Blocks",
+        title: "Blocked control does not freeze physics",
+        description: "Two independent sources can block control. Airborne gravity continues, and locomotion returns only after the final source releases its block.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Block control for Game State", { type: "ADD_BLOCK", source: "Game State" }],
+          ["Block control for Cutscene", { type: "ADD_BLOCK", source: "Cutscene" }],
+          ["Advance gravity while Disabled", { type: "TICK" }],
+          ["Release Game State block", { type: "REMOVE_BLOCK", source: "Game State" }],
+          ["Release final Cutscene block", { type: "REMOVE_BLOCK", source: "Cutscene" }]
+        ]
+      },
+      {
+        id: "conflict",
+        label: "Conflict",
+        title: "Resolve three requests in one step",
+        description: "A Control Block, Ledge Grab, and Grapple arrive together. System-forced Disabled must win and explain both rejected Ability requests.",
+        steps: [
+          ["Request Jump", { type: "JUMP" }],
+          ["Put a ledge in reach", { type: "SEE_LEDGE" }],
+          ["Submit all three requests", { type: "CONFLICT" }]
+        ]
+      },
+      {
+        id: "illegal",
+        label: "Illegal requests",
+        title: "Reject requests that skip prerequisites",
+        description: "These actions are intentionally wrong. Each rejection should name what happened, why it failed, and what prerequisite is missing.",
+        steps: [
+          ["Request Climbing from Grounded", { type: "START_CLIMB" }],
+          ["Request Ledge Hang from Grounded", { type: "GRAB_LEDGE" }],
+          ["Apply Grapple from Grounded", { type: "GRAPPLE" }]
+        ]
+      }
+    ];
+
+    let state = PlayerLocomotionMachine.createInitialState();
+    let activeScenarioIndex = 0;
+    let completedStepCount = 0;
+
+    const byId = id => document.getElementById(id);
+
+    function renderHierarchy() {
+      const active = state.mode;
+      const controllable = active !== PlayerLocomotionMachine.MODES.DISABLED;
+      const rows = [
+        ["Disabled", active === "Disabled", "root", false],
+        ["Controllable", controllable, "root", false],
+        ["Grounded", active === "Grounded", "child", false],
+        ["Airborne", active === "Airborne", "child", false],
+        ["Ledge Hang", active === "Ledge Hang", "prototype-child", true],
+        ["Climbing", active === "Climbing", "prototype-child", true]
+      ];
+      byId("hierarchy").innerHTML = rows.map(([label, isActive, rowClass, prototype]) => `
+        <div class="tree-row ${rowClass} ${isActive ? "active" : ""}">
+          <span class="tree-node" aria-hidden="true"></span>
+          <span>${label}</span>
+          ${prototype ? '<span class="prototype-tag">prototype only</span>' : ""}
+        </div>
+      `).join("");
+    }
+
+    function renderEvents() {
+      const events = state.events.length ? state.events : [{ revision: 0, message: "Reset established Grounded as the active Locomotion Mode." }];
+      byId("event-list").innerHTML = events.map(event => `
+        <li class="event-item">
+          <span class="event-revision">r${event.revision}</span>
+          <span>${event.message}</span>
+        </li>
+      `).join("");
+    }
+
+    function renderState() {
+      byId("revision").textContent = state.revision;
+      byId("resolution-summary").textContent = state.resolutionSummary;
+      byId("mode-path").textContent = PlayerLocomotionMachine.pathFor(state.mode);
+      byId("mode-mark").textContent = state.mode.charAt(0);
+      byId("intent").textContent = state.moveIntent === "None" ? `None · last: ${state.lastIntent}` : `${state.moveIntent} · last: ${state.lastIntent}`;
+      byId("grounding").textContent = state.stableGrounded ? "Stable & walkable" : "Not stable";
+      byId("air-jumps").textContent = `${state.airJumpsRemaining} available`;
+      byId("control-blocks").textContent = state.controlBlocks.length ? state.controlBlocks.join(", ") : "None";
+      byId("ability").textContent = state.grappleActive ? "Grapple influence" : "None";
+      byId("ledge").textContent = state.ledgeInReach ? "In reach" : "Not in reach";
+      byId("output-kind").textContent = state.locomotionOutput.kind;
+      byId("output-vector").textContent = `(${state.locomotionOutput.vector.map(value => Number(value).toFixed(1)).join(", ")})`;
+      byId("output-description").textContent = state.locomotionOutput.description;
+      byId("accepted-message").textContent = state.latestAccepted;
+      byId("rejected-message").textContent = state.latestRejection;
+      renderHierarchy();
+      renderEvents();
+    }
+
+    function dispatch(action) {
+      state = PlayerLocomotionMachine.reduce(state, action);
+      renderState();
+    }
+
+    function selectScenario(index, focusTab = false) {
+      activeScenarioIndex = index;
+      completedStepCount = 0;
+      state = PlayerLocomotionMachine.createInitialState();
+      renderState();
+      renderScenarios();
+      if (focusTab) document.querySelectorAll('[role="tab"]')[index].focus();
+    }
+
+    function renderScenarios() {
+      const tabs = byId("scenario-tabs");
+      tabs.innerHTML = scenarios.map((scenario, index) => `
+        <button
+          id="tab-${scenario.id}"
+          class="tab-button"
+          type="button"
+          role="tab"
+          aria-selected="${index === activeScenarioIndex}"
+          aria-controls="scenario-steps"
+          tabindex="${index === activeScenarioIndex ? 0 : -1}"
+          data-scenario-index="${index}"
+        >${scenario.label}</button>
+      `).join("");
+
+      const scenario = scenarios[activeScenarioIndex];
+      byId("scenario-title").textContent = scenario.title;
+      byId("scenario-description").textContent = scenario.description;
+      byId("scenario-progress").textContent = completedStepCount === scenario.steps.length ? "Walkthrough complete. Free play remains available." : `Step ${completedStepCount + 1} of ${scenario.steps.length}`;
+      byId("scenario-steps").setAttribute("aria-labelledby", `tab-${scenario.id}`);
+      byId("scenario-steps").innerHTML = scenario.steps.map(([label], index) => `
+        <button
+          class="step-button ${index < completedStepCount ? "completed" : ""} ${index === completedStepCount ? "current" : ""}"
+          type="button"
+          data-step-index="${index}"
+          ${index > completedStepCount ? "disabled" : ""}
+        >${label}</button>
+      `).join("");
+    }
+
+    byId("free-play-controls").addEventListener("click", event => {
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+      dispatch({ type: button.dataset.action, source: button.dataset.source });
+    });
+
+    byId("reset-all").addEventListener("click", () => {
+      state = PlayerLocomotionMachine.createInitialState();
+      completedStepCount = 0;
+      renderState();
+      renderScenarios();
+    });
+
+    byId("scenario-tabs").addEventListener("click", event => {
+      const tab = event.target.closest("[data-scenario-index]");
+      if (tab) selectScenario(Number(tab.dataset.scenarioIndex));
+    });
+
+    byId("scenario-tabs").addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      let next = activeScenarioIndex;
+      if (event.key === "ArrowLeft") next = (next - 1 + scenarios.length) % scenarios.length;
+      if (event.key === "ArrowRight") next = (next + 1) % scenarios.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = scenarios.length - 1;
+      selectScenario(next, true);
+    });
+
+    byId("scenario-steps").addEventListener("click", event => {
+      const button = event.target.closest("[data-step-index]");
+      if (!button) return;
+      const index = Number(button.dataset.stepIndex);
+      if (index !== completedStepCount) return;
+      const [, action] = scenarios[activeScenarioIndex].steps[index];
+      dispatch(action);
+      completedStepCount += 1;
+      renderScenarios();
+    });
+
+    renderState();
+    renderScenarios();
+  </script>
+</body>
+</html>
