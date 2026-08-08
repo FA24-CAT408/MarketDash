@@ -89,6 +89,24 @@ namespace CrazyMarket.Player.V2
             copy.definitions = definitions == null ? null : new List<PlayerAbilityDefinition>(definitions);
             return copy;
         }
+
+        internal bool TryCreateRuntime(out PlayerRuntimeAbilityLoadout runtime)
+        {
+            runtime = null;
+            if (!IsValid || abilityIds == null) return false;
+
+            var ids = new List<PlayerAbilityId>(abilityIds.Count);
+            for (int i = 0; i < abilityIds.Count; i++)
+            {
+                PlayerAbilityId id = abilityIds[i];
+                if (id != PlayerAbilityId.DoubleJump || ids.Contains(id)) return false;
+                ids.Add(id);
+            }
+
+            // DoubleJump currently has no asset parameters, so its runtime snapshot is ID-only.
+            runtime = new PlayerRuntimeAbilityLoadout(ids);
+            return true;
+        }
     }
 
     [Serializable]
@@ -150,8 +168,10 @@ namespace CrazyMarket.Player.V2
                 return false;
             }
 
-            runtime = new PlayerRuntimeProfile(Id, data.Clone(), name);
-            return true;
+            PlayerRuntimeAbilityLoadout abilities;
+            if (!data.AbilityLoadout.TryCreateRuntime(out abilities)) return false;
+            runtime = new PlayerRuntimeProfile(Id, data.Locomotion, abilities, name);
+            return runtime.IsValid;
         }
 
         public PlayerRuntimeProfile CreateRuntimeProfile()
@@ -162,9 +182,41 @@ namespace CrazyMarket.Player.V2
 
         public static PlayerRuntimeProfile CreateProductionRuntimeProfile()
         {
-            var loadout = new PlayerAbilityLoadout();
-            var data = new PlayerProfileData(LocomotionTuning.ProductionDefaults, loadout);
-            return new PlayerRuntimeProfile(new PlayerProfileId("Production"), data, "Production");
+            return new PlayerRuntimeProfile(new PlayerProfileId("Production"),
+                LocomotionTuning.ProductionDefaults,
+                new PlayerRuntimeAbilityLoadout(new List<PlayerAbilityId> { PlayerAbilityId.DoubleJump }),
+                "Production");
+        }
+    }
+
+    public sealed class PlayerRuntimeAbilityLoadout
+    {
+        private readonly List<PlayerAbilityId> abilityIds;
+
+        public IReadOnlyList<PlayerAbilityId> AbilityIds => abilityIds;
+
+        internal PlayerRuntimeAbilityLoadout(IList<PlayerAbilityId> ids)
+        {
+            abilityIds = ids == null ? null : new List<PlayerAbilityId>(ids);
+        }
+
+        internal PlayerRuntimeAbilityLoadout Clone()
+        {
+            return new PlayerRuntimeAbilityLoadout(abilityIds);
+        }
+
+        internal bool IsValid
+        {
+            get
+            {
+                if (abilityIds == null) return false;
+                for (int i = 0; i < abilityIds.Count; i++)
+                {
+                    if (abilityIds[i] != PlayerAbilityId.DoubleJump || abilityIds.IndexOf(abilityIds[i]) != i)
+                        return false;
+                }
+                return true;
+            }
         }
     }
 
@@ -172,34 +224,38 @@ namespace CrazyMarket.Player.V2
     {
         private readonly PlayerProfileId profileId;
         private readonly RuntimeProfileId runtimeId;
-        private readonly PlayerProfileData data;
+        private readonly LocomotionTuning locomotion;
+        private readonly PlayerRuntimeAbilityLoadout abilityLoadout;
         private readonly string name;
 
         public PlayerProfileId ProfileId => profileId;
         public RuntimeProfileId Id => runtimeId;
-        public LocomotionTuning Locomotion => data.Locomotion;
-        public PlayerAbilityLoadout AbilityLoadout => data.AbilityLoadout;
+        public LocomotionTuning Locomotion => locomotion;
+        public PlayerRuntimeAbilityLoadout AbilityLoadout => abilityLoadout;
         public string Name => name;
 
-        internal PlayerRuntimeProfile(PlayerProfileId profileId, PlayerProfileData data, string name)
+        internal PlayerRuntimeProfile(PlayerProfileId profileId, LocomotionTuning locomotion,
+            PlayerRuntimeAbilityLoadout abilityLoadout, string name)
         {
             this.profileId = profileId;
-            this.data = data;
+            this.locomotion = locomotion;
+            this.abilityLoadout = abilityLoadout;
             this.name = string.IsNullOrEmpty(name) ? profileId.Value : name;
             runtimeId = new RuntimeProfileId(this.name + "#" + Guid.NewGuid().ToString("N"));
         }
 
         public PlayerRuntimeProfile Clone()
         {
-            return new PlayerRuntimeProfile(profileId, data.Clone(), name);
+            return new PlayerRuntimeProfile(profileId, locomotion, abilityLoadout.Clone(), name);
         }
 
         public PlayerRuntimeProfile WithLocomotion(LocomotionTuning tuning)
         {
             if (!tuning.IsFinite()) return null;
-            return new PlayerRuntimeProfile(profileId, new PlayerProfileData(tuning, data.AbilityLoadout), name);
+            return new PlayerRuntimeProfile(profileId, tuning, abilityLoadout.Clone(), name);
         }
 
-        internal bool IsValid => profileId.IsValid && data != null && data.IsValid;
+        internal bool IsValid => profileId.IsValid && locomotion.IsFinite() &&
+            abilityLoadout != null && abilityLoadout.IsValid;
     }
 }

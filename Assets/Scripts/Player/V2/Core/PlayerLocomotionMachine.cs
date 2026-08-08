@@ -36,8 +36,11 @@ namespace CrazyMarket.Player.V2
         public PlayerLocomotionMachine(PlayerProfile selected, PlayerBodyObservation initial)
         {
             profile = selected == null ? PlayerProfile.CreateProductionRuntimeProfile() : selected.CreateRuntimeProfile();
-            if (!CanBuild(profile)) profile = PlayerProfile.CreateProductionRuntimeProfile();
-            Build(profile);
+            if (!TryBuild(profile))
+            {
+                profile = PlayerProfile.CreateProductionRuntimeProfile();
+                TryBuild(profile);
+            }
             wasStable = Stable(initial);
             state = root.Resolve(false, wasStable);
             mode = state.Mode;
@@ -52,7 +55,7 @@ namespace CrazyMarket.Player.V2
             float dt = Mathf.Max(0f, Finite(deltaTime) ? deltaTime : 0f);
             TeleportRequest teleport = pendingTeleport;
             PlayerActionFlags requestFlags = ApplyRequests(ref observation);
-            if (teleport != null && teleport.ResetVelocity)
+            if (teleport != null)
             {
                 wasStable = false;
                 coyote = jumpBuffer = 0f;
@@ -122,6 +125,11 @@ namespace CrazyMarket.Player.V2
             float airAcceleration = Resolve(PlayerStat.AirAcceleration, baseTuning.AirAcceleration);
             float gravity = Resolve(PlayerStat.Gravity, baseTuning.Gravity);
             float fall = Resolve(PlayerStat.FallGravityMultiplier, baseTuning.FallGravityMultiplier);
+            float stableMovementSharpness = Resolve(PlayerStat.StableMovementSharpness,
+                baseTuning.StableMovementSharpness);
+            float orientationSharpness = Resolve(PlayerStat.OrientationSharpness,
+                baseTuning.OrientationSharpness);
+            float drag = Resolve(PlayerStat.Drag, baseTuning.Drag);
             Vector2 move = Vector2.ClampMagnitude(intent.Move, 1f);
             float speed = mode == LocomotionMode.Grounded ? stableSpeed : airSpeed;
             Vector3 target = blocked ? Vector3.zero : new Vector3(move.x, 0f, move.y) * speed;
@@ -129,7 +137,9 @@ namespace CrazyMarket.Player.V2
             Vector3 gravityVector = new Vector3(0f, gravity * (falling ? fall : 1f), 0f);
             if (mode == LocomotionMode.Grounded) flags |= PlayerActionFlags.Grounded;
             LocomotionOutput output = new LocomotionOutput(mode, target,
-                mode == LocomotionMode.Airborne && !blocked ? airAcceleration : 0f, gravityVector, stable,
+                mode == LocomotionMode.Airborne && !blocked ? airAcceleration : 0f,
+                stableMovementSharpness, orientationSharpness, drag, gravityVector,
+                stable && mode == LocomotionMode.Grounded && !jumped,
                 jumped, jumpVelocity, flags, teleport != null,
                 teleport == null ? Vector3.zero : teleport.Position,
                 teleport == null ? Quaternion.identity : teleport.Rotation,
@@ -145,7 +155,8 @@ namespace CrazyMarket.Player.V2
             wasStable = stable;
             if (output.HasTeleport) pendingTeleport = null;
             return new LocomotionOutput(output.Mode, output.TargetPlanarVelocity, output.AirAcceleration,
-                output.Gravity, output.ApplyGrounding, output.HasJumpInfluence, output.JumpVerticalVelocity,
+                output.StableMovementSharpness, output.OrientationSharpness, output.Drag, output.Gravity,
+                output.ApplyGrounding, output.HasJumpInfluence, output.JumpVerticalVelocity,
                 output.ActionFlags | requestFlags, output.HasTeleport, output.TeleportPosition,
                 output.TeleportRotation, output.ResetVelocity);
         }
@@ -228,20 +239,20 @@ namespace CrazyMarket.Player.V2
                 PlayerRuntimeProfile replacement = pendingProfile;
                 pendingProfile = null;
                 CancelAbilities(AbilityCancellationReason.ProfileChanged);
-                Build(replacement);
-                profile = replacement;
-                if (!Stable(observation)) CancelAbilities(AbilityCancellationReason.ProfileChanged);
-                coyote = jumpBuffer = 0f;
-                flags |= PlayerActionFlags.ProfileChanged;
+                if (TryBuild(replacement))
+                {
+                    profile = replacement;
+                    if (!Stable(observation)) CancelAbilities(AbilityCancellationReason.ProfileChanged);
+                    coyote = jumpBuffer = 0f;
+                    flags |= PlayerActionFlags.ProfileChanged;
+                }
             }
             if (pendingTeleport != null)
             {
                 TeleportRequest request = pendingTeleport;
                 observation = new PlayerBodyObservation(request.Position, request.Rotation,
                     request.ResetVelocity ? Vector3.zero : observation.Velocity,
-                    request.ResetVelocity ? false : observation.StableGrounded,
-                    request.ResetVelocity ? false : observation.WalkableGround,
-                    request.ResetVelocity ? Vector3.up : observation.GroundNormal);
+                    false, false, Vector3.up);
                 flags |= PlayerActionFlags.Teleported;
             }
             return flags;
@@ -257,15 +268,26 @@ namespace CrazyMarket.Player.V2
             return PlayerAbilityResult.Rejected;
         }
 
-        private void Build(PlayerRuntimeProfile source)
+        private bool TryBuild(PlayerRuntimeProfile source)
         {
-            abilities.Clear();
+            if (!CanBuild(source)) return false;
+            var created = new List<IPlayerAbilityRuntime>();
             IReadOnlyList<PlayerAbilityId> ids = source.AbilityLoadout.AbilityIds;
             for (int i = 0; i < ids.Count; i++)
             {
-                PlayerAbilityDefinition definition = source.AbilityLoadout.FindDefinition(ids[i]);
-                abilities.Add(definition == null ? DoubleJumpAbilityDefinition.CreateDefaultRuntime() : definition.CreateRuntime());
+                IPlayerAbilityRuntime runtime = CreateRuntime(ids[i]);
+                if (runtime == null) return false;
+                created.Add(runtime);
             }
+            abilities.Clear();
+            abilities.AddRange(created);
+            return true;
+        }
+
+        private static IPlayerAbilityRuntime CreateRuntime(PlayerAbilityId id)
+        {
+            return id == PlayerAbilityId.DoubleJump ?
+                (IPlayerAbilityRuntime)new DoubleJumpAbilityRuntime() : null;
         }
 
         private static bool CanBuild(PlayerRuntimeProfile source)
