@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine;
-
 namespace CrazyMarket.Player.V2
 {
     [Serializable]
@@ -34,7 +33,6 @@ namespace CrazyMarket.Player.V2
             FallGravityMultiplier = 2f,
             Drag = 0.1f
         };
-
         internal bool IsFinite()
         {
             return Finite(StableMoveSpeed) && Finite(AirMoveSpeed) && Finite(AirAcceleration) &&
@@ -42,10 +40,8 @@ namespace CrazyMarket.Player.V2
                    Finite(JumpBufferTime) && Finite(CoyoteTime) && Finite(Gravity) &&
                    Finite(FallGravityMultiplier) && Finite(Drag);
         }
-
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
-
     [Serializable]
     public sealed class PlayerAbilityLoadout
     {
@@ -57,21 +53,17 @@ namespace CrazyMarket.Player.V2
             new List<PlayerAbilityDefinition>();
 
         public IReadOnlyList<PlayerAbilityId> AbilityIds => abilityIds;
-
-        internal bool IsValid => abilityIds != null && definitions != null;
-
+        internal bool IsValid => abilityIds != null;
         internal bool Contains(PlayerAbilityId id)
         {
             return abilityIds != null && abilityIds.Contains(id);
         }
-
         internal PlayerAbilityDefinition FindDefinition(PlayerAbilityId id)
         {
             if (definitions == null)
             {
                 return null;
             }
-
             for (int i = 0; i < definitions.Count; i++)
             {
                 if (definitions[i] != null && definitions[i].Id == id)
@@ -79,10 +71,8 @@ namespace CrazyMarket.Player.V2
                     return definitions[i];
                 }
             }
-
             return null;
         }
-
         internal PlayerAbilityLoadout Clone()
         {
             var copy = new PlayerAbilityLoadout();
@@ -90,22 +80,22 @@ namespace CrazyMarket.Player.V2
             copy.definitions = definitions == null ? null : new List<PlayerAbilityDefinition>(definitions);
             return copy;
         }
-
         internal bool TryCreateRuntime(out PlayerRuntimeAbilityLoadout runtime)
         {
             runtime = null;
             if (!IsValid || abilityIds == null) return false;
-
-            var ids = new List<PlayerAbilityId>(abilityIds.Count);
+            var data = new List<PlayerAbilityData>(abilityIds.Count);
             for (int i = 0; i < abilityIds.Count; i++)
             {
                 PlayerAbilityId id = abilityIds[i];
-                if (id != PlayerAbilityId.DoubleJump || ids.Contains(id)) return false;
-                ids.Add(id);
+                if (id != PlayerAbilityId.DoubleJump || data.Exists(entry => entry.Id == id)) return false;
+                PlayerAbilityDefinition definition = FindDefinition(id);
+                // Definitions are authoring adapters; absent DoubleJump assets use the built-in ID-only default.
+                data.Add(definition == null ? new PlayerAbilityData(id) : definition.CreateRuntimeData());
+                if (!data[data.Count - 1].IsValid) return false;
             }
 
-            // DoubleJump currently has no asset parameters, so its runtime snapshot is ID-only.
-            runtime = new PlayerRuntimeAbilityLoadout(ids);
+            runtime = new PlayerRuntimeAbilityLoadout(data);
             return true;
         }
     }
@@ -115,23 +105,19 @@ namespace CrazyMarket.Player.V2
     {
         [SerializeField] private LocomotionTuning locomotion = LocomotionTuning.ProductionDefaults;
         [SerializeField] private PlayerAbilityLoadout abilityLoadout = new PlayerAbilityLoadout();
-
         public LocomotionTuning Locomotion => locomotion;
         public PlayerAbilityLoadout AbilityLoadout => abilityLoadout;
 
         public PlayerProfileData() { }
-
         internal PlayerProfileData(LocomotionTuning locomotion, PlayerAbilityLoadout abilityLoadout)
         {
             this.locomotion = locomotion;
             this.abilityLoadout = abilityLoadout;
         }
-
         internal PlayerProfileData Clone()
         {
             return new PlayerProfileData(locomotion, abilityLoadout == null ? null : abilityLoadout.Clone());
         }
-
         internal bool IsValid => locomotion.IsFinite() && abilityLoadout != null && abilityLoadout.IsValid;
     }
 
@@ -140,11 +126,9 @@ namespace CrazyMarket.Player.V2
     {
         [SerializeField] private string profileId = "Production";
         [SerializeField] private PlayerProfileData data = new PlayerProfileData();
-
         public PlayerProfileId Id => new PlayerProfileId(profileId);
         public LocomotionTuning Locomotion => data == null ? LocomotionTuning.ProductionDefaults : data.Locomotion;
         public PlayerAbilityLoadout AbilityLoadout => data == null ? null : data.AbilityLoadout;
-
         private void OnEnable()
         {
             if (data == null)
@@ -152,7 +136,6 @@ namespace CrazyMarket.Player.V2
                 data = new PlayerProfileData();
             }
         }
-
         private void OnValidate()
         {
             if (data == null || !data.IsValid)
@@ -160,7 +143,6 @@ namespace CrazyMarket.Player.V2
                 Debug.LogError("PlayerProfile V2 requires finite locomotion data and an Ability Loadout.", this);
             }
         }
-
         public bool TryCreateRuntime(out PlayerRuntimeProfile runtime)
         {
             runtime = null;
@@ -174,51 +156,50 @@ namespace CrazyMarket.Player.V2
             runtime = new PlayerRuntimeProfile(Id, data.Locomotion, abilities, name);
             return runtime.IsValid;
         }
-
         public PlayerRuntimeProfile CreateRuntimeProfile()
         {
             PlayerRuntimeProfile runtime;
             return TryCreateRuntime(out runtime) ? runtime : null;
         }
-
         public static PlayerRuntimeProfile CreateProductionRuntimeProfile()
         {
             return new PlayerRuntimeProfile(new PlayerProfileId("Production"),
                 LocomotionTuning.ProductionDefaults,
-                new PlayerRuntimeAbilityLoadout(new List<PlayerAbilityId> { PlayerAbilityId.DoubleJump }),
+                new PlayerRuntimeAbilityLoadout(new List<PlayerAbilityData>
+                {
+                    new PlayerAbilityData(PlayerAbilityId.DoubleJump)
+                }),
                 "Production");
         }
     }
-
     public sealed class PlayerRuntimeAbilityLoadout
     {
-        private readonly ReadOnlyCollection<PlayerAbilityId> abilityIds;
+        private readonly ReadOnlyCollection<PlayerAbilityData> abilityData;
 
-        public IReadOnlyList<PlayerAbilityId> AbilityIds => abilityIds;
-
-        internal PlayerRuntimeAbilityLoadout(IList<PlayerAbilityId> ids)
+        public IReadOnlyList<PlayerAbilityData> AbilityData => abilityData;
+        internal PlayerRuntimeAbilityLoadout(IList<PlayerAbilityData> data)
         {
-            abilityIds = ids == null ? null : new List<PlayerAbilityId>(ids).AsReadOnly();
+            abilityData = data == null ? null : new List<PlayerAbilityData>(data).AsReadOnly();
         }
-
         internal PlayerRuntimeAbilityLoadout Clone()
         {
-            return new PlayerRuntimeAbilityLoadout(abilityIds);
+            return new PlayerRuntimeAbilityLoadout(abilityData);
         }
-
         internal bool IsValid
         {
             get
             {
-                if (abilityIds == null) return false;
-                for (int i = 0; i < abilityIds.Count; i++)
+                if (abilityData == null) return false;
+                for (int i = 0; i < abilityData.Count; i++)
                 {
-                    if (abilityIds[i] != PlayerAbilityId.DoubleJump || abilityIds.IndexOf(abilityIds[i]) != i)
+                    if (!abilityData[i].IsValid || FindDuplicate(abilityData, i))
                         return false;
                 }
                 return true;
             }
         }
+        private static bool FindDuplicate(IReadOnlyList<PlayerAbilityData> data, int index)
+        { for (int i = 0; i < index; i++) if (data[i].Id == data[index].Id) return true; return false; }
     }
 
     public sealed class PlayerRuntimeProfile

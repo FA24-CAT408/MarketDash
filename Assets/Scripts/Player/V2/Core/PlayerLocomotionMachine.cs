@@ -49,7 +49,6 @@ namespace CrazyMarket.Player.V2
                 profile.ProfileId, profile.Id, wasStable ? PlayerActionFlags.Grounded : PlayerActionFlags.None);
             presentation = Present(initial.Velocity, Vector2.zero, snapshot.ActionFlags);
         }
-
         public LocomotionOutput Step(PlayerIntent intent, PlayerBodyObservation observation, float deltaTime)
         {
             float dt = Mathf.Max(0f, Finite(deltaTime) ? deltaTime : 0f);
@@ -103,7 +102,7 @@ namespace CrazyMarket.Player.V2
                     state = root.Controllable.Airborne;
                     mode = state.Mode;
                     jumped = true;
-                    jumpVelocity = tuning.JumpSpeed;
+                    jumpVelocity = MotorSafe(tuning.JumpSpeed);
                     coyote = jumpBuffer = 0f;
                     flags |= PlayerActionFlags.Jumped;
                 }
@@ -113,7 +112,7 @@ namespace CrazyMarket.Player.V2
                     if (result.Accepted)
                     {
                         jumped = true;
-                        jumpVelocity = Safe(result.VerticalInfluence, 0f);
+                        jumpVelocity = MotorSafe(result.VerticalInfluence);
                         jumpBuffer = 0f;
                         flags |= PlayerActionFlags.Jumped | PlayerActionFlags.DoubleJumped;
                     }
@@ -130,18 +129,17 @@ namespace CrazyMarket.Player.V2
             float orientationSharpness = Resolve(PlayerStat.OrientationSharpness,
                 baseTuning.OrientationSharpness);
             float drag = Resolve(PlayerStat.Drag, baseTuning.Drag);
-            Vector2 move = Finite(intent.Move) ? intent.Move : Vector2.zero;
-            move = Vector2.ClampMagnitude(move, 1f);
+            Vector2 move = Vector2.ClampMagnitude(Finite(intent.Move) ?
+                new Vector2(MotorSafe(intent.Move.x), MotorSafe(intent.Move.y)) : Vector2.zero, 1f);
             float speed = mode == LocomotionMode.Grounded ? stableSpeed : airSpeed;
-            Vector3 target = blocked ? Vector3.zero : new Vector3(move.x, 0f, move.y) * speed;
+            Vector3 target = blocked ? Vector3.zero : MotorSafe(new Vector3(move.x, 0f, move.y) * speed);
             bool falling = !stable && observation.Velocity.y < 0f;
-            Vector3 gravityVector = new Vector3(0f, gravity * (falling ? fall : 1f), 0f);
+            Vector3 gravityVector = MotorSafe(new Vector3(0f, gravity * (falling ? fall : 1f), 0f));
             if (mode == LocomotionMode.Grounded) flags |= PlayerActionFlags.Grounded;
             LocomotionOutput output = new LocomotionOutput(mode, target,
-                mode == LocomotionMode.Airborne && !blocked ? airAcceleration : 0f,
-                stableMovementSharpness, orientationSharpness, drag, gravityVector,
-                stable && mode == LocomotionMode.Grounded && !jumped,
-                jumped, jumpVelocity, flags, teleport != null,
+                mode == LocomotionMode.Airborne && !blocked ? MotorSafe(airAcceleration) : 0f,
+                MotorSafe(stableMovementSharpness), MotorSafe(orientationSharpness), MotorSafe(drag), gravityVector,
+                stable && !jumped && teleport == null, jumped, MotorSafe(jumpVelocity), flags, teleport != null,
                 teleport == null ? Vector3.zero : teleport.Position,
                 teleport == null ? Quaternion.identity : teleport.Rotation,
                 teleport != null && teleport.ResetVelocity);
@@ -161,7 +159,6 @@ namespace CrazyMarket.Player.V2
                 output.ActionFlags | requestFlags, output.HasTeleport, output.TeleportPosition,
                 output.TeleportRotation, output.ResetVelocity);
         }
-
         public PlayerOperationResult SetControlBlocked(string source, bool blocked)
         {
             if (string.IsNullOrWhiteSpace(source)) return PlayerOperationResult.RejectedInvalidArgument;
@@ -176,17 +173,14 @@ namespace CrazyMarket.Player.V2
             else blocks.Remove(source);
             return PlayerOperationResult.Accepted;
         }
-
         public PlayerOperationResult Teleport(Vector3 position, Quaternion rotation, bool resetVelocity = true)
         {
-            float quaternionMagnitude = rotation.x * rotation.x + rotation.y * rotation.y +
-                rotation.z * rotation.z + rotation.w * rotation.w;
-            if (!Finite(position) || !Finite(rotation) || quaternionMagnitude <= 0.00000001f)
+            Quaternion normalized;
+            if (!Finite(position) || !TryNormalize(rotation, out normalized))
                 return PlayerOperationResult.RejectedInvalidArgument;
-            pendingTeleport = new TeleportRequest { Position = position, Rotation = rotation, ResetVelocity = resetVelocity };
+            pendingTeleport = new TeleportRequest { Position = position, Rotation = normalized, ResetVelocity = resetVelocity };
             return PlayerOperationResult.Accepted;
         }
-
         public PlayerOperationResult SelectProfile(PlayerProfile selected)
         {
             PlayerRuntimeProfile candidate = selected == null ? null : selected.CreateRuntimeProfile();
@@ -194,7 +188,6 @@ namespace CrazyMarket.Player.V2
             pendingProfile = candidate;
             return PlayerOperationResult.Accepted;
         }
-
         public PlayerRuntimeProfile CaptureRuntimeProfile() => profile.Clone();
 
         public PlayerOperationResult ReplaceRuntimeProfile(PlayerRuntimeProfile replacement)
@@ -273,10 +266,10 @@ namespace CrazyMarket.Player.V2
         {
             if (!CanBuild(source)) return false;
             var created = new List<IPlayerAbilityRuntime>();
-            IReadOnlyList<PlayerAbilityId> ids = source.AbilityLoadout.AbilityIds;
-            for (int i = 0; i < ids.Count; i++)
+            IReadOnlyList<PlayerAbilityData> data = source.AbilityLoadout.AbilityData;
+            for (int i = 0; i < data.Count; i++)
             {
-                IPlayerAbilityRuntime runtime = CreateRuntime(ids[i]);
+                IPlayerAbilityRuntime runtime = CreateRuntime(data[i]);
                 if (runtime == null) return false;
                 created.Add(runtime);
             }
@@ -285,20 +278,21 @@ namespace CrazyMarket.Player.V2
             return true;
         }
 
-        private static IPlayerAbilityRuntime CreateRuntime(PlayerAbilityId id)
+        private static IPlayerAbilityRuntime CreateRuntime(PlayerAbilityData data)
         {
-            return id == PlayerAbilityId.DoubleJump ?
+            return data.Id == PlayerAbilityId.DoubleJump ?
                 (IPlayerAbilityRuntime)new DoubleJumpAbilityRuntime() : null;
         }
 
         private static bool CanBuild(PlayerRuntimeProfile source)
         {
-            if (source == null || !source.IsValid || source.AbilityLoadout == null || source.AbilityLoadout.AbilityIds == null) return false;
-            IReadOnlyList<PlayerAbilityId> ids = source.AbilityLoadout.AbilityIds;
+            if (source == null || !source.IsValid || source.AbilityLoadout == null ||
+                source.AbilityLoadout.AbilityData == null) return false;
+            IReadOnlyList<PlayerAbilityData> ids = source.AbilityLoadout.AbilityData;
             bool doubleJumpSeen = false;
             for (int i = 0; i < ids.Count; i++)
             {
-                if (ids[i] != PlayerAbilityId.DoubleJump || doubleJumpSeen) return false;
+                if (!ids[i].IsValid || ids[i].Id != PlayerAbilityId.DoubleJump || doubleJumpSeen) return false;
                 doubleJumpSeen = true;
             }
             return true;
@@ -325,13 +319,31 @@ namespace CrazyMarket.Player.V2
         private PlayerPresentationState Present(Vector3 velocity, Vector2 move, PlayerActionFlags flags) =>
             new PlayerPresentationState(mode, mode == LocomotionMode.Grounded,
                 new Vector3(velocity.x, 0f, velocity.z).magnitude, velocity.y, move, flags);
-        private static Vector3 Sanitize(Vector3 value) => new Vector3(Safe(value.x, 0f), Safe(value.y, 0f), Safe(value.z, 0f));
+        // Final motor-output safety boundary; ordinary negative and large authoring values remain valid before this cap.
+        private const float EngineSafetyMagnitude = 1000000f;
+        private static Vector3 Sanitize(Vector3 value) => MotorSafe(value);
+        private static Vector3 MotorSafe(Vector3 value) =>
+            new Vector3(MotorSafe(value.x), MotorSafe(value.y), MotorSafe(value.z));
+        private static float MotorSafe(float value, float fallback = 0f) =>
+            Mathf.Clamp(Safe(value, fallback), -EngineSafetyMagnitude, EngineSafetyMagnitude);
         private static float Duration(float value) => Mathf.Max(0f, Safe(value, 0f));
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         private static bool Finite(Vector2 value) => Finite(value.x) && Finite(value.y);
         private static bool Finite(Vector3 value) => Finite(value.x) && Finite(value.y) && Finite(value.z);
         private static bool Finite(Quaternion value) => Finite(value.x) && Finite(value.y) && Finite(value.z) && Finite(value.w);
         private static float Safe(float value, float fallback) => Finite(value) ? value : fallback;
+        private static bool TryNormalize(Quaternion value, out Quaternion normalized)
+        {
+            normalized = Quaternion.identity;
+            if (!Finite(value)) return false;
+            float scale = Mathf.Max(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z), Mathf.Abs(value.w));
+            if (scale <= 0f) return false;
+            float x = value.x / scale, y = value.y / scale, z = value.z / scale, w = value.w / scale;
+            float inverse = 1f / Mathf.Sqrt(x * x + y * y + z * z + w * w);
+            if (scale <= 0.0001f * inverse) return false;
+            normalized = new Quaternion(x * inverse, y * inverse, z * inverse, w * inverse);
+            return true;
+        }
 
         private abstract class LocomotionNode
         {
