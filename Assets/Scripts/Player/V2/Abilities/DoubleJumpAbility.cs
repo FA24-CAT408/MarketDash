@@ -8,7 +8,7 @@ namespace CrazyMarket.Player.V2
         [SerializeField] private int remainingJumps;
 
         public int ExtraJumps => Mathf.Max(0, extraJumps);
-        public override int RemainingCharges => Mathf.Max(0, remainingJumps);
+        public int RemainingJumps => Mathf.Max(0, remainingJumps);
 
         private void Awake() => Reset();
 
@@ -33,7 +33,7 @@ namespace CrazyMarket.Player.V2
         public override PlayerAbilityResult Evaluate(PlayerAbilityContext context)
         {
             if (context.Mode != LocomotionMode.Airborne || !context.Intent.JumpPressed ||
-                RemainingCharges <= 0)
+                RemainingJumps <= 0)
             {
                 return PlayerAbilityResult.Rejected;
             }

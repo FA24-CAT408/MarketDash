@@ -200,7 +200,6 @@ namespace CrazyMarket.Player.V2
         public bool StableGrounded { get; }
         public bool ControlBlocked { get; }
         public int ControlBlockCount { get; }
-        public int AirJumpsRemaining { get; }
         public float CoyoteTimeRemaining { get; }
         public float JumpBufferRemaining { get; }
         public PlayerProfileId ProfileId { get; }
@@ -208,7 +207,7 @@ namespace CrazyMarket.Player.V2
         public PlayerActionFlags ActionFlags { get; }
 
         internal PlayerSnapshot(long revision, PlayerBodyObservation observation, Vector3 velocity,
-            LocomotionMode mode, int controlBlockCount, int airJumpsRemaining, float coyoteTimeRemaining,
+            LocomotionMode mode, int controlBlockCount, float coyoteTimeRemaining,
             float jumpBufferRemaining, PlayerProfileId profileId, RuntimeProfileId runtimeProfileId,
             PlayerActionFlags actionFlags)
         {
@@ -220,7 +219,6 @@ namespace CrazyMarket.Player.V2
             StableGrounded = observation.StableGrounded && observation.WalkableGround;
             ControlBlockCount = controlBlockCount;
             ControlBlocked = controlBlockCount > 0;
-            AirJumpsRemaining = airJumpsRemaining;
             CoyoteTimeRemaining = coyoteTimeRemaining;
             JumpBufferRemaining = jumpBufferRemaining;
             ProfileId = profileId;
