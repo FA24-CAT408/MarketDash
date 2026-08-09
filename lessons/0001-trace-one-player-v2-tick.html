@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 1 — Trace One Player V2 Tick</title>
+  <link rel="stylesheet" href="../Assets/Teaching/course.css">
+  <script src="../Assets/Teaching/quiz.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Player Controller V2 · Lesson 1 · 8 minutes</div>
+    <h1>Trace one motor tick</h1>
+    <p class="lede">The controller becomes much easier to change once you stop seeing it as one movement script. It is a pipeline with a deliberate seam between gameplay decisions and KCC mechanics.</p>
+    <p class="win">Tangible win: after this lesson, you can name the first file to inspect for any movement symptom.</p>
+  </header>
+
+  <h2>The central design idea</h2>
+  <p><code>PlayerLocomotionMachine</code> decides <em>what movement should mean</em>. <code>PlayerControllerV2</code> translates between that decision and <code>KinematicCharacterMotor</code>, which resolves actual motion against the world.</p>
+  <div class="rule"><strong>Maintenance rule:</strong> change gameplay rules in the machine; change Unity/KCC translation in the adapter. Crossing that boundary without a reason is how controllers become hard to simplify.</div>
+
+  <h2>A tick, in order</h2>
+  <ol class="pipeline">
+    <li class="stage"><div><h3>Input events are cached</h3><p><code>InputReader</code> raises move/jump events. The adapter stores continuous move input, a one-shot jump request, and held state.</p></div><span class="owner">Input boundary</span></li>
+    <li class="stage"><div><h3>KCC begins its update</h3><p><code>BeforeCharacterUpdate</code> converts raw input into camera-relative world direction exactly once for this motor step.</p></div><span class="owner">Adapter</span></li>
+    <li class="stage"><div><h3>Rotation is proposed</h3><p><code>UpdateRotation</code> projects direction onto the character-up plane and exponentially smooths facing.</p></div><span class="owner">Adapter</span></li>
+    <li class="stage"><div><h3>Intent meets observation</h3><p><code>UpdateVelocity</code> builds <code>PlayerIntent</code>, observes grounding/velocity from KCC, then calls <code>locomotion.Step(...)</code>.</p></div><span class="owner">Seam</span></li>
+    <li class="stage"><div><h3>Policy emits an output</h3><p>The machine resolves mode, buffered/coyote jumps, abilities, tuning, modifiers, gravity, and pending requests into one <code>LocomotionOutput</code>.</p></div><span class="owner">Pure policy</span></li>
+    <li class="stage"><div><h3>The adapter applies it</h3><p>Grounded motion is tangent-projected and smoothed; airborne motion gets acceleration, gravity, drag, and jump influence.</p></div><span class="owner">Motor mechanics</span></li>
+    <li class="stage"><div><h3>One-shots finish</h3><p><code>AfterCharacterUpdate</code> applies queued teleports, spawns jump particles, and finally consumes <code>jumpQueued</code>.</p></div><span class="owner">Adapter</span></li>
+    <li class="stage"><div><h3>Presentation reads results</h3><p><code>PlayerAnimationPresenter.LateUpdate</code> maps the controller's presentation state to animator booleans.</p></div><span class="owner">Presentation</span></li>
+  </ol>
+
+  <p>The one-shot jump is deliberately retained until after KCC finishes the step. Unity's Input System invokes action callbacks during input updates; V2 then bridges that event timing into KCC's motor lifecycle. See the official <a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/api/UnityEngine.InputSystem.InputAction.html">InputAction API</a> and the bundled <a href="../Assets/Other/KinematicCharacterController/Core/ICharacterController.cs">KCC callback contract</a>.</p>
+
+  <h2>The four values to follow</h2>
+  <table class="trace-table">
+    <thead><tr><th>Value</th><th>Question it answers</th><th>Created by</th></tr></thead>
+    <tbody>
+      <tr><td><code>PlayerIntent</code></td><td>What did the player ask for?</td><td>Adapter</td></tr>
+      <tr><td><code>PlayerBodyObservation</code></td><td>What is the motor doing now?</td><td>Adapter</td></tr>
+      <tr><td><code>LocomotionOutput</code></td><td>What should happen next?</td><td>Machine</td></tr>
+      <tr><td><code>currentVelocity</code></td><td>What will KCC actually integrate?</td><td>Adapter + KCC</td></tr>
+    </tbody>
+  </table>
+
+  <section class="exercise">
+    <h2 class="flush-heading">Two-minute trace</h2>
+    <p>Imagine the player presses Jump 0.05 seconds after walking off a ledge. Predict the path before revealing it in code:</p>
+    <pre><code>JumpEvent
+→ jumpQueued = true
+→ PlayerIntent.JumpPressed = true
+→ observation is Airborne
+→ coyote &gt; 0
+→ baseJump = true
+→ output.HasJumpInfluence = true
+→ motor.ForceUnground()
+→ vertical velocity is replaced</code></pre>
+    <p>Now open <a href="../Assets/Scripts/Player/V2/Core/PlayerLocomotionMachine.cs">PlayerLocomotionMachine.cs</a> and find the exact branch. The important insight is that coyote time is a <em>policy decision</em>; <code>ForceUnground</code> and velocity replacement are <em>motor application</em>.</p>
+  </section>
+
+  <section class="quiz" data-quiz data-correct="Correct. Coyote time changes jump eligibility, so it belongs in locomotion policy." data-incorrect="Not quite. Ask whether the change alters a gameplay decision, engine translation, or visuals.">
+    <h2 class="flush-heading">Retrieval check</h2>
+    <p>A designer asks you to shorten the coyote-time window. Which layer should you change first?</p>
+    <div class="choices">
+      <button class="choice" data-answer="incorrect">The Unity-facing adapter layer</button>
+      <button class="choice" data-answer="correct">The pure locomotion policy</button>
+      <button class="choice" data-answer="incorrect">The animation presentation layer</button>
+    </div>
+    <p class="feedback" data-feedback aria-live="polite"></p>
+  </section>
+
+  <h2>Keep beside the debugger</h2>
+  <p>Open the printable <a href="../reference/0001-player-v2-layer-map.html">Player V2 layer map</a>. For a bug, walk left-to-right through its debugging order and stop at the first value that is wrong.</p>
+
+  <h2>Primary reading</h2>
+  <p>Read only <code>UpdateVelocity</code> in <a href="../Assets/Scripts/Player/V2/Unity/PlayerControllerV2.cs">PlayerControllerV2.cs</a>, then only <code>Step</code> in <a href="../Assets/Scripts/Player/V2/Core/PlayerLocomotionMachine.cs">PlayerLocomotionMachine.cs</a>. Your goal is not line-by-line recall; it is recognizing the adapter → policy → adapter handoff.</p>
+
+  <footer>Ask your teaching agent any follow-up question—even “why is this line on this side of the seam?” The next lesson should be chosen from what remains unclear after this trace.</footer>
+</main>
+</body>
+</html>
