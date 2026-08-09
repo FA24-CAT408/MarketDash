@@ -364,6 +364,115 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &120013091
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      propertyPath: m_Name
+      value: KCC Player Controller
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 120013095}
+  m_SourcePrefab: {fileID: 100100000, guid: 541302cb08857404088c78bc75016156, type: 3}
+--- !u!1 &120013092 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
+    type: 3}
+  m_PrefabInstance: {fileID: 120013091}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &120013093 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5976832322369415315, guid: 541302cb08857404088c78bc75016156,
+    type: 3}
+  m_PrefabInstance: {fileID: 120013091}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 120013092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c6f907a49383d14e92f58ddbf37c982, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.PlayerControllerV2
+--- !u!4 &120013094 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
+    type: 3}
+  m_PrefabInstance: {fileID: 120013091}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &120013095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 120013092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 590b0fb83ce04aa49b7b4521ad560aee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.TestCampusPlayerV2Bridge
+  controller: {fileID: 120013093}
 --- !u!1 &133313254
 GameObject:
   m_ObjectHideFlags: 0
@@ -1037,7 +1146,7 @@ MonoBehaviour:
   - Zone: 6
     SceneName: TestCampus_Integration
     LoadByDefault: 1
-  playerRoot: {fileID: 1350607826}
+  playerRoot: {fileID: 120013094}
   killPlaneY: -20
   disablePointLightShadows: 1
 --- !u!4 &164691973
@@ -6562,115 +6671,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282080431}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &1350607823
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      propertyPath: m_Name
-      value: KCC Player Controller
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1350607827}
-  m_SourcePrefab: {fileID: 100100000, guid: 541302cb08857404088c78bc75016156, type: 3}
---- !u!1 &1350607824 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 1350607823}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1350607825 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5976832322369415315, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 1350607823}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350607824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c6f907a49383d14e92f58ddbf37c982, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.PlayerControllerV2
---- !u!4 &1350607826 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 1350607823}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1350607827
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350607824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 590b0fb83ce04aa49b7b4521ad560aee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.TestCampusPlayerV2Bridge
-  controller: {fileID: 1350607825}
 --- !u!1 &1390142512
 GameObject:
   m_ObjectHideFlags: 0
@@ -9773,4 +9773,4 @@ SceneRoots:
   - {fileID: 1832492202}
   - {fileID: 1088267254}
   - {fileID: 655081077}
-  - {fileID: 1350607823}
+  - {fileID: 120013091}

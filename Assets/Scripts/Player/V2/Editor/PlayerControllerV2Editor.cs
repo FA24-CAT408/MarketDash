@@ -9,6 +9,10 @@ namespace CrazyMarket.Player.V2.Editor
     public sealed class PlayerControllerV2Editor : UnityEditor.Editor
     {
         private SerializedProperty profileProperty;
+        private SerializedProperty inputProperty;
+        private SerializedProperty movementReferenceProperty;
+        private SerializedProperty jumpParticlesProperty;
+        private SerializedProperty ignoredCollidersProperty;
         private LocomotionTuning workingTuning;
         private string workingProfileId;
         private bool hasWorkingCopy;
@@ -16,12 +20,15 @@ namespace CrazyMarket.Player.V2.Editor
         private MessageType statusType = MessageType.Info;
         private bool showGround = true;
         private bool showAir = true;
-        private bool showJump = true;
-        private bool showForcesAndOrientation = true;
+        private bool showMiscellaneous = true;
 
         private void OnEnable()
         {
             profileProperty = serializedObject.FindProperty("profile");
+            inputProperty = serializedObject.FindProperty("input");
+            movementReferenceProperty = serializedObject.FindProperty("movementReference");
+            jumpParticlesProperty = serializedObject.FindProperty("jumpParticles");
+            ignoredCollidersProperty = serializedObject.FindProperty("ignoredColliders");
             hasWorkingCopy = false;
             status = null;
         }
@@ -29,21 +36,43 @@ namespace CrazyMarket.Player.V2.Editor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            DrawDefaultInspector();
+            EditorGUILayout.LabelField("Composition", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(profileProperty);
+            EditorGUILayout.PropertyField(inputProperty);
+            EditorGUILayout.PropertyField(movementReferenceProperty);
+            EditorGUILayout.PropertyField(jumpParticlesProperty);
+            EditorGUILayout.PropertyField(ignoredCollidersProperty, true);
             serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Player Controller V2", EditorStyles.boldLabel);
+            if (Application.isPlaying) DrawRuntimeTuning();
+            else DrawSelectedProfileTuning();
+        }
 
-            if (!Application.isPlaying)
+        private void DrawSelectedProfileTuning()
+        {
+            PlayerProfile selected = profileProperty.objectReferenceValue as PlayerProfile;
+            if (selected == null)
             {
                 EditorGUILayout.HelpBox(
-                    "Runtime locomotion tuning is available in Play Mode. Edits stay in memory unless you explicitly save them.",
+                    "No profile is selected. The controller will use its production fallback values.",
                     MessageType.Info);
                 return;
             }
 
-            DrawRuntimeTuning();
+            EditorGUILayout.LabelField("Selected Profile Tuning", EditorStyles.boldLabel);
+            SerializedObject profile = new SerializedObject(selected);
+            profile.Update();
+            SerializedProperty data = profile.FindProperty("data");
+            SerializedProperty tuning = data == null ? null : data.FindPropertyRelative("locomotion");
+            if (tuning == null)
+            {
+                EditorGUILayout.HelpBox("The selected profile has no locomotion data.", MessageType.Error);
+                return;
+            }
+
+            PlayerProfileEditor.DrawTuning(tuning, ref showGround, ref showAir, ref showMiscellaneous);
+            if (profile.ApplyModifiedProperties()) EditorUtility.SetDirty(selected);
         }
 
         private void DrawRuntimeTuning()
@@ -68,7 +97,7 @@ namespace CrazyMarket.Player.V2.Editor
                 MessageType.Info);
 
             bool changed = false;
-            showGround = EditorGUILayout.Foldout(showGround, "Ground", true);
+            showGround = EditorGUILayout.Foldout(showGround, "Ground Movement", true);
             if (showGround)
             {
                 EditorGUI.indentLevel++;
@@ -77,33 +106,25 @@ namespace CrazyMarket.Player.V2.Editor
                 EditorGUI.indentLevel--;
             }
 
-            showAir = EditorGUILayout.Foldout(showAir, "Air", true);
+            showAir = EditorGUILayout.Foldout(showAir, "Air Movement", true);
             if (showAir)
             {
                 EditorGUI.indentLevel++;
                 changed |= FloatField(ref workingTuning.AirMoveSpeed, "Air Move Speed");
                 changed |= FloatField(ref workingTuning.AirAcceleration, "Air Acceleration");
+                changed |= FloatField(ref workingTuning.JumpSpeed, "Jump Speed");
+                changed |= FloatField(ref workingTuning.JumpBufferTime, "Jump Buffer Time");
+                changed |= FloatField(ref workingTuning.CoyoteTime, "Coyote Time");
+                changed |= FloatField(ref workingTuning.Gravity, "Gravity");
+                changed |= FloatField(ref workingTuning.FallGravityMultiplier, "Fall Gravity Multiplier");
                 changed |= FloatField(ref workingTuning.Drag, "Drag");
                 EditorGUI.indentLevel--;
             }
 
-            showJump = EditorGUILayout.Foldout(showJump, "Jump", true);
-            if (showJump)
+            showMiscellaneous = EditorGUILayout.Foldout(showMiscellaneous, "Miscellaneous", true);
+            if (showMiscellaneous)
             {
                 EditorGUI.indentLevel++;
-                changed |= FloatField(ref workingTuning.JumpSpeed, "Jump Speed");
-                changed |= FloatField(ref workingTuning.JumpBufferTime, "Jump Buffer Time");
-                changed |= FloatField(ref workingTuning.CoyoteTime, "Coyote Time");
-                EditorGUI.indentLevel--;
-            }
-
-            showForcesAndOrientation = EditorGUILayout.Foldout(showForcesAndOrientation,
-                "Forces & Orientation", true);
-            if (showForcesAndOrientation)
-            {
-                EditorGUI.indentLevel++;
-                changed |= FloatField(ref workingTuning.Gravity, "Gravity");
-                changed |= FloatField(ref workingTuning.FallGravityMultiplier, "Fall Gravity Multiplier");
                 changed |= FloatField(ref workingTuning.OrientationSharpness, "Orientation Sharpness");
                 EditorGUI.indentLevel--;
             }
