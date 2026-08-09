@@ -64,6 +64,10 @@ sysinfo.txt
 *.apk
 *.aab
 *.unitypackage
+*.unitypackage.meta
+
+# Local vendor installer cache; imported FlatKit assets live elsewhere.
+/Assets/FlatKit.meta
 *.app
 
 # Crashlytics generated file
