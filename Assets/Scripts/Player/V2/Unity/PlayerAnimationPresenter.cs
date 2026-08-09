@@ -21,7 +21,8 @@ namespace CrazyMarket.Player.V2.Unity
                 Debug.LogError("PlayerAnimationPresenter requires PlayerControllerV2 and Animator references.", this);
         }
 
-        private void LateUpdate()
+        // Feed parameters before Unity evaluates the Animator for this frame.
+        private void Update()
         {
             if (controller == null || animator == null) return;
             PlayerPresentationState state = controller.Presentation;
