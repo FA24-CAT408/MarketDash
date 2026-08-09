@@ -5,18 +5,19 @@ using UnityEngine;
 
 namespace CrazyMarket.Player.V2.Unity
 {
+    [RequireComponent(typeof(KinematicCharacterMotor))]
     [DisallowMultipleComponent]
     public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController
     {
         [Header("V2 composition")]
         [SerializeField] private PlayerProfile profile;
         [SerializeField] private InputReader input;
-        [SerializeField] private KinematicCharacterMotor motor;
         [SerializeField] private Transform movementReference;
 
         [Header("Collision filtering")]
         [SerializeField] private List<Collider> ignoredColliders = new List<Collider>();
 
+        private KinematicCharacterMotor motor;
         private PlayerLocomotionMachine locomotion;
         private Vector2 rawMove;
         private bool jumpHeld;
