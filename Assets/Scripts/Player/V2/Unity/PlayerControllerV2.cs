@@ -357,12 +357,17 @@ namespace CrazyMarket.Player.V2.Unity
 
         private static Vector3 SanitizeVelocity(Vector3 velocity)
         {
-            return new Vector3(SanitizeVelocityComponent(velocity.x),
-                SanitizeVelocityComponent(velocity.y), SanitizeVelocityComponent(velocity.z));
+            float x = IsFinite(velocity.x)
+                ? Mathf.Clamp(velocity.x, -MotorSafetyMagnitude, MotorSafetyMagnitude)
+                : 0f;
+            float y = IsFinite(velocity.y)
+                ? Mathf.Clamp(velocity.y, -MotorSafetyMagnitude, MotorSafetyMagnitude)
+                : 0f;
+            float z = IsFinite(velocity.z)
+                ? Mathf.Clamp(velocity.z, -MotorSafetyMagnitude, MotorSafetyMagnitude)
+                : 0f;
+            return new Vector3(x, y, z);
         }
-
-        private static float SanitizeVelocityComponent(float value) =>
-            IsFinite(value) ? Mathf.Clamp(value, -MotorSafetyMagnitude, MotorSafetyMagnitude) : 0f;
 
         private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
