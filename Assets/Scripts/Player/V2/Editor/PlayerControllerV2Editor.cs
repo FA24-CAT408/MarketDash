@@ -24,6 +24,8 @@ namespace CrazyMarket.Player.V2.Editor
 
         private void OnEnable()
         {
+            if (target == null) return;
+
             profileProperty = serializedObject.FindProperty("profile");
             inputProperty = serializedObject.FindProperty("input");
             movementReferenceProperty = serializedObject.FindProperty("movementReference");
@@ -35,6 +37,11 @@ namespace CrazyMarket.Player.V2.Editor
 
         public override void OnInspectorGUI()
         {
+            if (target == null || profileProperty == null || inputProperty == null ||
+                movementReferenceProperty == null || jumpParticlesProperty == null ||
+                ignoredCollidersProperty == null)
+                return;
+
             serializedObject.Update();
             EditorGUILayout.LabelField("Composition", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(profileProperty);
@@ -55,8 +62,9 @@ namespace CrazyMarket.Player.V2.Editor
             if (selected == null)
             {
                 EditorGUILayout.HelpBox(
-                    "No profile is selected. The controller will use its production fallback values.",
+                    "No profile is selected. These read-only production fallback values will be used.",
                     MessageType.Info);
+                DrawFallbackTuning();
                 return;
             }
 
@@ -73,6 +81,45 @@ namespace CrazyMarket.Player.V2.Editor
 
             PlayerProfileEditor.DrawTuning(tuning, ref showGround, ref showAir, ref showMiscellaneous);
             if (profile.ApplyModifiedProperties()) EditorUtility.SetDirty(selected);
+        }
+
+        private void DrawFallbackTuning()
+        {
+            LocomotionTuning tuning = LocomotionTuning.ProductionDefaults;
+            using (new EditorGUI.DisabledScope(true))
+            {
+                showGround = EditorGUILayout.Foldout(showGround, "Ground Movement", true);
+                if (showGround)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.FloatField("Stable Move Speed", tuning.StableMoveSpeed);
+                    EditorGUILayout.FloatField("Stable Movement Sharpness", tuning.StableMovementSharpness);
+                    EditorGUI.indentLevel--;
+                }
+
+                showAir = EditorGUILayout.Foldout(showAir, "Air Movement", true);
+                if (showAir)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.FloatField("Air Move Speed", tuning.AirMoveSpeed);
+                    EditorGUILayout.FloatField("Air Acceleration", tuning.AirAcceleration);
+                    EditorGUILayout.FloatField("Jump Speed", tuning.JumpSpeed);
+                    EditorGUILayout.FloatField("Jump Buffer Time", tuning.JumpBufferTime);
+                    EditorGUILayout.FloatField("Coyote Time", tuning.CoyoteTime);
+                    EditorGUILayout.FloatField("Gravity", tuning.Gravity);
+                    EditorGUILayout.FloatField("Fall Gravity Multiplier", tuning.FallGravityMultiplier);
+                    EditorGUILayout.FloatField("Drag", tuning.Drag);
+                    EditorGUI.indentLevel--;
+                }
+
+                showMiscellaneous = EditorGUILayout.Foldout(showMiscellaneous, "Miscellaneous", true);
+                if (showMiscellaneous)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.FloatField("Orientation Sharpness", tuning.OrientationSharpness);
+                    EditorGUI.indentLevel--;
+                }
+            }
         }
 
         private void DrawRuntimeTuning()
