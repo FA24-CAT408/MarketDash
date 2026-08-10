@@ -1,11 +1,12 @@
 using System;
+using CrazyMarket.Player;
 using UnityEngine;
 using System.Reflection;
 
 namespace CrazyMarket.TestCampus
 {
     [DisallowMultipleComponent]
-    public sealed class TestCampusPlayerAdapter : MonoBehaviour, ITestCampusPlayerController
+    public sealed class TestCampusPlayerAdapter : MonoBehaviour, IPlayerSceneControl
     {
         public static event Action<Transform, Vector3> PlayerWarped;
 

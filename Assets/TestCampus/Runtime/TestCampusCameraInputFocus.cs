@@ -7,6 +7,7 @@ using UnityEditor;
 namespace CrazyMarket.TestCampus
 {
     /// <summary>Owns camera look input and the cursor/UI focus hand-off.</summary>
+    [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class TestCampusCameraInputFocus : MonoBehaviour
     {
@@ -52,6 +53,8 @@ namespace CrazyMarket.TestCampus
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
+
+        private void Start() => ApplyCursorState();
 
         private void Update()
         {

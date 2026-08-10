@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CrazyMarket.Player;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -54,7 +55,7 @@ namespace CrazyMarket.TestCampus
         private CinemachineDecollider _decollider;
         private TestCampusCameraInputFocus _inputFocus;
         private Transform _player;
-        private ITestCampusPlayerController _playerController;
+        private IPlayerSceneControl _playerController;
         private Transform _movementReference;
         private Vector3 _previousPlayerPosition;
         private Vector3 _lastGroundedMoveDirection = Vector3.forward;
@@ -245,11 +246,11 @@ namespace CrazyMarket.TestCampus
             ApplyMode();
         }
 
-        private static ITestCampusPlayerController ResolvePlayerController(Transform player)
+        private static IPlayerSceneControl ResolvePlayerController(Transform player)
         {
             if (player == null) return null;
             foreach (MonoBehaviour behaviour in player.GetComponents<MonoBehaviour>())
-                if (behaviour is ITestCampusPlayerController controller)
+                if (behaviour is IPlayerSceneControl controller)
                     return controller;
             return null;
         }
