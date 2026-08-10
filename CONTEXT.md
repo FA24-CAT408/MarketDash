@@ -6,19 +6,18 @@ tuned into distinct playable styles.
 ## Language
 
 **Player Profile**:
-A named definition of a player's movement and world-interaction tuning,
-including its locomotion feel and selected Ability Loadout. It excludes visual
-and presentation choices.
+A named definition of a player's movement and world-interaction tuning. It
+excludes ability composition, visual choices, and presentation choices.
 _Avoid_: Theme, preset
 
-**Ability Loadout**:
-The collection of abilities selected for a Player Profile.
-_Avoid_: Skill set
+**Ability Composition**:
+The collection of enabled Player Ability components on a player prefab. The
+prefab owns this composition independently of its Player Profile.
+_Avoid_: Profile loadout, skill set
 
 **Ability**:
-A capability granted through an Ability Loadout. It can contribute a modifier
-or movement influence, or request a Locomotion Mode, but never moves the player
-body directly.
+A capability granted by an enabled Player Ability component. It returns a
+typed result to locomotion policy but never moves the player body directly.
 _Avoid_: Locomotion state, skill
 
 **Locomotion Mode**:
