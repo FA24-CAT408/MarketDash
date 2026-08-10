@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using CrazyMarket.Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -180,11 +181,8 @@ namespace CrazyMarket.TestCampus
         {
             Transform spawn = ResolveSpawn(zone, spawnId);
             if (spawn == null || playerRoot == null) return false;
-            ITestCampusPlayerController controller = playerRoot.GetComponent(typeof(ITestCampusPlayerController))
-                as ITestCampusPlayerController;
-            TestCampusPlayerAdapter adapter = playerRoot.GetComponent<TestCampusPlayerAdapter>();
+            IPlayerSceneControl controller = ResolvePlayerControl(playerRoot);
             if (controller != null) controller.TeleportTo(spawn.position, spawn.rotation);
-            else if (adapter != null) adapter.TeleportTo(spawn.position, spawn.rotation);
             else playerRoot.SetPositionAndRotation(spawn.position, spawn.rotation);
             _currentZone = zone;
             _lastSpawn = spawnId;
@@ -192,6 +190,15 @@ namespace CrazyMarket.TestCampus
         }
 
         public bool ReturnToHub() => TeleportToZone(TestZoneId.Hub);
+
+        private static IPlayerSceneControl ResolvePlayerControl(Transform player)
+        {
+            if (player == null) return null;
+            foreach (MonoBehaviour behaviour in player.GetComponents<MonoBehaviour>())
+                if (behaviour is IPlayerSceneControl control)
+                    return control;
+            return null;
+        }
 
         public bool RecoverPlayer()
         {
