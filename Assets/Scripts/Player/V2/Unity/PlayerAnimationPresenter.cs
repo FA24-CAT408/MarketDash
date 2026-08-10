@@ -8,7 +8,10 @@ namespace CrazyMarket.Player.V2.Unity
     {
         [SerializeField] private PlayerControllerV2 controller;
         [SerializeField] private Animator animator;
+        [SerializeField] private ParticleSystem jumpParticles;
         [SerializeField] private float runningSpeedThreshold = 0.1f;
+
+        private long lastPresentedRevision = -1;
 
         private static readonly int IsRunning = Animator.StringToHash("isRunning");
         private static readonly int IsJumping = Animator.StringToHash("isJumping");
@@ -27,6 +30,15 @@ namespace CrazyMarket.Player.V2.Unity
             PlayerPresentationState state = controller.Presentation;
             animator.SetBool(IsRunning, state.Grounded && state.PlanarSpeed >= runningSpeedThreshold);
             animator.SetBool(IsJumping, !state.Grounded);
+
+            PlayerSnapshot snapshot = controller.Snapshot;
+            if (snapshot.Revision == lastPresentedRevision) return;
+            lastPresentedRevision = snapshot.Revision;
+            if (jumpParticles == null || (snapshot.ActionFlags & PlayerActionFlags.Jumped) == 0) return;
+
+            ParticleSystem particles = Instantiate(jumpParticles, transform.position, Quaternion.identity);
+            particles.Play();
+            Destroy(particles.gameObject, 1f);
         }
     }
 }

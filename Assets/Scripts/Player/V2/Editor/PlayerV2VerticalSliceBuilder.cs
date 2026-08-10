@@ -103,7 +103,6 @@ namespace CrazyMarket.Player.V2.Editor
                 serialized.FindProperty("profile").objectReferenceValue = profile;
                 serialized.FindProperty("input").objectReferenceValue = input;
                 serialized.FindProperty("motor").objectReferenceValue = root.GetComponent<KinematicCharacterMotor>();
-                serialized.FindProperty("jumpParticles").objectReferenceValue = legacyJumpParticles;
                 SerializedProperty ignored = serialized.FindProperty("ignoredColliders");
                 ignored.arraySize = legacyIgnoredColliders.Count;
                 for (int i = 0; i < legacyIgnoredColliders.Count; i++)
@@ -113,6 +112,7 @@ namespace CrazyMarket.Player.V2.Editor
                 SerializedObject presentation = new SerializedObject(presenter);
                 presentation.FindProperty("controller").objectReferenceValue = controller;
                 presentation.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();
+                presentation.FindProperty("jumpParticles").objectReferenceValue = legacyJumpParticles;
                 presentation.ApplyModifiedPropertiesWithoutUndo();
 
                 return PrefabUtility.SaveAsPrefabAsset(root, OutputPrefab);
@@ -142,6 +142,8 @@ namespace CrazyMarket.Player.V2.Editor
             GameObject replacement = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
             replacement.name = playerName;
             replacement.transform.SetPositionAndRotation(position, rotation);
+            TestCampusPlayerV2Bridge bridge = replacement.GetComponent<TestCampusPlayerV2Bridge>();
+            if (bridge == null) bridge = replacement.AddComponent<TestCampusPlayerV2Bridge>();
             Undo.RegisterCreatedObjectUndo(replacement, "Create Player Controller V2 instance");
             campus.PlayerRoot = replacement.transform;
             Undo.DestroyObjectImmediate(oldPlayer.gameObject);

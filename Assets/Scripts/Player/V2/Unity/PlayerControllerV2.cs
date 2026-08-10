@@ -1,21 +1,18 @@
 using System.Collections.Generic;
 using CrazyMarket.Player.V2;
-using CrazyMarket.TestCampus;
 using KinematicCharacterController;
 using UnityEngine;
 
 namespace CrazyMarket.Player.V2.Unity
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController,
-        ITestCampusPlayerController
+    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController
     {
         [Header("V2 composition")]
         [SerializeField] private PlayerProfile profile;
         [SerializeField] private InputReader input;
         [SerializeField] private KinematicCharacterMotor motor;
         [SerializeField] private Transform movementReference;
-        [SerializeField] private ParticleSystem jumpParticles;
 
         [Header("Collision filtering")]
         [SerializeField] private List<Collider> ignoredColliders = new List<Collider>();
@@ -270,13 +267,6 @@ namespace CrazyMarket.Player.V2.Unity
             {
                 motor.SetPositionAndRotation(output.TeleportPosition, output.TeleportRotation, true);
                 if (output.ResetVelocity) motor.BaseVelocity = Vector3.zero;
-            }
-            if (stepProducedOutput && jumpParticles != null &&
-                (output.ActionFlags & PlayerActionFlags.Jumped) != 0)
-            {
-                ParticleSystem particles = Instantiate(jumpParticles, transform.position, Quaternion.identity);
-                particles.Play();
-                Destroy(particles.gameObject, 1f);
             }
             // Keep the one-shot press through UpdateVelocity and consume it only
             // after KCC has completed the motor step.
