@@ -39,7 +39,7 @@ namespace CrazyMarket.Player.V2
             }
 
             remainingJumps--;
-            return PlayerAbilityResult.Jump(context.Tuning.JumpSpeed);
+            return PlayerAbilityResult.AirJump(context.Tuning.JumpSpeed);
         }
     }
 }
