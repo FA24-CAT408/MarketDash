@@ -12,11 +12,10 @@ namespace CrazyMarket.TestCampus
         [SerializeField] private List<TestZoneScene> zoneScenes = new();
         [SerializeField] private Transform playerRoot;
         [SerializeField] private float killPlaneY = -20f;
-        [SerializeField] private bool disablePointLightShadows = true;
 
         private readonly Dictionary<TestZoneId, TestZoneRoot> _zones = new();
         private readonly Dictionary<TestZoneId, HashSet<ITestResettable>> _externalResettables = new();
-        private readonly Dictionary<Light, LightShadows> _overriddenPointLightShadows = new();
+        private TestCampusLightShadowBudget _lightShadowBudget;
         private TestZoneId _currentZone = TestZoneId.Hub;
         private string _lastSpawn = "Default";
 
@@ -37,6 +36,9 @@ namespace CrazyMarket.TestCampus
                 return;
             }
             Instance = this;
+            _lightShadowBudget = GetComponent<TestCampusLightShadowBudget>();
+            if (_lightShadowBudget == null)
+                _lightShadowBudget = gameObject.AddComponent<TestCampusLightShadowBudget>();
         }
 
         private IEnumerator Start()
@@ -51,7 +53,7 @@ namespace CrazyMarket.TestCampus
                 foreach (TestZoneScene zone in zoneScenes)
                     if (zone.LoadByDefault && !IsSceneLoaded(zone.SceneName))
                         yield return LoadZone(zone.Zone);
-            ApplyAdditionalLightShadowBudget();
+            _lightShadowBudget?.Apply();
         }
 
         private void Update()
@@ -61,7 +63,6 @@ namespace CrazyMarket.TestCampus
 
         private void OnDestroy()
         {
-            RestoreAdditionalLightShadows();
             if (Instance == this) Instance = null;
         }
 
@@ -95,7 +96,7 @@ namespace CrazyMarket.TestCampus
             }
             if (!IsSceneLoaded(config.SceneName))
                 yield return SceneManager.LoadSceneAsync(config.SceneName, LoadSceneMode.Additive);
-            ApplyAdditionalLightShadowBudget();
+            _lightShadowBudget?.Apply();
         }
 
         public IEnumerator UnloadZone(TestZoneId zone)
@@ -202,39 +203,5 @@ namespace CrazyMarket.TestCampus
             return scene.IsValid() && scene.isLoaded;
         }
 
-        private void ApplyAdditionalLightShadowBudget()
-        {
-            if (!disablePointLightShadows) return;
-
-            // Each point light consumes six atlas tiles. Test Campus keeps spot-light
-            // shadows and disables point-light shadows so the 512px URP atlas does
-            // not repeatedly resize twenty shadow maps while additive zones load.
-            foreach (Light light in FindObjectsByType<Light>(
-                         FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                if (!IsTestCampusScene(light.gameObject.scene)
-                    || light.type != LightType.Point
-                    || light.shadows == LightShadows.None)
-                    continue;
-
-                _overriddenPointLightShadows.TryAdd(light, light.shadows);
-                light.shadows = LightShadows.None;
-            }
-        }
-
-        private bool IsTestCampusScene(Scene scene)
-        {
-            if (!scene.IsValid()) return false;
-            if (scene == gameObject.scene) return true;
-            return zoneScenes.Exists(zone => zone != null && zone.SceneName == scene.name);
-        }
-
-        private void RestoreAdditionalLightShadows()
-        {
-            foreach ((Light light, LightShadows shadows) in _overriddenPointLightShadows)
-                if (light != null)
-                    light.shadows = shadows;
-            _overriddenPointLightShadows.Clear();
-        }
     }
 }

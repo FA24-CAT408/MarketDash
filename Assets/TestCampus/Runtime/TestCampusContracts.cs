@@ -38,6 +38,14 @@ namespace CrazyMarket.TestCampus
         IEnumerable<TestDiagnostic> GetDiagnostics();
     }
 
+    public interface ITestCampusPlayerController
+    {
+        void SetMovementEnabled(bool enabled);
+        void SetMovementReference(Transform reference);
+        bool TryGetMovementIntent(out Vector3 direction);
+        void TeleportTo(Vector3 position, Quaternion rotation);
+    }
+
     [Serializable]
     public sealed class TestZoneScene
     {

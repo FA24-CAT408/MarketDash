@@ -140,6 +140,7 @@ namespace CrazyMarket.TestCampus.Editor
             Scene scene = NewScene("TestCampus_Core");
             GameObject root = new("=== TEST CAMPUS CORE ===");
             TestCampusController controller = root.AddComponent<TestCampusController>();
+            root.AddComponent<TestCampusLightShadowBudget>();
             GameObject cameraSystems = new("Camera Systems");
             cameraSystems.AddComponent<TestCampusCameraInputFocus>();
             cameraSystems.AddComponent<TestCampusCameraOcclusionController>();
