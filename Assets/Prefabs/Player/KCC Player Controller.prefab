@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 7370521166888030895}
   - component: {fileID: 470471699361173564}
   - component: {fileID: 4227054882705831058}
-  - component: {fileID: 6694722634004274500}
   m_Layer: 10
   m_Name: KCC Player Controller
   m_TagString: Player
@@ -202,18 +201,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &6694722634004274500
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1726818363548777039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42e8052c0ab42486b9d2ffb2e18b8adf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: CrazyMarket.TestCampus.Runtime::CrazyMarket.TestCampus.TestCampusPlayerAdapter
 --- !u!1 &3884548846329610784
 GameObject:
   m_ObjectHideFlags: 0

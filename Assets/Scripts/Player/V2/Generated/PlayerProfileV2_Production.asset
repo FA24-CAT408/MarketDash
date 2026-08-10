@@ -16,7 +16,7 @@ MonoBehaviour:
   data:
     locomotion:
       StableMoveSpeed: 10
-      AirMoveSpeed: 15
+      AirMoveSpeed: 8
       AirAcceleration: 60
       StableMovementSharpness: 15
       OrientationSharpness: 10
