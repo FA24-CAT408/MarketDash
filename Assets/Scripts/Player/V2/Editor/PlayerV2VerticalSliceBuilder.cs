@@ -143,7 +143,6 @@ namespace CrazyMarket.Player.V2.Editor
                 SerializedObject serialized = new SerializedObject(controller);
                 serialized.FindProperty("profile").objectReferenceValue = profile;
                 serialized.FindProperty("input").objectReferenceValue = input;
-                serialized.FindProperty("motor").objectReferenceValue = motor;
                 SerializedProperty ignored = serialized.FindProperty("ignoredColliders");
                 ignored.arraySize = legacyIgnoredColliders.Count;
                 for (int i = 0; i < legacyIgnoredColliders.Count; i++)

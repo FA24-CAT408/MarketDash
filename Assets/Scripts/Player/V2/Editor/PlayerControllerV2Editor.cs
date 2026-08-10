@@ -11,7 +11,6 @@ namespace CrazyMarket.Player.V2.Editor
         private SerializedProperty profileProperty;
         private SerializedProperty inputProperty;
         private SerializedProperty movementReferenceProperty;
-        private SerializedProperty jumpParticlesProperty;
         private SerializedProperty ignoredCollidersProperty;
         private LocomotionTuning workingTuning;
         private string workingProfileId;
@@ -29,7 +28,6 @@ namespace CrazyMarket.Player.V2.Editor
             profileProperty = serializedObject.FindProperty("profile");
             inputProperty = serializedObject.FindProperty("input");
             movementReferenceProperty = serializedObject.FindProperty("movementReference");
-            jumpParticlesProperty = serializedObject.FindProperty("jumpParticles");
             ignoredCollidersProperty = serializedObject.FindProperty("ignoredColliders");
             hasWorkingCopy = false;
             status = null;
@@ -38,7 +36,7 @@ namespace CrazyMarket.Player.V2.Editor
         public override void OnInspectorGUI()
         {
             if (target == null || profileProperty == null || inputProperty == null ||
-                movementReferenceProperty == null || jumpParticlesProperty == null ||
+                movementReferenceProperty == null ||
                 ignoredCollidersProperty == null)
                 return;
 
@@ -47,7 +45,6 @@ namespace CrazyMarket.Player.V2.Editor
             EditorGUILayout.PropertyField(profileProperty);
             EditorGUILayout.PropertyField(inputProperty);
             EditorGUILayout.PropertyField(movementReferenceProperty);
-            EditorGUILayout.PropertyField(jumpParticlesProperty);
             EditorGUILayout.PropertyField(ignoredCollidersProperty, true);
             serializedObject.ApplyModifiedProperties();
 
