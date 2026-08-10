@@ -1,11 +1,11 @@
-using CrazyMarket.TestCampus;
+using CrazyMarket.Player;
 using UnityEngine;
 
 namespace CrazyMarket.Player.V2.Unity
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerControllerV2))]
-    public sealed class TestCampusPlayerV2Bridge : MonoBehaviour, ITestCampusPlayerController
+    public sealed class TestCampusPlayerV2Bridge : MonoBehaviour, IPlayerSceneControl
     {
         [SerializeField] private PlayerControllerV2 controller;
 
