@@ -4,6 +4,7 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Obvious.Soap.Editor.csproj" />
   <Project Path="CrazyMarket.TestCampus.Runtime.csproj" />
+  <Project Path="CrazyMarket.Player.Contracts.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="ExternAttributes.Editor.csproj" />
   <Project Path="CrazyMarket.TestCampus.EditModeTests.csproj" />
