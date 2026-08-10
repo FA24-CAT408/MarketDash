@@ -191,7 +191,6 @@ GameObject:
   - component: {fileID: 2112920886071973623}
   - component: {fileID: 435895674068279328}
   - component: {fileID: 5976832322369415315}
-  - component: {fileID: 7398784298507024464}
   - component: {fileID: 4787039076354964448}
   m_Layer: 10
   m_Name: Player Controller V2
@@ -364,19 +363,6 @@ MonoBehaviour:
   jumpParticles: {fileID: 3270974459108386389, guid: c0b4b2ea414680f4587e1171db83c2c7,
     type: 3}
   ignoredColliders: []
---- !u!114 &7398784298507024464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9115246567303182386}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 590b0fb83ce04aa49b7b4521ad560aee, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.TestCampusPlayerV2Bridge
-  controller: {fileID: 5976832322369415315}
 --- !u!114 &4787039076354964448
 MonoBehaviour:
   m_ObjectHideFlags: 0
