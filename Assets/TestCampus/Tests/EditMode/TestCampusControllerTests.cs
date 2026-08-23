@@ -1,4 +1,8 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using CrazyMarket.TestCampus;
 using UnityEngine.TestTools;
@@ -9,6 +13,17 @@ namespace CrazyMarket.TestCampus.Tests
 {
     public sealed class TestCampusControllerTests
     {
+        private static readonly string[] GeneratedSceneNames =
+        {
+            "TestCampus_Core.unity",
+            "TestCampus_Movement.unity",
+            "TestCampus_Camera.unity",
+            "TestCampus_Lighting.unity",
+            "TestCampus_NPCInteraction.unity",
+            "TestCampus_UI.unity",
+            "TestCampus_Integration.unity"
+        };
+
         private GameObject _controllerObject;
         private TestCampusController _controller;
 
@@ -94,6 +109,73 @@ namespace CrazyMarket.TestCampus.Tests
         }
 
         [Test]
+        public void BuildExisting_WhenGenerationIsCurrent_DoesNotRewriteScenes()
+        {
+            Assert.That(TestCampusSceneGenerator.AreExistingScenesCurrent(), Is.True,
+                "Regenerate Test Campus scenes and record their generation state before running this test.");
+            Dictionary<string, string> before = HashGeneratedScenes();
+
+            TestCampusSceneGenerator.BuildExisting();
+
+            Dictionary<string, string> after = HashGeneratedScenes();
+            foreach (string sceneName in GeneratedSceneNames)
+                Assert.That(after[sceneName], Is.EqualTo(before[sceneName]), sceneName);
+        }
+
+        [Test]
+        public void BuildExisting_WhenSceneIsMissingFromBuildSettings_RestoresItWithoutRewritingScenes()
+        {
+            EditorBuildSettingsScene[] originalScenes = EditorBuildSettings.scenes;
+            string missingPath = Path.Combine(TestCampusSceneGenerator.SceneFolder, GeneratedSceneNames[0]);
+            List<EditorBuildSettingsScene> incompleteScenes = new(originalScenes);
+            incompleteScenes.RemoveAll(scene => scene.path == missingPath);
+            Dictionary<string, string> before = HashGeneratedScenes();
+
+            try
+            {
+                EditorBuildSettings.scenes = incompleteScenes.ToArray();
+
+                TestCampusSceneGenerator.BuildExisting();
+
+                Assert.That(System.Array.Exists(EditorBuildSettings.scenes,
+                    scene => scene.path == missingPath && scene.enabled), Is.True);
+                Dictionary<string, string> after = HashGeneratedScenes();
+                foreach (string sceneName in GeneratedSceneNames)
+                    Assert.That(after[sceneName], Is.EqualTo(before[sceneName]), sceneName);
+            }
+            finally
+            {
+                EditorBuildSettings.scenes = originalScenes;
+            }
+        }
+
+        [Test]
+        public void BuildExisting_WhenCameraCollisionMatrixDrifts_RestoresItWithoutRewritingScenes()
+        {
+            int obstacleLayer = LayerMask.NameToLayer("Camera Obstacle");
+            const int defaultLayer = 0;
+            Assert.That(obstacleLayer, Is.GreaterThanOrEqualTo(0));
+            bool originalValue = Physics.GetIgnoreLayerCollision(obstacleLayer, defaultLayer);
+            Dictionary<string, string> before = HashGeneratedScenes();
+
+            try
+            {
+                Physics.IgnoreLayerCollision(obstacleLayer, defaultLayer, false);
+
+                TestCampusSceneGenerator.BuildExisting();
+
+                Assert.That(Physics.GetIgnoreLayerCollision(obstacleLayer, defaultLayer), Is.True);
+                Dictionary<string, string> after = HashGeneratedScenes();
+                foreach (string sceneName in GeneratedSceneNames)
+                    Assert.That(after[sceneName], Is.EqualTo(before[sceneName]), sceneName);
+            }
+            finally
+            {
+                Physics.IgnoreLayerCollision(obstacleLayer, defaultLayer, originalValue);
+            }
+        }
+
+        [Test]
         public void ApplyPreset_UsesRegisteredZoneProvider()
         {
             TestZoneRoot zone = CreateZone(TestZoneId.Integration, "Integration");
@@ -111,6 +193,19 @@ namespace CrazyMarket.TestCampus.Tests
             TestZoneRoot zone = zoneObject.AddComponent<TestZoneRoot>();
             zone.Configure(id, displayName, Color.white);
             return zone;
+        }
+
+        private static Dictionary<string, string> HashGeneratedScenes()
+        {
+            Dictionary<string, string> hashes = new();
+            using SHA256 sha256 = SHA256.Create();
+            foreach (string sceneName in GeneratedSceneNames)
+            {
+                string path = Path.Combine(TestCampusSceneGenerator.SceneFolder, sceneName);
+                byte[] hash = sha256.ComputeHash(File.ReadAllBytes(path));
+                hashes.Add(sceneName, System.BitConverter.ToString(hash).Replace("-", string.Empty));
+            }
+            return hashes;
         }
 
         private ResetProbe CreateZoneWithProbe(TestZoneId id)
