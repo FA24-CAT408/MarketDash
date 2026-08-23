@@ -1,0 +1,4 @@
+interface:
+  display_name: "Steady Improvement"
+  short_description: "Ship one bounded game improvement at a time"
+  default_prompt: "Use $steady-improvement to choose, scope, and advance one CrazyMarket improvement without letting the work sprawl."

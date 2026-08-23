@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="A visual guide to CrazyMarket Player Controller V2 movement and the current local diff.">
+  <title>Player V2 — Movement Field Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: oklch(25% 0.025 118);
+      --muted: oklch(46% 0.025 118);
+      --paper: oklch(95% 0.018 88);
+      --paper-deep: oklch(90% 0.025 88);
+      --surface: oklch(98% 0.012 88);
+      --line: oklch(76% 0.035 105);
+      --leaf: oklch(43% 0.09 135);
+      --leaf-soft: oklch(88% 0.065 135);
+      --clay: oklch(57% 0.11 48);
+      --clay-soft: oklch(89% 0.055 48);
+      --slate: oklch(42% 0.055 235);
+      --slate-soft: oklch(88% 0.04 235);
+      --danger: oklch(47% 0.13 28);
+      --space-xs: .25rem;
+      --space-sm: .5rem;
+      --space-md: .75rem;
+      --space-lg: 1rem;
+      --space-xl: 1.5rem;
+      --space-2xl: 2rem;
+      --space-3xl: 3rem;
+      --space-4xl: 4rem;
+      --radius-sm: .35rem;
+      --radius-md: .7rem;
+      --radius-lg: 1.2rem;
+      --display: Bahnschrift, "Arial Narrow", sans-serif;
+      --body: Charter, "Bitstream Charter", "Book Antiqua", serif;
+      --code: Consolas, "Cascadia Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 2rem,
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 1rem;
+      line-height: 1.6;
+      font-kerning: normal;
+    }
+
+    a { color: var(--leaf); text-underline-offset: .18em; }
+    a:focus-visible, button:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--clay);
+      outline-offset: 3px;
+    }
+    .skip-link {
+      position: fixed; top: var(--space-md); left: var(--space-md); z-index: 10;
+      padding: var(--space-sm) var(--space-lg); background: var(--ink); color: var(--surface);
+      transform: translateY(-200%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .page { width: min(76rem, calc(100% - 2rem)); margin-inline: auto; }
+    header { padding: clamp(3rem, 8vw, 7rem) 0 var(--space-3xl); }
+    .eyebrow, .stamp, .chip, .filter, .file-ref {
+      font-family: var(--display); font-size: .76rem; font-weight: 650;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .eyebrow { color: var(--leaf); }
+    h1, h2, h3 { font-family: var(--display); line-height: 1.06; letter-spacing: -.025em; }
+    h1 { margin: var(--space-lg) 0; max-width: 13ch; font-size: clamp(3rem, 8vw, 6.6rem); font-weight: 720; }
+    h2 { margin: 0; font-size: clamp(2rem, 4vw, 3.35rem); }
+    h3 { margin: 0; font-size: 1.3rem; }
+    p { max-width: 68ch; }
+    .lede { max-width: 54ch; font-size: 1.25rem; line-height: 1.5; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-xl); }
+    .stamp { padding: .4rem .7rem; border: 1px solid var(--line); background: var(--surface); }
+    .stamp.good { background: var(--leaf-soft); border-color: var(--leaf); }
+    .stamp.caution { background: var(--clay-soft); border-color: var(--clay); }
+
+    nav {
+      position: sticky; top: 0; z-index: 5; border-block: 1px solid var(--line);
+      background: color-mix(in oklch, var(--paper) 94%, transparent);
+      backdrop-filter: blur(10px);
+    }
+    nav .page { display: flex; gap: var(--space-lg); overflow-x: auto; scrollbar-width: thin; }
+    nav a { min-height: 3.25rem; display: grid; place-items: center; color: var(--ink); font-family: var(--display); text-decoration: none; white-space: nowrap; }
+    nav a:hover { color: var(--leaf); }
+
+    main { padding-block: var(--space-3xl) var(--space-4xl); }
+    section { scroll-margin-top: 5rem; padding-block: var(--space-3xl); }
+    .section-head { display: grid; gap: var(--space-lg); grid-template-columns: minmax(0, 1fr); margin-bottom: var(--space-2xl); }
+    .section-no { font-family: var(--display); color: var(--clay); font-size: .9rem; letter-spacing: .1em; }
+
+    .flow {
+      display: grid; grid-template-columns: repeat(6, minmax(8.5rem, 1fr));
+      gap: var(--space-md); overflow-x: auto; padding: var(--space-lg) 0 var(--space-xl);
+    }
+    .flow-step { position: relative; min-height: 10rem; padding: var(--space-lg); border: 1px solid var(--line); background: var(--surface); }
+    .flow-step:not(:last-child)::after {
+      content: "→"; position: absolute; right: -.8rem; top: 46%; z-index: 1;
+      width: 1.4rem; height: 1.4rem; display: grid; place-items: center;
+      background: var(--paper); color: var(--leaf); font-family: var(--display); font-weight: 700;
+    }
+    .flow-step strong { display: block; font-family: var(--display); line-height: 1.15; }
+    .flow-step p { margin: var(--space-sm) 0 0; font-size: .9rem; line-height: 1.45; }
+    .flow-step .step-no { color: var(--clay); font-family: var(--display); font-size: .8rem; }
+
+    .rule { display: grid; gap: var(--space-xl); padding: var(--space-2xl) 0; border-top: 1px solid var(--line); }
+    .rule:first-of-type { border-top: 0; }
+    .rule-copy { display: grid; align-content: start; gap: var(--space-sm); }
+    .rule-copy p { margin: 0; }
+    .mini-state { display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; gap: var(--space-sm); }
+    .state { padding: var(--space-lg) var(--space-md); border: 1px solid var(--line); background: var(--surface); text-align: center; font-family: var(--display); font-weight: 650; }
+    .state.active { background: var(--leaf-soft); border-color: var(--leaf); }
+    .state.disabled { background: var(--clay-soft); border-color: var(--clay); }
+    .state-arrow { color: var(--muted); text-align: center; font-family: var(--code); font-size: .78rem; }
+
+    .ownership { display: grid; gap: var(--space-lg); }
+    .owner { padding: var(--space-xl); border: 1px solid var(--line); background: var(--surface); }
+    .owner:nth-child(2) { transform: translateX(0); }
+    .owner-role { color: var(--leaf); font-family: var(--display); font-weight: 700; }
+    .owner code, code { font-family: var(--code); font-size: .88em; }
+    .owner p { margin-bottom: 0; }
+
+    .tuning-wrap { overflow-x: auto; border-block: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--line); text-align: left; }
+    th { font-family: var(--display); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; }
+    td:nth-child(2) { font-family: var(--code); font-weight: 700; }
+
+    .diff-summary { display: grid; gap: var(--space-lg); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-block: var(--space-xl); }
+    .diff-stat { padding: var(--space-lg); border-block: 1px solid var(--line); }
+    .diff-stat b { display: block; font-family: var(--display); font-size: 2rem; line-height: 1; }
+    .filters { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-xl); }
+    .filter { min-height: 2.75rem; padding: 0 var(--space-lg); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+    .filter[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+    .filter:active { transform: translateY(1px); }
+    .diff-list { display: grid; gap: var(--space-md); }
+    .diff-item { display: grid; gap: var(--space-md); padding: var(--space-xl); border: 1px solid var(--line); background: var(--surface); }
+    .diff-item[hidden] { display: none; }
+    .diff-top { display: flex; align-items: start; justify-content: space-between; gap: var(--space-lg); }
+    .chip { flex: none; padding: .25rem .55rem; border: 1px solid currentColor; }
+    .chip.keep { color: var(--leaf); background: var(--leaf-soft); }
+    .chip.hold { color: var(--clay); background: var(--clay-soft); }
+    .chip.split { color: var(--slate); background: var(--slate-soft); }
+    .diff-item p { margin: 0; }
+    .file-ref { color: var(--muted); text-transform: none; letter-spacing: .02em; overflow-wrap: anywhere; }
+
+    .decision {
+      display: grid; gap: var(--space-xl); padding: var(--space-2xl);
+      background: var(--ink); color: var(--paper); border-radius: var(--radius-sm);
+    }
+    .decision h3 { color: var(--paper); }
+    .decision p { margin: 0; color: oklch(89% 0.018 88); }
+    .commands { display: grid; gap: 1px; background: oklch(36% 0.03 118); border: 1px solid oklch(48% 0.03 118); }
+    .command { padding: var(--space-md) var(--space-lg); background: var(--ink); overflow-x: auto; white-space: nowrap; font-family: var(--code); font-size: .86rem; }
+
+    details { border-top: 1px solid var(--line); }
+    summary { min-height: 3.5rem; display: flex; align-items: center; cursor: pointer; font-family: var(--display); font-weight: 650; }
+    details p { padding-bottom: var(--space-lg); }
+    footer { padding-block: var(--space-2xl); border-top: 1px solid var(--line); color: var(--muted); }
+
+    @media (min-width: 48rem) {
+      .section-head { grid-template-columns: 5rem minmax(0, 1fr); }
+      .rule { grid-template-columns: minmax(0, 1fr) minmax(20rem, .8fr); }
+      .ownership { grid-template-columns: repeat(3, 1fr); }
+      .owner:nth-child(2) { transform: translateY(1.5rem); }
+      .diff-item { grid-template-columns: 15rem minmax(0, 1fr); }
+      .diff-top { display: contents; }
+      .chip { justify-self: start; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      nav, .filters, .skip-link { display: none; }
+      body { background: var(--paper); }
+      .page { width: 100%; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to guide</a>
+  <header class="page">
+    <div class="eyebrow">CrazyMarket · developer field guide</div>
+    <h1>How Player V2 moves</h1>
+    <p class="lede">The machine decides. The KCC adapter executes. The presenter observes. This guide follows one input through the complete movement step, then separates the movement work from today’s uncommitted diff.</p>
+    <div class="hero-meta">
+      <span class="stamp good">Movement code: already committed locally</span>
+      <span class="stamp caution">Runtime acceptance: still pending</span>
+      <span class="stamp">Branch after this guide: main · 27 ahead</span>
+    </div>
+  </header>
+
+  <nav aria-label="Guide sections">
+    <div class="page">
+      <a href="#flow">The loop</a>
+      <a href="#rules">Movement rules</a>
+      <a href="#ownership">Ownership</a>
+      <a href="#tuning">Tuning</a>
+      <a href="#diff">Current diff</a>
+      <a href="#commit">Commit plan</a>
+    </div>
+  </nav>
+
+  <main id="main" class="page">
+    <section id="flow">
+      <div class="section-head"><span class="section-no">01 / LOOP</span><div><h2>One motor step, end to end</h2><p>Input is captured continuously, but movement decisions happen during KCC’s velocity callback. A one-shot jump remains queued until KCC finishes the whole step.</p></div></div>
+      <div class="flow" aria-label="Movement processing flow">
+        <article class="flow-step"><span class="step-no">01</span><strong>Input System</strong><p>Move, jump press, and jump release enter through the shared input actions.</p></article>
+        <article class="flow-step"><span class="step-no">02</span><strong>InputReader</strong><p>Publishes <code>MoveEvent</code>, <code>JumpEvent</code>, and <code>JumpCancelledEvent</code>.</p></article>
+        <article class="flow-step"><span class="step-no">03</span><strong>PlayerControllerV2</strong><p>Clamps input, converts it to camera-relative XZ space, and observes the KCC body.</p></article>
+        <article class="flow-step"><span class="step-no">04</span><strong>LocomotionMachine</strong><p>Resolves mode, timers, abilities, tuning, and pending operations.</p></article>
+        <article class="flow-step"><span class="step-no">05</span><strong>LocomotionOutput</strong><p>Describes target speed, acceleration, gravity, drag, jump, or teleport.</p></article>
+        <article class="flow-step"><span class="step-no">06</span><strong>KCC + Presenter</strong><p>The motor applies motion; animation reads the resulting presentation state.</p></article>
+      </div>
+    </section>
+
+    <section id="rules">
+      <div class="section-head"><span class="section-no">02 / RULES</span><div><h2>What the movement rules actually do</h2><p>There are only three locomotion modes. Responsiveness comes from timers and output policies, not extra states.</p></div></div>
+
+      <article class="rule"><div class="rule-copy"><h3>Grounded movement</h3><p>Normalized camera-relative intent is multiplied by <code>StableMoveSpeed</code>. KCC projects both current and target velocity onto the ground tangent, then eases toward the target with exponential sharpness.</p></div><div class="mini-state"><span class="state active">Grounded</span><span class="state-arrow">input × 10</span><span class="state">Ground tangent</span></div></article>
+      <article class="rule"><div class="rule-copy"><h3>Air control and falling</h3><p>Air input accelerates toward an 8-unit target without adding speed once already at the cap. A steep-contact guard prevents air input from becoming wall-climbing velocity. Falling uses doubled gravity.</p></div><div class="mini-state"><span class="state active">Airborne</span><span class="state-arrow">accel 60</span><span class="state">Capped planar</span></div></article>
+      <article class="rule"><div class="rule-copy"><h3>Jump, buffer, and coyote</h3><p>A base jump is legal while grounded or during the 0.2-second coyote window. A press is remembered for 0.15 seconds. On acceptance, KCC force-ungrounds and replaces the vertical component with jump speed.</p></div><div class="mini-state"><span class="state">Grounded</span><span class="state-arrow">press / coyote</span><span class="state active">Airborne</span></div></article>
+      <article class="rule"><div class="rule-copy"><h3>Double jump is composition</h3><p>If the base jump cannot fire, the machine asks participating ability components. <code>DoubleJumpAbility</code> consumes one extra jump and resets only after stable landing. A buffered press does not later trigger the double jump; it requires that frame’s press.</p></div><div class="mini-state"><span class="state">Airborne</span><span class="state-arrow">ability consumes 1</span><span class="state active">Air jump</span></div></article>
+      <article class="rule"><div class="rule-copy"><h3>Control blocking</h3><p>Blockers are keyed by source, so overlapping systems cannot accidentally unblock one another. Any blocker clears queued jump state and disables planar control while preserving vertical motion. Re-enabling movement removes only the <code>MovementEnabled</code> source.</p></div><div class="mini-state"><span class="state">Any mode</span><span class="state-arrow">block source</span><span class="state disabled">Disabled</span></div></article>
+      <article class="rule"><div class="rule-copy"><h3>Teleport and reset</h3><p>A validated teleport is queued into the next machine step. That step ignores input, clears coyote and jump buffer, cancels abilities, and asks the controller to apply position and rotation after KCC finishes. Test Campus reset also zeroes velocity.</p></div><div class="mini-state"><span class="state">Queued</span><span class="state-arrow">next step</span><span class="state active">Finite + controllable</span></div></article>
+
+      <details><summary>Important caveat: jump release is not variable jump height</summary><p><code>jumpHeld</code> is carried through the intent contract, but no current rule changes vertical velocity when it becomes false. It is an extension seam, not shipped short-hop behavior.</p></details>
+    </section>
+
+    <section id="ownership">
+      <div class="section-head"><span class="section-no">03 / SEAMS</span><div><h2>Three owners, one direction of travel</h2><p>The useful mental model is a decision boundary, not a collection of MonoBehaviours.</p></div></div>
+      <div class="ownership">
+        <article class="owner"><div class="owner-role">Decides</div><h3>PlayerLocomotionMachine</h3><p>Owns modes, coyote and buffer timers, profile/modifier resolution, ability evaluation, snapshots, and presentation state.</p></article>
+        <article class="owner"><div class="owner-role">Executes</div><h3>PlayerControllerV2</h3><p>Owns Unity lifecycle, input subscription, camera-space conversion, KCC observations, motor-safe velocity, collision filtering, and teleport application.</p></article>
+        <article class="owner"><div class="owner-role">Observes</div><h3>PlayerAnimationPresenter</h3><p>Reads the published state before Animator evaluation. It never decides gameplay: grounded speed drives running; airborne drives jumping; revision flags trigger particles once.</p></article>
+      </div>
+    </section>
+
+    <section id="tuning">
+      <div class="section-head"><span class="section-no">04 / PROFILE</span><div><h2>Production fallback tuning</h2><p>A valid ScriptableObject is copied into runtime data. Missing or invalid data falls back to these values.</p></div></div>
+      <div class="tuning-wrap"><table><thead><tr><th>Control</th><th>Default</th><th>Effect</th></tr></thead><tbody>
+        <tr><td>Stable move speed</td><td>10</td><td>Maximum grounded target speed</td></tr>
+        <tr><td>Air move speed</td><td>8</td><td>Maximum intended planar air speed</td></tr>
+        <tr><td>Air acceleration</td><td>60</td><td>How quickly air input changes velocity</td></tr>
+        <tr><td>Jump speed</td><td>12</td><td>Vertical influence for base and air jump</td></tr>
+        <tr><td>Jump buffer</td><td>0.15 s</td><td>How long an early press is remembered</td></tr>
+        <tr><td>Coyote time</td><td>0.20 s</td><td>How long base jump survives after a ledge</td></tr>
+        <tr><td>Gravity</td><td>−30</td><td>Base vertical acceleration</td></tr>
+        <tr><td>Fall multiplier</td><td>2×</td><td>Extra gravity while descending</td></tr>
+        <tr><td>Drag</td><td>0.1</td><td>Airborne and disabled velocity damping</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="diff">
+      <div class="section-head"><span class="section-no">05 / WORKTREE</span><div><h2>What today’s diff contains</h2><p>It does not contain the Player V2 implementation. That work is already in the local commit stack. The dirty tree is a mixture of unrelated changes and generated output.</p></div></div>
+      <div class="diff-summary"><div class="diff-stat"><b>14</b>tracked files modified</div><div class="diff-stat"><b>12</b>untracked paths</div><div class="diff-stat"><b>0</b>handwritten V2 source files changed</div></div>
+      <div class="filters" aria-label="Filter diff groups">
+        <button class="filter" type="button" data-filter="all" aria-pressed="true">All groups</button>
+        <button class="filter" type="button" data-filter="keep" aria-pressed="false">Committed</button>
+        <button class="filter" type="button" data-filter="hold" aria-pressed="false">Hold</button>
+        <button class="filter" type="button" data-filter="split" aria-pressed="false">Separate</button>
+      </div>
+      <div class="diff-list" aria-live="polite">
+        <article class="diff-item" data-status="keep"><div class="diff-top"><span class="chip keep">Committed</span><div class="file-ref">docs/tutorials/player-v2-movement.html</div></div><div><h3>This field guide</h3><p>Committed separately as self-contained documentation. It accurately describes the local movement system and records the dirty-tree boundary without changing runtime behavior.</p></div></article>
+        <article class="diff-item" data-status="hold"><div class="diff-top"><span class="chip hold">Hold</span><div class="file-ref">KCC Player Controller.prefab</div></div><div><h3>Legacy prefab mixes three concerns</h3><p>It changes slope, step, ledge, and air-speed tuning; adds a Test Campus adapter to a production prefab; and adds inactive shadow/ripple visuals. This needs ownership and Play Mode validation before any commit.</p></div></article>
+        <article class="diff-item" data-status="hold"><div class="diff-top"><span class="chip hold">Hold</span><div class="file-ref">TestCampus_Core.unity · TestCampus_Core_PlayerV2.unity</div></div><div><h3>Large generated scene rewrites</h3><p>Thousands of lines and object IDs were reordered. Since the generator now skips unchanged scenes, this looks like stale regeneration. Accept only after repeatability checks and actual scene validation.</p></div></article>
+        <article class="diff-item" data-status="split"><div class="diff-top"><span class="chip split">Separate</span><div class="file-ref">URP Settings · FlatKit presets · GraphicsSettings · QualitySettings</div></div><div><h3>Renderer migration</h3><p>New High Fidelity pipeline assets become project defaults while Balanced, Performant, and vendor example assets receive substantive changes. Potentially coherent, but broad, visual, and performance-sensitive. It deserves its own reviewed commit.</p></div></article>
+        <article class="diff-item" data-status="hold"><div class="diff-top"><span class="chip hold">Hold</span><div class="file-ref">ProjectVersion · packages-lock · CrazyMarket.slnx</div></div><div><h3>Unity and tooling churn</h3><p>The editor version string keeps the same release but changes revision; Timeline and performance-test packages bump; the generated solution gains 41 projects. Keep only if the upgrade was deliberate.</p></div></article>
+        <article class="diff-item" data-status="split"><div class="diff-top"><span class="chip split">Separate</span><div class="file-ref">.codex/improvements · .codex/skills/steady-improvement</div></div><div><h3>Local workflow state</h3><p>The board needs its branch count and validation status updated before closure. The skill is repository workflow tooling, not movement runtime, and should be committed independently if the team wants it versioned.</p></div></article>
+        <article class="diff-item" data-status="split"><div class="diff-top"><span class="chip split">Separate</span><div class="file-ref">DefaultVolumeProfile.asset.meta · URP Settings.meta</div></div><div><h3>Missing Unity metadata filled in</h3><p>These metas may be legitimate repairs, but they assign GUIDs. No current reference uses the new volume-profile GUID. Keep them with the asset group whose ownership they belong to.</p></div></article>
+      </div>
+    </section>
+
+    <section id="commit">
+      <div class="section-head"><span class="section-no">06 / HANDOFF</span><div><h2>Smallest safe way forward</h2><p>The tutorial is committed alone. Next, run the V2 acceptance pass before marking the movement slice complete. Reconcile renderer, scene, prefab, and Unity-upgrade changes as separate work.</p></div></div>
+      <div class="decision">
+        <div><h3>Commit boundary</h3><p>One documentation artifact, zero runtime files, zero generated scenes, zero project settings.</p></div>
+        <div class="commands" aria-label="Commit commands">
+          <div class="command">git add -- docs/tutorials/player-v2-movement.html</div>
+          <div class="command">git commit -m "docs(player): explain V2 movement system"</div>
+        </div>
+        <p><strong>Still required for feature closure:</strong> exercise camera-relative movement, base jump, air jump, stable-landing reset, ledge/coyote behavior, reset/teleport, and movement disable/restore in <code>TestCampus_Core_PlayerV2</code>; inspect the Console and Game view.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="page">CrazyMarket Player Controller V2 · source-checked against local <code>main</code> on 2026-08-23</div></footer>
+  <script>
+    const filters = [...document.querySelectorAll('.filter')];
+    const items = [...document.querySelectorAll('.diff-item')];
+    filters.forEach((button) => button.addEventListener('click', () => {
+      const selected = button.dataset.filter;
+      filters.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button)));
+      items.forEach((item) => { item.hidden = selected !== 'all' && item.dataset.status !== selected; });
+    }));
+  </script>
+</body>
+</html>

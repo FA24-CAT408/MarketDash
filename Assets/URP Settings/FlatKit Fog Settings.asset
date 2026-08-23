@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a6f656ab8114e939b71b289ffd9d7b2, type: 3}
-  m_Name: '[FlatKit] Example Fog Settings'
+  m_Name: FlatKit Fog Settings
   m_EditorClassIdentifier: 
   useDistance: 0
   distanceGradient:
@@ -84,7 +84,7 @@ MonoBehaviour:
   distanceHeightBlend: 0.5
   renderEvent: 550
   applyInSceneView: 1
-  effectMaterial: {fileID: 1928039045320840455}
+  effectMaterial: {fileID: 0}
 --- !u!21 &1928039045320840455
 Material:
   serializedVersion: 8

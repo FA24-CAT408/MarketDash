@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FlatKitFog
   m_EditorClassIdentifier: 
   m_Active: 1
-  settings: {fileID: 11400000, guid: 709f11a7f3c4041caa4ef136ea32d874, type: 2}
+  settings: {fileID: 11400000, guid: 743951f6188c93b438c5a58cb59614e8, type: 2}
 --- !u!114 &-7027187745363092568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
-  m_Name: '[FlatKit] Example Renderer'
+  m_Name: URP-HighFidelity-Renderer
   m_EditorClassIdentifier: 
   debugShaders:
     debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7,
@@ -268,4 +268,4 @@ MonoBehaviour:
   m_Name: FlatKitOutline
   m_EditorClassIdentifier: 
   m_Active: 1
-  settings: {fileID: 11400000, guid: 755ceca864f09464f924786464a00487, type: 2}
+  settings: {fileID: 11400000, guid: e05998046ecfda849a039ed1853ee058, type: 2}
