@@ -1,111 +1,81 @@
 ---
 name: crazy-market-review-loop
-description: Run a bounded local review, fix, and Unity-validation loop for CrazyMarket stack branches. Use when reviewing or finishing a feature, splitting a large change, handing a diff to reviewer agents, validating component architecture and readability, exercising Test Campus behavior in Unity, or showing live review progress in the local dashboard. Keep all branches, findings, and validation local; do not push or create PRs.
+description: Use for explicit feature or stack-branch completion or review, substantial gameplay or generated-content changes, or requested Test Campus validation. Small fixes, alignment, documentation, skill edits, and read-only questions use targeted checks instead.
 ---
 
 # CrazyMarket Review Loop
 
-Use the project tool at `Tools/LocalReview/review_loop.py`. Read
-`references/acceptance-gates.md` before deciding that a branch is complete.
+Use this skill for a formal local review, fix, and Unity-validation handoff. Use
+`Tools/LocalReview/review_loop.py` and read `references/acceptance-gates.md`
+before declaring a formal branch complete.
 
-## Start
+For explicit architecture review or substantial cross-component changes, also
+read and apply `../thermo-nuclear-code-quality-review/SKILL.md`. Routine feature
+validation uses the focused Unity checks below.
 
-1. Identify the immediate parent branch in `gh stack view`.
-2. Initialize state and run preflight:
+## Choose the path
 
-   ```bash
-   python3 Tools/LocalReview/review_loop.py init --base <parent-branch>
-   python3 Tools/LocalReview/review_loop.py preflight
-   ```
+- **Targeted change:** inspect the diff, run the narrowest relevant check, and
+  report what was verified. Do not initialize review state, start the dashboard,
+  or spawn reviewers.
+- **Feature change:** validate the affected behavior in Unity and provide
+  focused Play Mode and visual evidence.
+- **Formal branch review:** run the bounded review loop below.
 
-3. Start the dashboard if it is not already running:
+## Formal branch review
 
-   ```bash
-   python3 Tools/LocalReview/review_loop.py dashboard
-   ```
+1. Define one feature purpose, the intended file scope, the target scene, the
+   changed happy path, the reset or boundary path, and any expected generated
+   outputs.
+2. Inspect `git status` and keep unrelated dirty work outside the review scope.
+   Use `init --base <parent-branch>` and `preflight` only for a formal review.
+3. Start the dashboard only for the formal loop or when the user requests it.
+   If started, open it visibly and keep its phase, findings, and checks current.
+   Dashboard state is evidence of the workflow, not proof of behavior.
+4. Run at most three review rounds. Each formal round uses two fresh,
+   read-only reviewers: `architecture` and `correctness`. Prefer Fable for
+   difficult reasoning and review when it is available. Otherwise use the
+   strongest available reviewer and record the actual backend, model, and
+   effort. Pause for approval only when the user explicitly requires a
+   particular model. Never label a reviewer as Fable unless it performed the
+   review.
+5. Reviewers receive the declared scope, raw diff, requirements, `AGENTS.md`,
+   and their rubric. They do not edit files, run Unity, inspect dashboard
+   conclusions, or read another reviewer's report. Keep the reviewed scope
+   unchanged while both passes run.
+6. Normalize findings as `blocker`, `should-fix`, or `suggestion`. Fix only
+   blockers and should-fix items in the formal loop; leave suggestions
+   documented unless the user chooses them.
 
-   This is a long-running local server. Start it in a persistent terminal or
-   background tool session so the review can continue alongside it. Always
-   open the graph visibly: use the T3 shared preview first; if it is unavailable,
-   let the command open the machine's default browser. Do not continue with a
-   hidden dashboard. Verify that the page shows the current branch and phase.
+## Unity validation
 
-Keep the dashboard state current with the `phase`, `agent`, `finding`, and
-`check` commands. The dashboard is evidence of work, not a substitute for it.
+For production gameplay or presentation changes:
 
-## Review round
+- compile the project;
+- enter the actual affected production scene in Play Mode;
+- exercise the changed happy path and one reset or boundary path;
+- inspect the Console and Game view;
+- visually inspect a representative capture for camera, UI, scene, prefab, or
+  presentation changes.
 
-Run at most three rounds. For each round:
+Test Campus is supporting evidence only. It does not replace production
+validation. If Unity is unavailable or the target scene was not exercised,
+report the work as `unverified` rather than complete.
 
-1. Mark `review` running.
-2. Spawn two fresh, read-only reviewers in parallel when agent tools are
-   available. Pass only the base/head range, raw diff, requirements, and
-   project instructions. Do not leak earlier conclusions.
-3. Use these roles:
-   - `architecture`: component responsibilities, ownership, dependency
-     direction, public contracts, duplication, and understandability.
-   - `correctness`: Unity lifecycle, serialization/GUID safety, scene/build
-     safety, regressions, unnecessary scope, and reproducibility.
-4. Register each reviewer before spawning it, then mark it passed, failed, or
-   blocked when it returns:
+Run `unity-smoke` as a baseline, then exercise the feature-specific path with
+the applicable Unity action or live Editor interaction. Record the behavior
+evidence separately before marking the formal workflow done.
 
-   ```bash
-   python3 Tools/LocalReview/review_loop.py agent architecture-r1 running --role architecture --task "Review component boundaries and understandability"
-   python3 Tools/LocalReview/review_loop.py agent correctness-r1 running --role correctness --task "Review Unity correctness, safety, and scope"
-   ```
+Regenerate only when the generator or its inputs changed, or when regeneration
+is explicitly part of the task. When generated output changes, check
+repeatability and inspect diff size and content before accepting it. Use
+`--build-guard` for build-behavior changes.
 
-   Spawn both only after registration. Give each the `<base>...HEAD` range,
-   raw diff, requirements, and `AGENTS.md`; forbid edits and Unity execution.
-   When each returns, rerun its `agent` command with `passed`, `failed`, or
-   `blocked` and a short `--note`.
+## Handoff and stopping
 
-5. Normalize findings to `blocker`, `should-fix`, or `suggestion`. Record them
-   in the dashboard. Missing new tests is not a finding unless the user opts in
-   to tests.
-
-   ```bash
-   python3 Tools/LocalReview/review_loop.py finding ARCH-001 open --severity should-fix --title "Short actionable finding" --owner architecture-r1
-   python3 Tools/LocalReview/review_loop.py finding ARCH-001 resolved --owner main
-   ```
-6. Deduplicate the reviews. Main agent fixes only blockers and should-fix
-   items. Reviewers never edit files.
-
-Prefer the installed Open Code Review artifacts as additional evidence, not as
-a replacement for fresh reviewer agents. Never post OCR output to GitHub.
-
-## Fix and validate
-
-Keep fixes small and on the branch that owns the component. After committing
-there, run `gh stack rebase --no-trunk --upstack` to rebase its descendants
-locally. Never push.
-
-After changes, run Unity validation:
-
-```bash
-python3 Tools/LocalReview/review_loop.py unity-smoke
-```
-
-Add `--regenerate` when the generator, scenes, prefabs, or their inputs changed.
-Add `--build-guard` when build behavior changed. Adjust `--expected-scenes` and
-`--zone` when validating a lower stack branch that intentionally contains only
-part of the campus.
-
-Inspect all files Unity changed. Preserve intended regenerated assets and remove
-only known validation side effects. Do not automatically discard dirty user
-work.
-
-## Iterate and stop
-
-Start another round only when a blocker or should-fix item required code
-changes:
-
-```bash
-python3 Tools/LocalReview/review_loop.py next-round
-```
-
-Stop successfully only when every acceptance gate passes. Stop after three
-rounds and ask the user for direction rather than chasing perfection. Leave
-suggestions documented unless the user chooses them.
-
-Give the user a short branch summary: purpose, components, data flow, fixes,
-Unity behavior exercised, and any deferred suggestions.
+- Do not commit or rebase automatically. Commit and rebase only for an
+  explicitly requested stack handoff.
+- Stop successfully only when the formal acceptance gates pass. Stop after
+  three rounds and ask the user for direction rather than chasing perfection.
+- Summarize the purpose, changed components, behavior exercised, visual
+  evidence, unverified areas, fixes, and deferred suggestions.
