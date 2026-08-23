@@ -20,3 +20,17 @@ Keep review branches, findings, and validation local. Do not push or create PRs
 unless the user separately requests publishing. Do not add tests unless the
 user requests them. Run the required Unity smoke validation for relevant
 changes, and stop after three review/fix rounds.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in GitHub Issues for `FA24-CAT408/MarketDash`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default five-role triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This repository uses a single-context domain-documentation layout. See `docs/agents/domain.md`.

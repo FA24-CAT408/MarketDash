@@ -8,8 +8,10 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import threading
 import time
 import webbrowser
 from datetime import datetime, timezone
@@ -25,8 +27,12 @@ STATE_DIR = ROOT / ".local-review"
 STATE_PATH = STATE_DIR / "state.json"
 EVIDENCE_DIR = STATE_DIR / "evidence"
 DASHBOARD_PATH = Path(__file__).with_name("dashboard.html")
+AGENT_GRAPH_PATH = Path(__file__).with_name("agent_graph.js")
 PHASES = ("scope", "review", "fix", "unity", "done")
 STATUSES = ("queued", "running", "passed", "failed", "blocked", "skipped")
+CHANGE_SUMMARY_TTL_SECONDS = 5.0
+_change_summary_cache: dict[tuple[str | None, str | None], tuple[float, dict[str, Any]]] = {}
+_change_summary_lock = threading.Lock()
 
 MOVEMENT_CHANGELOG = (
     {
@@ -166,6 +172,39 @@ UI_CHANGELOG = (
     },
 )
 
+MAIN_MENU_UI_TOOLKIT_CHANGELOG = (
+    {
+        "type": "NEW",
+        "title": "The Main Menu has an isolated UI Toolkit prototype",
+        "detail": "A cloned scene replaces the legacy canvases with a UIDocument while the shipping Main Menu and Build Settings remain unchanged.",
+        "file": "Assets/Scenes/Levels/Main Menu UI Toolkit.unity",
+    },
+    {
+        "type": "NEW",
+        "title": "Menu structure and styling are native UI Toolkit assets",
+        "detail": "UXML owns the Main and Settings hierarchy, USS owns presentation and focus states, and one presenter binds runtime behavior.",
+        "file": "Assets/UI/MainMenu/MainMenu.uxml · Assets/UI/MainMenu/MainMenu.uss · Assets/Scripts/UI/MainMenu/MainMenuUiToolkitPresenter.cs",
+    },
+    {
+        "type": "CHANGED",
+        "title": "The menu card now anchors to the right",
+        "detail": "Main and Settings use the right edge so the employee, counter, and left-side store composition remain visible behind the overlay.",
+        "file": "Assets/UI/MainMenu/MainMenu.uss",
+    },
+    {
+        "type": "FIXED",
+        "title": "Fades cannot strand input or keyboard focus",
+        "detail": "Explicit Entering, Ready, and Exiting phases gate actions, recover interrupted transitions, and restore focus after every screen change.",
+        "file": "Assets/Scripts/UI/MainMenu/MainMenuUiToolkitPresenter.cs",
+    },
+    {
+        "type": "VERIFIED",
+        "title": "Menu behavior passed Unity and fallback review gates",
+        "detail": "Settings, navigation focus, interrupted fades, Level 1 loading, and a clean Console were verified; architecture and correctness fallback reviews pass.",
+        "file": "Local review session 20260811-095212-stack-main-menu-ui-toolkit",
+    },
+)
+
 INTEGRATION_CHANGELOG = (
     {
         "type": "FIXED",
@@ -223,6 +262,7 @@ def default_state() -> dict[str, Any]:
         "branch": None,
         "base": None,
         "round": 1,
+        "reviewSnapshots": {},
         "currentPhase": "scope",
         "phases": {phase: "queued" for phase in PHASES},
         "agents": [],
@@ -240,13 +280,21 @@ def load_state(required: bool = True) -> dict[str, Any]:
         if required:
             raise RuntimeError("No review session. Run `review_loop.py init --base <branch>` first.")
         return default_state()
-    return json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    state.setdefault("reviewSnapshots", {})
+    for agent in state.get("agents", []):
+        if agent.get("round") is None:
+            match = re.search(r"-r(\d+)$", agent.get("id", ""))
+            if match:
+                agent["round"] = int(match.group(1))
+    return reconcile_completion(state)
 
 
 def save_state(state: dict[str, Any]) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     state["updatedAt"] = now()
     refresh_git_state(state)
+    reconcile_completion(state)
     temporary = STATE_PATH.with_suffix(".tmp")
     temporary.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
     temporary.replace(STATE_PATH)
@@ -359,19 +407,13 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
         )
 
     file_totals: dict[str, dict[str, Any]] = {}
-    output = git("diff", "--numstat", base, "--", check=False)
-    for line in output.splitlines():
-        parts = line.split("\t", 2)
-        if len(parts) != 3:
-            continue
-        added, deleted, path = parts
+    for change in review_scope(base):
+        path = change["path"]
         if not safe_path(path):
             continue
         item = file_totals.setdefault(path, {"path": path, "added": 0, "deleted": 0})
-        if added.isdigit():
-            item["added"] = int(added)
-        if deleted.isdigit():
-            item["deleted"] = int(deleted)
+        item["added"] = change["added"]
+        item["deleted"] = change["deleted"]
 
     files = []
     for item in sorted(file_totals.values(), key=lambda value: value["path"]):
@@ -497,9 +539,165 @@ def collect_change_summary(state: dict[str, Any]) -> dict[str, Any]:
     return {"files": files, "snippets": unique_snippets[:8]}
 
 
+def cached_change_summary(state: dict[str, Any]) -> dict[str, Any]:
+    """Bound repeated dashboard polls without hiding working-tree changes for long."""
+    key = (state.get("base"), state.get("branch"))
+    with _change_summary_lock:
+        cached = _change_summary_cache.get(key)
+        if cached and time.monotonic() - cached[0] < CHANGE_SUMMARY_TTL_SECONDS:
+            return cached[1]
+        summary = collect_change_summary(state)
+        _change_summary_cache.clear()
+        _change_summary_cache[key] = (time.monotonic(), summary)
+        return summary
+
+
 def validate_status(status: str) -> None:
     if status not in STATUSES:
         raise RuntimeError(f"Status must be one of: {', '.join(STATUSES)}")
+
+
+def review_snapshot() -> str:
+    """Hash HEAD, its complete tracked diff, and every non-ignored untracked file."""
+    digest = hashlib.sha256()
+    digest.update(git("rev-parse", "HEAD").encode())
+    tracked = subprocess.run(
+        ["git", "diff", "--binary", "HEAD"], cwd=ROOT, capture_output=True, check=True
+    ).stdout
+    digest.update(tracked)
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    ).stdout
+    for raw_path in sorted(path for path in untracked.split(b"\0") if path):
+        relative = Path(os.fsdecode(raw_path))
+        digest.update(b"\0path\0")
+        digest.update(raw_path)
+        if (ROOT / relative).is_file():
+            digest.update(b"\0content\0")
+            digest.update((ROOT / relative).read_bytes())
+    return digest.hexdigest()
+
+
+def review_scope(base: str) -> list[dict[str, Any]]:
+    """Return every base-to-worktree change, including non-ignored untracked files."""
+    changes: dict[str, dict[str, Any]] = {}
+    output = git("diff", "--numstat", "--no-renames", base, "--", check=False)
+    for line in output.splitlines():
+        fields = line.split("\t", 2)
+        if len(fields) != 3:
+            continue
+        added, deleted, path = fields
+        changes[path] = {
+            "path": path,
+            "added": int(added) if added.isdigit() else 0,
+            "deleted": int(deleted) if deleted.isdigit() else 0,
+            "untracked": False,
+        }
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    ).stdout
+    for raw_path in (path for path in untracked.split(b"\0") if path):
+        path = os.fsdecode(raw_path)
+        candidate = ROOT / path
+        added = 0
+        if candidate.is_file():
+            data = candidate.read_bytes()
+            added = data.count(b"\n") + int(bool(data) and not data.endswith(b"\n"))
+        changes[path] = {
+            "path": path,
+            "added": added,
+            "deleted": 0,
+            "untracked": True,
+        }
+    return [changes[path] for path in sorted(changes)]
+
+
+def review_scope_paths(base: str) -> list[str]:
+    return [change["path"] for change in review_scope(base)]
+
+
+def completion_problems(state: dict[str, Any]) -> list[str]:
+    problems: list[str] = []
+    expected_snapshot = state.get("reviewSnapshots", {}).get(str(state["round"]))
+    if not expected_snapshot:
+        problems.append("current round has no review snapshot")
+    elif review_snapshot() != expected_snapshot:
+        problems.append("working tree no longer matches the current-round review snapshot")
+    if state["phases"].get("review") != "passed":
+        problems.append("review phase has not passed")
+    round_suffix = f"-r{state['round']}"
+    current_agents = [
+        agent for agent in state["agents"]
+        if agent.get("round") == state["round"] or agent["id"].endswith(round_suffix)
+    ]
+    for role in ("architecture", "correctness"):
+        passed_agents = [
+            agent for agent in current_agents
+            if agent.get("role") == role
+            and agent.get("status") == "passed"
+        ]
+        if not passed_agents:
+            problems.append(f"current-round {role} reviewer has not passed")
+        elif expected_snapshot and not any(
+            agent.get("reviewSnapshot") == expected_snapshot for agent in passed_agents
+        ):
+            problems.append(f"current-round {role} reviewer did not cover the recorded snapshot")
+    unresolved = [
+        finding["id"]
+        for finding in state["findings"]
+        if finding.get("severity") in ("blocker", "should-fix") and finding.get("status") != "resolved"
+    ]
+    if unresolved:
+        problems.append(f"unresolved findings: {', '.join(unresolved)}")
+    unity_status = state["phases"].get("unity")
+    if unity_status == "passed":
+        required_checks = (
+            "unity-smoke",
+            "compile",
+            "campus-validator",
+            "play-mode",
+            "reset-probe",
+            "feature-behavior",
+        )
+        for check in required_checks:
+            if state["checks"].get(check, {}).get("status") != "passed":
+                problems.append(f"{check} check has not passed")
+        changed_paths = review_scope_paths(state["base"])
+        regeneration_required = any(
+            path.endswith((".unity", ".prefab"))
+            or (path.endswith(".cs") and ("Generator" in path or "Builder" in path))
+            for path in changed_paths
+        )
+        if regeneration_required and state["checks"].get("generation", {}).get("status") != "passed":
+            problems.append("generation check has not passed for generated-content changes")
+    elif unity_status == "skipped":
+        if not state.get("unitySkipReason"):
+            problems.append("skipped Unity phase needs a reason")
+    else:
+        problems.append("Unity phase is neither passed nor skipped")
+    if state["checks"].get("preflight", {}).get("status") != "passed":
+        problems.append("preflight has not passed")
+    return problems
+
+
+def reconcile_completion(state: dict[str, Any]) -> dict[str, Any]:
+    if state.get("phases", {}).get("done") != "passed":
+        state.pop("completionProblems", None)
+        return state
+    problems = completion_problems(state)
+    if problems:
+        state["phases"]["done"] = "queued"
+        state["completionProblems"] = problems
+    else:
+        state.pop("completionProblems", None)
+    return state
 
 
 def command_init(args: argparse.Namespace) -> None:
@@ -520,20 +718,20 @@ def command_init(args: argparse.Namespace) -> None:
 
 
 def handwritten_metrics(base: str) -> dict[str, int]:
-    result = git("diff", "--numstat", f"{base}...HEAD")
-    added_files = set(git("diff", "--name-only", "--diff-filter=A", f"{base}...HEAD").splitlines())
+    changes = review_scope(base)
+    added_files = set(
+        git("diff", "--name-only", "--no-renames", "--diff-filter=A", base).splitlines()
+    )
+    added_files.update(change["path"] for change in changes if change["untracked"])
     source_files = 0
     additions = 0
     runtime_components = 0
-    for line in result.splitlines():
-        fields = line.split("\t", 2)
-        if len(fields) != 3 or not fields[0].isdigit():
-            continue
-        path = fields[2]
+    for change in changes:
+        path = change["path"]
         if not path.endswith(".cs"):
             continue
         source_files += 1
-        additions += int(fields[0])
+        additions += change["added"]
         if path in added_files and "/Runtime/" in path:
             runtime_components += 1
     return {"sourceFiles": source_files, "sourceAdditions": additions, "runtimeComponents": runtime_components}
@@ -573,7 +771,7 @@ def command_preflight(args: argparse.Namespace) -> None:
     state["phases"]["review"] = "queued"
     set_check(state, "preflight", "failed" if problems else "passed", "; ".join(problems))
     print(json.dumps({"branch": branch, "base": base, "metrics": metrics, "warnings": problems}, indent=2))
-    print(git("diff", "--stat", f"{base}...HEAD"))
+    print(git("diff", "--stat", base))
     if problems:
         raise RuntimeError("Preflight failed.")
 
@@ -581,8 +779,21 @@ def command_preflight(args: argparse.Namespace) -> None:
 def command_phase(args: argparse.Namespace) -> None:
     validate_status(args.status)
     state = load_state()
+    if args.name == "done" and args.status == "passed":
+        problems = completion_problems(state)
+        if problems:
+            raise RuntimeError("Cannot mark done: " + "; ".join(problems))
+    elif args.name in ("review", "fix", "unity") and args.status in ("queued", "running", "failed", "blocked"):
+        state["phases"]["done"] = "queued"
     state["phases"][args.name] = args.status
     state["currentPhase"] = args.name
+    if args.name == "unity":
+        if args.status == "skipped":
+            if not args.note:
+                raise RuntimeError("Skipping Unity requires a reason in --note.")
+            state["unitySkipReason"] = args.note
+        else:
+            state.pop("unitySkipReason", None)
     if args.note:
         state["notes"].append({"phase": args.name, "text": args.note, "at": now()})
     save_state(state)
@@ -593,15 +804,61 @@ def command_agent(args: argparse.Namespace) -> None:
     state = load_state()
     agent = next((item for item in state["agents"] if item["id"] == args.id), None)
     if agent is None:
-        if not args.role or not args.task:
-            raise RuntimeError("New agents require --role and --task.")
-        agent = {"id": args.id, "role": args.role, "task": args.task}
+        if not args.role or not args.task or not args.backend or not args.model or not args.effort:
+            raise RuntimeError("New agents require --role, --task, --backend, --model, and --effort.")
+        candidate = {
+            "id": args.id,
+            "parent": args.parent or "main",
+            "round": state["round"],
+            "role": args.role,
+            "task": args.task,
+            "backend": args.backend,
+            "model": args.model,
+            "effort": args.effort,
+            "fallback": args.fallback or "",
+            "note": f"fallback: {args.fallback}" if args.fallback else "",
+        }
+        agent = candidate
         state["agents"].append(agent)
+    proposed_parent = args.parent or agent.get("parent")
+    if proposed_parent:
+        known_ids = {item["id"] for item in state["agents"]}
+        if proposed_parent != "main" and proposed_parent not in known_ids:
+            raise RuntimeError(f"Agent parent does not exist: {proposed_parent}")
+        if proposed_parent == args.id:
+            raise RuntimeError(f"Agent {args.id} cannot be its own parent.")
+        parent_by_id = {item["id"]: item.get("parent") for item in state["agents"]}
+        parent_by_id[args.id] = proposed_parent
+        ancestor = proposed_parent
+        visited = {args.id}
+        while ancestor and ancestor != "main":
+            if ancestor in visited:
+                raise RuntimeError(f"Agent parent would create a cycle at: {ancestor}")
+            visited.add(ancestor)
+            ancestor = parent_by_id.get(ancestor)
+    for field in ("backend", "model", "effort", "fallback", "parent"):
+        value = getattr(args, field)
+        if value and agent.get(field) not in (None, value):
+            raise RuntimeError(f"Agent {args.id} {field} is immutable once registered.")
+        if value:
+            agent[field] = value
     if args.role:
         agent["role"] = args.role
     if args.task:
         agent["task"] = args.task
-    agent.update({"status": args.status, "note": args.note or "", "updatedAt": now()})
+    if args.note and args.note not in agent.get("note", ""):
+        agent["note"] = " · ".join(filter(None, (agent.get("note", ""), args.note)))
+    if args.status in ("passed", "failed", "blocked"):
+        expected_snapshot = state.get("reviewSnapshots", {}).get(str(state["round"]))
+        if not expected_snapshot:
+            raise RuntimeError("Run review-snapshot before accepting a reviewer result.")
+        current_snapshot = review_snapshot()
+        if current_snapshot != expected_snapshot:
+            raise RuntimeError(
+                "Reviewer result is stale: working tree does not match the recorded round snapshot."
+            )
+        agent["reviewSnapshot"] = expected_snapshot
+    agent.update({"status": args.status, "updatedAt": now()})
     save_state(state)
 
 
@@ -633,8 +890,23 @@ def command_round(_: argparse.Namespace) -> None:
     state["currentPhase"] = "review"
     state["phases"]["review"] = "running"
     state["phases"]["fix"] = "queued"
-    state["agents"] = []
+    state["phases"]["done"] = "queued"
     save_state(state)
+
+
+def command_review_snapshot(_: argparse.Namespace) -> None:
+    state = load_state()
+    digest = review_snapshot()
+    snapshots = state.setdefault("reviewSnapshots", {})
+    round_key = str(state["round"])
+    expected = snapshots.get(round_key)
+    if expected and expected != digest:
+        raise RuntimeError(
+            f"Review snapshot changed for round {round_key}: expected {expected}, got {digest}."
+        )
+    snapshots[round_key] = digest
+    save_state(state)
+    print(digest)
 
 
 def unity_command(name: str, *, timeout: int = 60, **parameters: Any) -> Any:
@@ -848,6 +1120,10 @@ var panel = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Scr
 var gameplayHud = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.VisualElement>(document.rootVisualElement, "gameplay-hud");
 var playerController = controller.PlayerRoot.GetComponent("KCCPlayerController");
 var canMoveField = playerController == null ? null : playerController.GetType().GetField("canMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+if (playerController == null) {
+    playerController = controller.PlayerRoot.GetComponent<CrazyMarket.Player.V2.Unity.PlayerControllerV2>();
+    canMoveField = playerController == null ? null : playerController.GetType().GetField("movementEnabled", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+}
 var canMove = canMoveField == null || (bool)canMoveField.GetValue(playerController);
 return new { success = panel.resolvedStyle.display == UnityEngine.UIElements.DisplayStyle.Flex && !canMove,
     panel = panel.resolvedStyle.display.ToString(), gameplayHud = gameplayHud.resolvedStyle.display.ToString(),
@@ -865,6 +1141,10 @@ var panel = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Scr
 var gameplayHud = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.VisualElement>(document.rootVisualElement, "gameplay-hud");
 var playerController = controller.PlayerRoot.GetComponent("KCCPlayerController");
 var canMoveField = playerController == null ? null : playerController.GetType().GetField("canMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+if (playerController == null) {
+    playerController = controller.PlayerRoot.GetComponent<CrazyMarket.Player.V2.Unity.PlayerControllerV2>();
+    canMoveField = playerController == null ? null : playerController.GetType().GetField("movementEnabled", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+}
 var canMove = canMoveField == null || (bool)canMoveField.GetValue(playerController);
 return new { success = panel.resolvedStyle.display == UnityEngine.UIElements.DisplayStyle.None && canMove,
     panel = panel.resolvedStyle.display.ToString(), gameplayHud = gameplayHud.resolvedStyle.display.ToString(), canMove = canMove };
@@ -1011,6 +1291,13 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
     state = load_state()
     state["currentPhase"] = "unity"
     state["phases"]["unity"] = "running"
+    state["phases"]["done"] = "queued"
+    set_check(
+        state,
+        "feature-behavior",
+        "queued",
+        "Exercise the changed happy path and one reset/boundary path before marking done.",
+    )
     state["evidence"] = []
     save_state(state)
     before_status = git("status", "--porcelain=v1")
@@ -1095,8 +1382,8 @@ def command_unity_smoke(args: argparse.Namespace) -> None:
             set_check(state, "build-guard", "skipped", "Use --build-guard when build behavior changed.")
 
         state["phases"]["unity"] = "passed"
-        state["phases"]["done"] = "passed"
-        state["currentPhase"] = "done"
+        state["phases"]["done"] = "queued"
+        state["currentPhase"] = "unity"
         set_check(state, "unity-smoke", "passed", "Unity smoke and screenshot timeline completed.")
         save_state(state)
         after_status = git("status", "--porcelain=v1")
@@ -1512,6 +1799,36 @@ def command_video_evidence(args: argparse.Namespace) -> None:
     print(source)
 
 
+def command_image_evidence(args: argparse.Namespace) -> None:
+    state = load_state()
+    source = Path(args.file).resolve()
+    if source.suffix.lower() != ".png" or not source.is_file() or source.stat().st_size == 0:
+        raise RuntimeError(f"Image must be a non-empty PNG: {source}")
+
+    session_dir = (EVIDENCE_DIR / state["session"]).resolve()
+    session_dir.mkdir(parents=True, exist_ok=True)
+    slug = re.sub(r"[^a-z0-9]+", "-", args.label.lower()).strip("-") or "capture"
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()[:8]
+    destination = session_dir / f"{slug}-{digest}.png"
+    if source != destination:
+        shutil.copy2(source, destination)
+
+    state["evidence"] = [
+        item for item in state.get("evidence", [])
+        if not (item.get("group") == args.group and item.get("label") == args.label)
+    ]
+    state["evidence"].append({
+        "label": args.label,
+        "view": args.view,
+        "phase": state.get("currentPhase", "done"),
+        "url": f"/evidence/{state['session']}/{destination.name}",
+        "capturedAt": now(),
+        "group": args.group,
+    })
+    save_state(state)
+    print(destination)
+
+
 class DashboardHandler(SimpleHTTPRequestHandler):
     def _evidence_file(self) -> tuple[Path, str] | None:
         if not self.path.startswith("/evidence/"):
@@ -1595,12 +1912,13 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/state":
             payload = load_state(required=False)
-            payload["changes"] = collect_change_summary(payload)
+            payload["changes"] = cached_change_summary(payload)
             changelogs = {
                 "stack/test-campus-movement": MOVEMENT_CHANGELOG,
                 "stack/test-campus-lighting": LIGHTING_CHANGELOG,
                 "stack/test-campus-npc-interaction": NPC_CHANGELOG,
                 "stack/test-campus-ui": UI_CHANGELOG,
+                "stack/main-menu-ui-toolkit": MAIN_MENU_UI_TOOLKIT_CHANGELOG,
                 "stack/test-campus-integration": INTEGRATION_CHANGELOG,
             }
             payload["changelog"] = changelogs.get(payload.get("branch"), ())
@@ -1624,6 +1942,19 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+        if self.path == "/agent-graph.js":
+            try:
+                body = AGENT_GRAPH_PATH.read_bytes()
+            except FileNotFoundError:
+                self.send_error(404)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/javascript; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         self.send_error(404)
 
     def do_HEAD(self) -> None:  # noqa: N802
@@ -1634,6 +1965,18 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             size = DASHBOARD_PATH.stat().st_size
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(size))
+            self.end_headers()
+            return
+        if self.path == "/agent-graph.js":
+            try:
+                size = AGENT_GRAPH_PATH.stat().st_size
+            except FileNotFoundError:
+                self.send_error(404)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/javascript; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(size))
             self.end_headers()
@@ -1683,6 +2026,11 @@ def parser() -> argparse.ArgumentParser:
     agent.add_argument("--role")
     agent.add_argument("--task")
     agent.add_argument("--note")
+    agent.add_argument("--backend")
+    agent.add_argument("--model")
+    agent.add_argument("--effort")
+    agent.add_argument("--fallback")
+    agent.add_argument("--parent", help="ID of the agent that spawned this reviewer; defaults to main.")
     agent.set_defaults(func=command_agent)
 
     check = subcommands.add_parser("check", help="Record a deterministic check.")
@@ -1701,6 +2049,11 @@ def parser() -> argparse.ArgumentParser:
 
     next_round = subcommands.add_parser("next-round", help="Start another bounded review round.")
     next_round.set_defaults(func=command_round)
+
+    snapshot = subcommands.add_parser(
+        "review-snapshot", help="Hash HEAD, the tracked diff, and non-ignored untracked files."
+    )
+    snapshot.set_defaults(func=command_review_snapshot)
 
     smoke = subcommands.add_parser("unity-smoke", help="Run connected-Editor Unity validation.")
     smoke.add_argument("--scene", default="Assets/TestCampus/Scenes/TestCampus_Core.unity")
@@ -1749,6 +2102,13 @@ def parser() -> argparse.ArgumentParser:
     video.add_argument("--label", required=True)
     video.add_argument("--group", default="feature-video")
     video.set_defaults(func=command_video_evidence)
+
+    image = subcommands.add_parser("image-evidence", help="Register a PNG screenshot in the dashboard.")
+    image.add_argument("--file", required=True)
+    image.add_argument("--label", required=True)
+    image.add_argument("--group", default="feature-screenshots")
+    image.add_argument("--view", default="Game + UI Toolkit")
+    image.set_defaults(func=command_image_evidence)
 
     dashboard = subcommands.add_parser("dashboard", help="Serve the live local dashboard.")
     dashboard.add_argument("--host", default="127.0.0.1")

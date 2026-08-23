@@ -43,13 +43,12 @@ namespace CrazyMarket.Player.V2.Editor
 
         private static PlayerProfile BuildProfileFromCurrentLegacyPrefab()
         {
-            LocomotionTuning tuning = ReadLegacyLocomotionTuning();
             PlayerProfile profile = AssetDatabase.LoadAssetAtPath<PlayerProfile>(ProfilePath);
-            if (profile == null)
-            {
-                profile = ScriptableObject.CreateInstance<PlayerProfile>();
-                AssetDatabase.CreateAsset(profile, ProfilePath);
-            }
+            if (profile != null) return profile;
+
+            LocomotionTuning tuning = ReadLegacyLocomotionTuning();
+            profile = ScriptableObject.CreateInstance<PlayerProfile>();
+            AssetDatabase.CreateAsset(profile, ProfilePath);
 
             SerializedObject serialized = new SerializedObject(profile);
             serialized.FindProperty("profileId").stringValue = "Production";
@@ -109,50 +108,56 @@ namespace CrazyMarket.Player.V2.Editor
             if (AssetDatabase.LoadAssetAtPath<GameObject>(SourcePrefab) == null)
                 throw new BuildFailedException("Missing source KCC player prefab at " + SourcePrefab + ".");
 
+            bool updatingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(OutputPrefab) != null;
             GameObject root = null;
             try
             {
-                // Always load the current legacy prefab. This preserves its current
-                // KCC settings and child hierarchy, including intentional shadow edits.
-                root = PrefabUtility.LoadPrefabContents(SourcePrefab);
+                // Seed the derived prefab from the legacy hierarchy once, then update
+                // that asset in place. Rebuilding the complete nested hierarchy makes
+                // Unity reconcile duplicate child names using transient object IDs,
+                // producing a different (but equivalent) YAML file on every run.
+                root = PrefabUtility.LoadPrefabContents(updatingExistingPrefab ? OutputPrefab : SourcePrefab);
                 KCCPlayerController legacy = root.GetComponent<KCCPlayerController>();
-                if (legacy == null)
+                if (!updatingExistingPrefab && legacy == null)
                     throw new BuildFailedException("Missing legacy KCCPlayerController on " + SourcePrefab + ".");
 
-                ParticleSystem legacyJumpParticles = legacy.JumpParticles;
-                List<Collider> legacyIgnoredColliders = legacy.IgnoredColliders == null
+                ParticleSystem legacyJumpParticles = legacy == null ? null : legacy.JumpParticles;
+                List<Collider> legacyIgnoredColliders = legacy == null || legacy.IgnoredColliders == null
                     ? new List<Collider>()
                     : new List<Collider>(legacy.IgnoredColliders);
 
                 RemoveComponents<KCCPlayerController>(root);
                 RemoveComponents<TestCampusPlayerAdapter>(root);
-                RemoveComponents<TestCampusPlayerV2Bridge>(root);
                 RemoveComponents<PlayerCollisionManager>(root);
-                RemoveComponents<PlayerControllerV2>(root);
-                RemoveComponents<DoubleJumpAbility>(root);
-                RemoveComponents<PlayerAnimationPresenter>(root);
 
                 KinematicCharacterMotor motor = root.GetComponent<KinematicCharacterMotor>();
                 if (motor == null)
                     throw new BuildFailedException("The source player prefab has no KinematicCharacterMotor.");
 
-                DoubleJumpAbility doubleJump = root.AddComponent<DoubleJumpAbility>();
-                PlayerControllerV2 controller = root.AddComponent<PlayerControllerV2>();
-                PlayerAnimationPresenter presenter = root.AddComponent<PlayerAnimationPresenter>();
+                DoubleJumpAbility doubleJump = root.GetComponent<DoubleJumpAbility>();
+                if (doubleJump == null) doubleJump = root.AddComponent<DoubleJumpAbility>();
+                PlayerControllerV2 controller = root.GetComponent<PlayerControllerV2>();
+                if (controller == null) controller = root.AddComponent<PlayerControllerV2>();
+                PlayerAnimationPresenter presenter = root.GetComponent<PlayerAnimationPresenter>();
+                if (presenter == null) presenter = root.AddComponent<PlayerAnimationPresenter>();
 
                 SerializedObject serialized = new SerializedObject(controller);
                 serialized.FindProperty("profile").objectReferenceValue = profile;
                 serialized.FindProperty("input").objectReferenceValue = input;
-                serialized.FindProperty("jumpParticles").objectReferenceValue = legacyJumpParticles;
                 SerializedProperty ignored = serialized.FindProperty("ignoredColliders");
-                ignored.arraySize = legacyIgnoredColliders.Count;
-                for (int i = 0; i < legacyIgnoredColliders.Count; i++)
-                    ignored.GetArrayElementAtIndex(i).objectReferenceValue = legacyIgnoredColliders[i];
+                if (!updatingExistingPrefab)
+                {
+                    ignored.arraySize = legacyIgnoredColliders.Count;
+                    for (int i = 0; i < legacyIgnoredColliders.Count; i++)
+                        ignored.GetArrayElementAtIndex(i).objectReferenceValue = legacyIgnoredColliders[i];
+                }
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 SerializedObject presentation = new SerializedObject(presenter);
                 presentation.FindProperty("controller").objectReferenceValue = controller;
                 presentation.FindProperty("animator").objectReferenceValue = root.GetComponentInChildren<Animator>();
+                if (!updatingExistingPrefab)
+                    presentation.FindProperty("jumpParticles").objectReferenceValue = legacyJumpParticles;
                 presentation.ApplyModifiedPropertiesWithoutUndo();
 
                 // Keep the ability component as a visible, editable prefab component.
@@ -168,8 +173,11 @@ namespace CrazyMarket.Player.V2.Editor
 
         private static void BuildScene(GameObject prefab)
         {
-            Scene scene = EditorSceneManager.OpenScene(SourceScene, OpenSceneMode.Single);
-            if (!EditorSceneManager.SaveScene(scene, OutputScene))
+            bool updatingExistingScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(OutputScene) != null;
+            Scene scene = EditorSceneManager.OpenScene(
+                updatingExistingScene ? OutputScene : SourceScene,
+                OpenSceneMode.Single);
+            if (!updatingExistingScene && !EditorSceneManager.SaveScene(scene, OutputScene))
                 throw new BuildFailedException("Could not create generated scene at " + OutputScene + ".");
             if (scene.path != OutputScene)
                 throw new BuildFailedException("Generated scene path mismatch: expected " + OutputScene + ".");
@@ -182,23 +190,22 @@ namespace CrazyMarket.Player.V2.Editor
             Vector3 position = oldPlayer.position;
             Quaternion rotation = oldPlayer.rotation;
             string playerName = oldPlayer.name;
-            GameObject replacement = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-            replacement.name = playerName;
-            replacement.transform.SetPositionAndRotation(position, rotation);
-
-            // Test Campus behavior belongs to the scene integration, not the
-            // reusable player prefab. This also leaves the canonical prefab with
-            // exactly its three production behavior components.
-            TestCampusPlayerV2Bridge bridge = replacement.GetComponent<TestCampusPlayerV2Bridge>();
-            if (bridge == null) bridge = replacement.AddComponent<TestCampusPlayerV2Bridge>();
-            PlayerControllerV2 controller = replacement.GetComponent<PlayerControllerV2>();
-            SerializedObject integration = new SerializedObject(bridge);
-            integration.FindProperty("controller").objectReferenceValue = controller;
-            integration.ApplyModifiedPropertiesWithoutUndo();
-
-            Undo.RegisterCreatedObjectUndo(replacement, "Create Player Controller V2 instance");
+            Object source = PrefabUtility.GetCorrespondingObjectFromSource(oldPlayer.gameObject);
+            bool alreadyUsesV2Prefab = source != null && AssetDatabase.GetAssetPath(source) == OutputPrefab;
+            GameObject replacement = alreadyUsesV2Prefab
+                ? oldPlayer.gameObject
+                : (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            if (!alreadyUsesV2Prefab)
+            {
+                replacement.name = playerName;
+                replacement.transform.SetPositionAndRotation(position, rotation);
+            }
             campus.PlayerRoot = replacement.transform;
-            Undo.DestroyObjectImmediate(oldPlayer.gameObject);
+            if (!alreadyUsesV2Prefab)
+            {
+                Undo.RegisterCreatedObjectUndo(replacement, "Create Player Controller V2 instance");
+                Undo.DestroyObjectImmediate(oldPlayer.gameObject);
+            }
             EditorUtility.SetDirty(campus);
             EditorSceneManager.MarkSceneDirty(scene);
             if (scene.path != OutputScene || !EditorSceneManager.SaveScene(scene))

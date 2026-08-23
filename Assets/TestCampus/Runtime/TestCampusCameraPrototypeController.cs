@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CrazyMarket.Player;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -54,6 +55,7 @@ namespace CrazyMarket.TestCampus
         private CinemachineDecollider _decollider;
         private TestCampusCameraInputFocus _inputFocus;
         private Transform _player;
+        private IPlayerSceneControl _playerController;
         private Transform _movementReference;
         private Vector3 _previousPlayerPosition;
         private Vector3 _lastGroundedMoveDirection = Vector3.forward;
@@ -119,7 +121,7 @@ namespace CrazyMarket.TestCampus
             if (_player != null)
             {
                 _previousPlayerPosition = _player.position;
-                _player.SendMessage("SetCameraMovementReference", _movementReference, SendMessageOptions.DontRequireReceiver);
+                _playerController?.SetMovementReference(_movementReference);
             }
             ApplyMode();
             SetUiFocus(false);
@@ -191,9 +193,7 @@ namespace CrazyMarket.TestCampus
         {
             _lookInputSource = hasFocus ? "UI focus" : "Waiting for look input";
             _inputFocus?.SetUiFocus(hasFocus);
-            if (_player != null)
-                _player.SendMessage(
-                    "SetMovementEnabled", !hasFocus, SendMessageOptions.DontRequireReceiver);
+            _playerController?.SetMovementEnabled(!hasFocus);
         }
 
         public void RecenterNow()
@@ -212,6 +212,7 @@ namespace CrazyMarket.TestCampus
             _player = TestCampusController.Instance != null
                 ? TestCampusController.Instance.PlayerRoot
                 : GameObject.FindGameObjectWithTag("Player")?.transform;
+            _playerController = ResolvePlayerController(_player);
 
             foreach (TestCampusCameraRigTag tag in FindObjectsByType<TestCampusCameraRigTag>(
                          FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -240,9 +241,18 @@ namespace CrazyMarket.TestCampus
                     _railCamera.Follow = _player;
                     _railCamera.LookAt = _player;
                 }
-                _player.SendMessage("SetCameraMovementReference", _movementReference, SendMessageOptions.DontRequireReceiver);
+                _playerController?.SetMovementReference(_movementReference);
             }
             ApplyMode();
+        }
+
+        private static IPlayerSceneControl ResolvePlayerController(Transform player)
+        {
+            if (player == null) return null;
+            foreach (MonoBehaviour behaviour in player.GetComponents<MonoBehaviour>())
+                if (behaviour is IPlayerSceneControl controller)
+                    return controller;
+            return null;
         }
 
         private void ApplyMode()

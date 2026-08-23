@@ -87,10 +87,7 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("GAME MANAGER START METHOD");
 
-        // Test Campus has its own Game-view-aware cursor owner. Production scenes
-        // still need their serialized startup cursor state applied immediately.
-        if (!SceneManager.GetActiveScene().name.StartsWith("TestCampus_", StringComparison.Ordinal))
-            ApplyCursorState();
+        ApplyCursorState();
 
         ChangeState(GameState.LoadingIn);
 

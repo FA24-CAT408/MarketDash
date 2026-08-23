@@ -1,28 +1,29 @@
 # CrazyMarket Agent Instructions
 
-## GitHub account
+## Working style
 
-- This project must use the personal GitHub account `Abe-54` for GitHub CLI authentication and pushes. Do not use the work account `AbrahamRubioDCA` for this repository.
+- Keep work tight and playable: define the requested outcome and touch only files needed for it. Prefer the smallest reversible solution; defer refactors, abstractions, assets, docs, tests, and tooling unless required.
+- Check `git status` first. Preserve unrelated dirty work; never reset, discard, or overwrite it.
+- Treat alignment, explanation, and read-only review requests as read-only. Do not start Unity, dashboards, audits, or subagents unless the request requires them.
 
-## Unity automation
+## Game development
 
-- The official Unity CLI is installed and available through the `unity` command. Prefer it for opening the project, checking Editor status, running tests, creating builds, and other supported Unity workflows.
-- Official Unity MCP/Editor automation is available through the `com.unity.pipeline` package. Use `unity status` to discover the connected Editor and `unity command` to list or invoke its live Editor commands.
-- The project uses Unity's official Pipeline/MCP integration; do not assume the former third-party CoplayDev Unity MCP package is installed or required.
+- Iterate in narrow playable slices: change one behavior, playtest it, inspect the result, then expand.
+- Test Campus is a prototype and diagnostic harness. It can validate reusable seams, but it is not proof that production scenes work.
+- Keep production gameplay rules in production owners. Test adapters and fixtures compose them without duplicating them.
+- Decide ownership before changing serialization or generated content.
+- Regenerate scenes and prefabs only when their inputs or generator logic changed. Check repeatability and inspect the resulting diff before accepting it.
 
-## Unity validation workflow
+## Verification
 
-- After changing gameplay, scenes, prefabs, editor generation, or build behavior, validate the result in Unity before declaring the work complete.
-- At minimum: confirm scripts compile, regenerate and validate affected generated content when applicable, enter Play Mode in the relevant scene, exercise the changed behavior, and inspect the Console for errors or exceptions.
-- Automated tests are optional unless the user requests them; interactive Unity validation is still required.
+- For gameplay, camera, UI, scene, prefab, or generator changes: compile; enter the actual affected scene in Play Mode; exercise the changed happy path and a reset or boundary path; inspect the Console and Game view.
+- Visual changes require visual inspection at a relevant Game-view resolution or aspect ratio.
+- Report validation as `verified`, `partially verified`, or `unverified`. Static inspection, stale evidence, and Test Campus results must not be presented as production verification.
+- If Unity is unavailable, say so clearly. Do not infer runtime success.
+- Automated tests are optional unless requested; interactive Play Mode testing is required for Unity-facing changes.
 
-## Local review loop
+## Project workflow
 
-- Automatically use the `crazy-market-review-loop` skill and `Tools/LocalReview/review_loop.py` whenever finishing or reviewing a feature, splitting a large change, or validating a stack branch. The user does not need to request the skill by name.
-- Treat `.codex/skills/crazy-market-review-loop/SKILL.md` and its `references/acceptance-gates.md` as the canonical workflow.
-- Always open the live agent graph visibly in the T3 shared preview, falling back to the machine's default browser when needed.
-- Keep the live dashboard updated during reviewer handoffs, fixes, and Unity validation.
-- Use two fresh read-only reviewers when agent delegation is available: one for architecture and one for Unity correctness. Reviewer agents must not edit files.
-- Keep the entire workflow local. Do not push stack branches or create PRs unless the user separately requests publishing.
-- Do not add tests unless the user requests them; Unity smoke validation is still required for relevant changes.
-- Stop after three review/fix rounds and ask the user rather than looping indefinitely.
+- GitHub owns scope, status, dependencies, and acceptance criteria. Notion is supporting design reference. For GitHub work, read `docs/agents/issue-tracker.md` and use the `Abe-54` account.
+- Use `crazy-market-review-loop` only when completing or explicitly reviewing a feature or stack branch. Use architecture-audit skills only when explicitly requested.
+- Keep work local. Do not push, create PRs, or make unrelated project-management changes unless explicitly requested.

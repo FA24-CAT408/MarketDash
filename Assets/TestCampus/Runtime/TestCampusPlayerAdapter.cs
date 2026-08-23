@@ -1,11 +1,12 @@
 using System;
+using CrazyMarket.Player;
 using UnityEngine;
 using System.Reflection;
 
 namespace CrazyMarket.TestCampus
 {
     [DisallowMultipleComponent]
-    public sealed class TestCampusPlayerAdapter : MonoBehaviour
+    public sealed class TestCampusPlayerAdapter : MonoBehaviour, IPlayerSceneControl
     {
         public static event Action<Transform, Vector3> PlayerWarped;
 
@@ -60,6 +61,15 @@ namespace CrazyMarket.TestCampus
             direction = (Vector3)_movementIntent.GetValue(_controller);
             direction.y = 0f;
             return true;
+        }
+
+        public void SetMovementReference(Transform reference)
+        {
+            _controller ??= GetComponent("KCCPlayerController");
+            _controller?.GetType()
+                .GetMethod("SetCameraMovementReference",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                ?.Invoke(_controller, new object[] { reference });
         }
 
         private void DisableLegacyShadows()

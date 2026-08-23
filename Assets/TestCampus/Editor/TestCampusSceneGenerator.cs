@@ -30,6 +30,7 @@ namespace CrazyMarket.TestCampus.Editor
         [MenuItem("CrazyMarket/Test Campus/Build All Scenes")]
         public static void BuildAll()
         {
+            ConfigureCameraCollisionLayers();
             PrepareBuild();
             CreateCore(true);
             CreateMovement();
@@ -41,6 +42,7 @@ namespace CrazyMarket.TestCampus.Editor
             AddScenesToBuildSettings(true);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            RecordCurrentGenerationState();
             Debug.Log("Test Campus: seven scenes generated and added to development build settings.");
         }
 
@@ -57,6 +59,14 @@ namespace CrazyMarket.TestCampus.Editor
             if (!hasCore)
                 throw new FileNotFoundException("Build Existing Scenes requires TestCampus_Core.unity.");
 
+            AddScenesToBuildSettings(false);
+            ConfigureCameraCollisionLayers();
+            if (AreExistingScenesCurrent())
+            {
+                Debug.Log("Test Campus: generation inputs and outputs are unchanged; existing scenes are current.");
+                return;
+            }
+
             PrepareBuild();
             CreateCore(false);
             if (hasMovement) CreateMovement();
@@ -65,18 +75,21 @@ namespace CrazyMarket.TestCampus.Editor
             if (hasNpcInteraction) CreateNpcInteraction();
             if (hasUi) CreateUi();
             if (hasIntegration) CreateIntegration();
-            AddScenesToBuildSettings(false);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            RecordCurrentGenerationState();
             Debug.Log("Test Campus: regenerated the scenes present in this stack layer.");
         }
+
+        public static bool AreExistingScenesCurrent() => TestCampusGenerationState.IsCurrent();
+
+        public static void RecordCurrentGenerationState() => TestCampusGenerationState.Record();
 
         private static void PrepareBuild()
         {
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(MaterialFolder);
             Directory.CreateDirectory(UiFolder);
-            ConfigureCameraCollisionLayers();
             CreateMaterials();
             CreateUiPanelSettings();
             RenderSettings.skybox = null;
@@ -140,6 +153,7 @@ namespace CrazyMarket.TestCampus.Editor
             Scene scene = NewScene("TestCampus_Core");
             GameObject root = new("=== TEST CAMPUS CORE ===");
             TestCampusController controller = root.AddComponent<TestCampusController>();
+            root.AddComponent<TestCampusLightShadowBudget>();
             GameObject cameraSystems = new("Camera Systems");
             cameraSystems.AddComponent<TestCampusCameraInputFocus>();
             cameraSystems.AddComponent<TestCampusCameraOcclusionController>();
@@ -887,6 +901,7 @@ namespace CrazyMarket.TestCampus.Editor
         private static void AddScenesToBuildSettings(bool includeAllScenes)
         {
             List<EditorBuildSettingsScene> scenes = new(EditorBuildSettings.scenes);
+            bool changed = false;
             foreach (TestZoneId id in System.Enum.GetValues(typeof(TestZoneId)))
             {
                 if (!includeAllScenes && !SceneExists(id))
@@ -898,10 +913,20 @@ namespace CrazyMarket.TestCampus.Editor
                     _ => id.ToString()
                 };
                 string path = $"{SceneFolder}/TestCampus_{suffix}.unity";
-                if (!scenes.Exists(scene => scene.path == path))
+                int index = scenes.FindIndex(scene => scene.path == path);
+                if (index < 0)
+                {
                     scenes.Add(new EditorBuildSettingsScene(path, true));
+                    changed = true;
+                }
+                else if (!scenes[index].enabled)
+                {
+                    scenes[index] = new EditorBuildSettingsScene(path, true);
+                    changed = true;
+                }
             }
-            EditorBuildSettings.scenes = scenes.ToArray();
+            if (changed)
+                EditorBuildSettings.scenes = scenes.ToArray();
         }
         private static void CreateMaterial(string name, Color color, float smoothness)
         {

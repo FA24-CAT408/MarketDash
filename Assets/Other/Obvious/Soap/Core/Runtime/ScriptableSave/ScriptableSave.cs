@@ -213,6 +213,15 @@ namespace Obvious.Soap
 #if UNITY_EDITOR
         private void OnPlayModeStateChanged(PlayModeStateChange playModeStateChange)
         {
+            // Asset reimports can destroy a ScriptableSave instance before Unity invokes
+            // a queued play-mode callback. Remove the stale delegate without touching the
+            // destroyed object's serialized state.
+            if (!this)
+            {
+                EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                return;
+            }
+
             if (playModeStateChange == PlayModeStateChange.ExitingEditMode)
             {
                 if (_loadMode == ELoadMode.Automatic)

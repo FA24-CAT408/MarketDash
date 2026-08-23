@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "run_id": "2026-08-11-004123-gameplay-improvements",
+  "repository": "CrazyMarket",
+  "repository_root": "/Users/abrahamrubio/Documents/Unity Projects/CrazyMarket",
+  "revision": "b34383ee55fb75cb7f3db812a5880478a5586a22",
+  "worktree_status": "dirty before audit; pre-existing changes limited to agent/review tooling and solution metadata",
+  "scope": [
+    "production runtime code under Assets/Scripts",
+    "enabled production scenes Main Menu, Levels 1-4, and GameOver",
+    "gameplay-relevant prefabs, input configuration, build settings, and V2 vertical-slice boundary"
+  ],
+  "excluded": [
+    "Library/**, Temp/**, Logs/**, obj/**, Build/**",
+    "Assets/Archive~/**",
+    "third-party package internals except explicit runtime boundaries",
+    "models, textures, audio binaries, lightmaps, reflection probes, and .meta files",
+    "Test Campus implementation except V2 integration evidence"
+  ],
+  "safe_commands": [
+    "git status/revision/history",
+    "rg/find/sed read-only census and source inspection",
+    "unity status",
+    "unity command editor_status/list_open_scenes/recompile_status/get_console_logs/capture_game_view"
+  ],
+  "external_limits": [
+    "No network or production systems accessed",
+    "No Play Mode production run performed",
+    "No source, scene, prefab, or project configuration modified"
+  ],
+  "status": "incomplete",
+  "gaps": [
+    "Production Main Menu-to-campaign behavior was not exercised in Play Mode.",
+    "Large serialized scenes were traced at gameplay wiring boundaries, not exhaustively modeled object-by-object.",
+    "One Console error was produced by an invalid read-only Unity command-list probe and is not a project defect.",
+    "graph.html was generated deterministically and opened in the default browser, but its controls were not automation-exercised because the T3 preview rejected file:// navigation."
+  ]
+}

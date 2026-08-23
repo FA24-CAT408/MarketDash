@@ -1,0 +1,6 @@
+interface:
+  display_name: "Thermo-Nuclear Game Code Review"
+  short_description: "Relentless Unity maintainability review"
+  default_prompt: "Use $thermo-nuclear-code-quality-review to perform a strict game-code maintainability audit of the current branch."
+policy:
+  allow_implicit_invocation: false

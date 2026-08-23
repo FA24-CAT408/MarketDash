@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Player V2 Layer Map</title>
+  <link rel="stylesheet" href="../Assets/Teaching/course.css">
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">CrazyMarket · Quick reference</div>
+    <h1>Player V2 layer map</h1>
+    <p class="lede">Start here when deciding where a change belongs or where a defect could have entered the movement pipeline.</p>
+  </header>
+
+  <table class="trace-table">
+    <thead><tr><th>Layer</th><th>Owns</th><th>Look here when…</th></tr></thead>
+    <tbody>
+      <tr><td><code>InputReader</code></td><td>Device action callbacks</td><td>Press, release, or move values never arrive.</td></tr>
+      <tr><td><code>PlayerControllerV2</code> input fields</td><td><code>rawMove</code>, <code>jumpQueued</code>, <code>jumpHeld</code></td><td>An event arrives but intent is stale, duplicated, or consumed too soon.</td></tr>
+      <tr><td><code>PlayerControllerV2</code> adapter</td><td>Camera space, KCC observations, applying output</td><td>Direction, slope response, rotation, or final velocity is wrong.</td></tr>
+      <tr><td><code>PlayerLocomotionMachine</code></td><td>Modes and gameplay rules</td><td>Jump eligibility, coyote time, buffering, blocking, modifiers, or teleport policy is wrong.</td></tr>
+      <tr><td><code>PlayerProfile</code></td><td>Authored and runtime tuning</td><td>The rule is correct but its speed, acceleration, gravity, drag, or timing feels wrong.</td></tr>
+      <tr><td><code>PlayerAbilityComponent</code></td><td>Optional composed behavior</td><td>A feature should be added or removed without expanding the locomotion machine.</td></tr>
+      <tr><td><code>KinematicCharacterMotor</code></td><td>Collision, grounding, motor lifecycle</td><td>V2 emits correct output but collision-resolved motion is still wrong.</td></tr>
+      <tr><td><code>PlayerAnimationPresenter</code></td><td>Animator booleans from presentation state</td><td>Motion is correct but animation is not.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rule"><strong>Debugging order:</strong> input event → cached intent → body observation → locomotion output → applied velocity → motor collision result → presentation.</div>
+
+  <h2>Stable contracts</h2>
+  <p><code>PlayerIntent</code> says what the player asked for. <code>PlayerBodyObservation</code> says what KCC currently knows. <code>LocomotionOutput</code> says what policy wants the adapter to apply. <code>PlayerSnapshot</code> and <code>PlayerPresentationState</code> expose results to tools and visuals.</p>
+
+  <footer><a href="../lessons/0001-trace-one-player-v2-tick.html">Return to Lesson 1</a></footer>
+</main>
+</body>
+</html>

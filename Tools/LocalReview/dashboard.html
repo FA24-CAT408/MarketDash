@@ -3,206 +3,573 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CrazyMarket Review Loop</title>
+  <meta name="theme-color" content="#0c0e12">
+  <title>CrazyMarket Review</title>
   <style>
     :root {
       color-scheme: light dark;
-      --bg: light-dark(#f5f7fb, #10131a);
-      --surface: light-dark(#ffffff, #171c25);
-      --surface-2: light-dark(#eef2f8, #202733);
-      --text: light-dark(#182033, #e8edf7);
-      --muted: light-dark(#68738a, #9aa6bb);
-      --line: light-dark(#cbd3e2, #3a4455);
-      --queued: light-dark(#8792a8, #7e899d);
-      --running: #4f8cff;
-      --passed: #2da66d;
-      --failed: #dc4f5e;
-      --blocked: #d68a1f;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: light-dark(#f2f1ed, #0c0e12);
+      --surface: light-dark(#ffffff, #14171d);
+      --surface-raised: light-dark(#f8f7f3, #1a1e26);
+      --surface-active: light-dark(#edf4ff, #18243a);
+      --text: light-dark(#1c2028, #f1f3f7);
+      --muted: light-dark(#565e6b, #9ba4b4);
+      --faint: light-dark(#646c7a, #7f899a);
+      --line: light-dark(#d9d8d2, #292e38);
+      --line-strong: light-dark(#c5c4bd, #3b4351);
+      --queued: light-dark(#747d8c, #778194);
+      --running: light-dark(#246bce, #68a2ff);
+      --passed: light-dark(#15794d, #42c98a);
+      --failed: light-dark(#bd3245, #ff6b7c);
+      --blocked: light-dark(#a85e09, #f3a74d);
+      --focus: light-dark(#0d5fc5, #83b5ff);
+      --shadow: light-dark(0 16px 40px rgb(28 32 40 / .08), 0 18px 50px rgb(0 0 0 / .28));
+      font-family: "Avenir Next", Avenir, "Segoe UI Variable", "Segoe UI", sans-serif;
     }
+
     * { box-sizing: border-box; }
+    html { min-width: 320px; }
     body { margin: 0; background: var(--bg); color: var(--text); }
-    main { width: min(1220px, 100%); margin: 0 auto; padding: 24px; }
-    header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-    h1, h2 { margin: 0; font-weight: 500; }
-    h1 { font-size: 22px; }
-    h2 { font-size: 15px; margin-bottom: 12px; }
-    .subtitle, .updated { color: var(--muted); font-size: 13px; }
-    .layout { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(240px, 1fr); gap: 18px; }
-    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-    .phase-graph { width: 100%; min-height: 310px; display: block; }
-    .edge { stroke: var(--line); stroke-width: 2; }
-    .node rect { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; rx: 10; }
-    .node text { fill: var(--text); font-size: 14px; text-anchor: middle; }
-    .node .small { fill: var(--muted); font-size: 11px; }
-    .node.running rect { stroke: var(--running); stroke-width: 3; animation: pulse 1.4s ease-in-out infinite; }
-    .node.passed rect { stroke: var(--passed); }
-    .node.failed rect { stroke: var(--failed); }
-    .node.blocked rect { stroke: var(--blocked); }
-    .agent-edge { stroke: var(--running); stroke-width: 1.5; opacity: .55; }
-    @keyframes pulse { 50% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--running) 55%, transparent)); } }
-    .stack { display: grid; gap: 8px; }
-    .branch { display: grid; grid-template-columns: 12px 1fr; gap: 9px; align-items: center; color: var(--muted); font-size: 13px; }
-    .branch::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--queued); }
-    .branch.current { color: var(--text); font-weight: 500; }
-    .branch.current::before { background: var(--running); box-shadow: 0 0 0 4px color-mix(in srgb, var(--running) 20%, transparent); }
-    .checks, .findings { display: grid; gap: 8px; }
-    .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 9px; align-items: start; font-size: 13px; }
-    .dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--queued); }
+    button, summary, a { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid color-mix(in srgb, var(--focus) 65%, transparent); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    main { width: min(1420px, 100%); margin: 0 auto; padding: 28px clamp(18px, 3vw, 44px) 56px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand > div:last-child { min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 11px; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 800; letter-spacing: -.03em; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(19px, 2vw, 24px); line-height: 1.15; letter-spacing: -.025em; }
+    h2 { font-size: 15px; line-height: 1.3; letter-spacing: -.012em; }
+    h3 { font-size: 13px; line-height: 1.35; }
+    .session-line { max-width: 72ch; margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .live-state { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .live-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--passed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--passed) 15%, transparent); }
+    .live-state.disconnected { color: var(--failed); }
+    .live-state.disconnected::before { background: var(--failed); box-shadow: none; }
+    .live-state.delayed { color: var(--blocked); }
+    .live-state.delayed::before { background: var(--blocked); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blocked) 15%, transparent); }
+    .live-state.stale { color: var(--failed); }
+    .live-state.stale::before { background: var(--failed); box-shadow: none; }
+
+    .overview { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(310px, .78fr); gap: 18px; align-items: start; }
+    .main-column, .rail { display: grid; gap: 18px; }
+    .decision { grid-column: 1 / -1; }
+    .overview > .details-panel { grid-column: 1 / -1; }
+    .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+    .panel-header { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding: 18px 20px 0; }
+    .panel-copy { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .panel-body { padding: 18px 20px 20px; }
+
+    .phase-track { display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)); gap: 0; margin: 0; padding: 4px 0 2px; list-style: none; }
+    .phase { position: relative; min-width: 0; padding-right: 12px; }
+    .phase:not(:last-child)::after { content: ""; position: absolute; z-index: 0; top: 15px; left: 33px; right: 0; height: 2px; background: var(--line-strong); }
+    .phase-step { position: relative; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border: 2px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--faint); font-size: 11px; font-weight: 750; }
+    .phase-label { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; font-weight: 650; text-transform: capitalize; }
+    .phase-status { display: block; margin-top: 2px; color: var(--faint); font-size: 11px; text-transform: capitalize; }
+    .phase.passed .phase-step { border-color: var(--passed); background: var(--passed); color: light-dark(#fff, #08170f); }
+    .phase.passed:not(:last-child)::after { background: var(--passed); }
+    .phase.running .phase-step { border-color: var(--running); background: var(--surface-active); color: var(--running); box-shadow: 0 0 0 5px color-mix(in srgb, var(--running) 13%, transparent); }
+    .phase.running .phase-label { color: var(--text); }
+    .phase.failed .phase-step { border-color: var(--failed); color: var(--failed); }
+    .phase.blocked .phase-step { border-color: var(--blocked); color: var(--blocked); }
+    .phase.skipped .phase-step { border-color: var(--queued); background: var(--surface-raised); color: var(--muted); }
+    .rail .phase-track { grid-template-columns: 1fr; }
+    .rail .phase { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 11px; align-items: center; min-height: 52px; padding: 0; }
+    .rail .phase:not(:last-child)::after { top: 32px; bottom: -20px; left: 15px; right: auto; width: 2px; height: auto; }
+    .rail .phase-label, .rail .phase-status { margin: 0; }
+    .rail .phase-status { text-align: right; }
+
+    .reviewer-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 26px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .reviewer-count { color: var(--muted); font-size: 12px; }
+    .agents { display: grid; gap: 10px; }
+    .agent { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 11px; align-items: start; min-width: 0; padding: 13px; border-radius: 12px; background: var(--surface-raised); }
+    .agent-indicator { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--queued); }
+    .agent-indicator.running { background: var(--running); box-shadow: 0 0 0 4px color-mix(in srgb, var(--running) 13%, transparent); animation: breathe 1.8s ease-in-out infinite; }
+    .agent-indicator.passed { background: var(--passed); }
+    .agent-indicator.failed { background: var(--failed); }
+    .agent-indicator.blocked { background: var(--blocked); }
+    .agent-indicator.skipped { background: var(--queued); }
+    .agent-role { overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
+    .agent-task { margin-top: 3px; overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .status-label { color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
+    .status-label.running { color: var(--running); }
+    .status-label.passed, .status-label.resolved { color: var(--passed); }
+    .status-label.failed { color: var(--failed); }
+    .status-label.blocked, .status-label.deferred { color: var(--blocked); }
+    .status-label.suggestion { color: var(--muted); }
+    .status-label.skipped { color: var(--blocked); }
+    .status-label.blocker { color: var(--failed); }
+    .status-label.should-fix { color: var(--blocked); }
+
+    .decision { position: relative; padding: 22px 24px; overflow: hidden; }
+    .decision.failed { border-color: color-mix(in srgb, var(--failed) 45%, var(--line)); }
+    .decision.blocked, .decision.incomplete { border-color: color-mix(in srgb, var(--blocked) 45%, var(--line)); }
+    .decision.passed { border-color: color-mix(in srgb, var(--passed) 40%, var(--line)); }
+    .decision-status { display: flex; align-items: center; gap: 9px; color: var(--running); font-size: 12px; font-weight: 700; }
+    .decision-status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+    .decision-status.passed { color: var(--passed); }
+    .decision-status.failed { color: var(--failed); }
+    .decision-status.blocked { color: var(--blocked); }
+    .decision-status.skipped { color: var(--muted); }
+    .decision h2 { margin-top: 12px; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.12; letter-spacing: -.03em; }
+    .decision p { max-width: 88ch; margin-top: 9px; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .freshness-warning { display: none; margin-top: 14px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--failed) 35%, var(--line)); border-radius: 9px; background: color-mix(in srgb, var(--failed) 8%, var(--surface)); color: var(--failed); font-size: 12px; font-weight: 650; }
+    .freshness-warning.visible { display: block; }
+    .decision-meta { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .decision-metric + .decision-metric { padding-left: 12px; border-left: 1px solid var(--line); }
+    .metric-value { font-size: 18px; font-weight: 720; letter-spacing: -.025em; }
+    .metric-label { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .metric-value.skipped, .metric-value.incomplete { color: var(--blocked); }
+    .metric-value.failed { color: var(--failed); }
+
+    .rows { display: grid; gap: 2px; }
+    .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); font-size: 12px; }
+    .row:first-child { padding-top: 0; border-top: 0; }
+    .row:last-child { padding-bottom: 0; }
+    .dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--queued); }
     .dot.running { background: var(--running); }
     .dot.passed, .dot.resolved { background: var(--passed); }
     .dot.failed, .dot.open.blocker { background: var(--failed); }
+    .dot.open.should-fix { background: var(--blocked); }
     .dot.blocked, .dot.deferred { background: var(--blocked); }
-    .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .status { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-    .side { display: grid; gap: 18px; align-content: start; }
-    .empty { color: var(--muted); font-size: 13px; }
-    .evidence-panel { margin-top: 18px; }
+    .dot.skipped { background: var(--blocked); box-shadow: 0 0 0 2px color-mix(in srgb, var(--blocked) 18%, transparent); }
+    .note { margin-top: 3px; overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .row > div { min-width: 0; overflow-wrap: anywhere; }
+    .empty { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .stack-wrap { max-height: 250px; overflow: auto; scrollbar-width: thin; }
+    .stack { display: grid; }
+    .branch { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 9px; align-items: center; min-height: 29px; color: var(--muted); font-size: 12px; }
+    .branch::before { content: ""; position: relative; z-index: 1; width: 7px; height: 7px; border-radius: 50%; background: var(--queued); box-shadow: 0 0 0 3px var(--surface); }
+    .branch:not(:last-child)::after { content: ""; position: absolute; top: 16px; bottom: -11px; left: 3px; width: 1px; background: var(--line-strong); }
+    .branch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .branch.current { color: var(--text); font-weight: 650; }
+    .branch.current::before { background: var(--running); box-shadow: 0 0 0 4px color-mix(in srgb, var(--running) 16%, var(--surface)); }
+
+    .agent-graph-panel { grid-column: 1 / -1; overflow: hidden; }
+    .graph-header { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding: 18px 20px 16px; }
+    .graph-heading-line { display: flex; align-items: baseline; gap: 10px; }
+    .graph-count { color: var(--muted); font-size: 12px; }
+    .graph-actions { display: flex; align-items: center; gap: 6px; }
+    .graph-actions button { min-height: 36px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+    .graph-actions button:hover { border-color: var(--line-strong); color: var(--text); }
+    .graph-actions button[aria-pressed="true"] { border-color: var(--running); background: var(--surface-active); color: var(--running); }
+    .agent-graph-viewport { max-height: 560px; margin: 0 20px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); overscroll-behavior: contain; }
+    .agent-canvas { position: relative; width: 100%; min-height: 330px; }
+    .agent-edges, .agent-nodes { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .agent-edges { pointer-events: none; overflow: visible; }
+    .agent-connection { fill: none; stroke: var(--line-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+    .agent-connection.inferred { stroke-dasharray: 5 5; opacity: .72; }
+    .agent-connection.outside { stroke-dasharray: 2 5; opacity: .72; }
+    .agent-connection.invalid { stroke: var(--failed); stroke-dasharray: 3 4; }
+    .agent-node { position: absolute; top: 0; left: 0; z-index: 1; display: grid; width: 172px; min-height: 76px; padding: 10px 11px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 7px 18px rgb(28 32 40 / .08); text-align: left; cursor: grab; touch-action: none; user-select: none; will-change: transform; }
+    .agent-node:hover { border-color: var(--running); }
+    .agent-node:active, .agent-node.dragging { cursor: grabbing; }
+    .agent-node.dragging { z-index: 3; box-shadow: 0 14px 30px rgb(28 32 40 / .16); }
+    .agent-node.selected { outline: 3px solid color-mix(in srgb, var(--focus) 42%, transparent); outline-offset: 2px; }
+    .agent-node.running { border-color: var(--running); }
+    .agent-node.passed { border-color: color-mix(in srgb, var(--passed) 62%, var(--line)); }
+    .agent-node.failed { border-color: color-mix(in srgb, var(--failed) 70%, var(--line)); }
+    .agent-node.blocked { border-color: color-mix(in srgb, var(--blocked) 70%, var(--line)); }
+    .agent-node-heading { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .agent-node-heading strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
+    .agent-node-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--queued); }
+    .agent-node.running .agent-node-dot { background: var(--running); }
+    .agent-node.passed .agent-node-dot { background: var(--passed); }
+    .agent-node.failed .agent-node-dot { background: var(--failed); }
+    .agent-node.blocked .agent-node-dot { background: var(--blocked); }
+    .agent-node-task, .agent-node-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .agent-node-task { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .agent-node-meta { margin-top: 4px; color: var(--faint); font-size: 11px; text-transform: capitalize; }
+    .graph-inspector { min-height: 92px; margin-top: 16px; padding: 0 20px 20px; }
+    .graph-inspector p { max-width: 90ch; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .graph-inspector-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 9px; color: var(--faint); font-size: 11px; text-transform: capitalize; }
+    .agent-graph-panel.unavailable .agent-graph-viewport, .agent-graph-panel.unavailable .graph-actions { display: none; }
+    .agent-graph-panel.unavailable .graph-inspector { min-height: 0; padding-top: 4px; color: var(--failed); }
+
+    .details-panel { margin-top: 0; }
+    .details-panel > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 58px; padding: 0 20px; cursor: pointer; list-style: none; }
+    .details-panel > summary::-webkit-details-marker { display: none; }
+    .details-panel > summary::after { content: "+"; color: var(--muted); font-size: 20px; font-weight: 300; }
+    .details-panel[open] > summary::after { content: "−"; }
+    .details-panel[open] > summary { border-bottom: 1px solid var(--line); }
+    .summary-title { display: flex; align-items: baseline; gap: 10px; }
+    .summary-count { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .details-content { padding: 18px 20px 20px; }
+    .change { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; padding: 13px 0; border-top: 1px solid var(--line); }
+    .change:first-child { padding-top: 0; border-top: 0; }
+    .change-type { color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
+    .change-title { font-size: 13px; font-weight: 650; }
+    .change-detail, .change-file { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .change-file { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+
+    .changes-layout { display: grid; grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); gap: 24px; }
+    .table-wrap { overflow-x: auto; }
+    .file-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .file-table th, .file-table td { padding: 9px 7px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .file-table th { color: var(--muted); font-weight: 650; }
+    .file-table code { color: var(--text); font-size: 11px; overflow-wrap: anywhere; }
+    .delta { color: var(--muted); white-space: nowrap; }
+    .snippet { padding: 10px 0; border-top: 1px solid var(--line); }
+    .snippet:first-child { padding-top: 0; border-top: 0; }
+    .snippet summary { cursor: pointer; font-size: 12px; font-weight: 650; }
+    .snippet-file { display: block; margin-top: 3px; overflow-wrap: anywhere; color: var(--muted); font-size: 11px; }
+    .snippet pre { max-height: 420px; margin: 10px 0 0; padding: 13px; overflow: auto; border-radius: 10px; background: light-dark(#f3f2ee, #0e1116); color: var(--text); font-size: 11px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    .evidence-section + .evidence-section { margin-top: 24px; }
+    .evidence-section h3 { margin-bottom: 10px; }
     .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .capture { margin: 0; min-width: 0; }
     .capture a { display: block; color: inherit; text-decoration: none; }
-    .capture img, .capture video { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+    .capture img, .capture video { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: contain; border-radius: 10px; background: var(--surface-raised); }
     .capture.video { grid-column: 1 / -1; }
     .capture.video video { object-fit: contain; }
-    .capture figcaption { padding-top: 7px; font-size: 13px; }
-    .capture-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
-    .changes-panel { margin-top: 18px; }
-    .changelog-panel { margin-top: 18px; }
-    .changelog { display: grid; gap: 10px; }
-    .change { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
-    .change:first-child { border-top: 0; padding-top: 0; }
-    .change-type { color: var(--muted); font-size: 11px; letter-spacing: .05em; }
-    .change-title { font-size: 14px; font-weight: 500; }
-    .change-detail, .change-file { color: var(--muted); font-size: 12px; margin-top: 3px; }
-    .change-file { overflow-wrap: anywhere; }
-    .changes-layout { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.4fr); gap: 22px; }
-    .file-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .file-table th, .file-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-    .file-table th { color: var(--muted); font-weight: 500; }
-    .file-table code { color: var(--text); overflow-wrap: anywhere; }
-    .delta { white-space: nowrap; color: var(--muted); }
-    .snippet { border-top: 1px solid var(--line); padding: 9px 0; }
-    .snippet:first-child { border-top: 0; padding-top: 0; }
-    .snippet summary { cursor: pointer; font-size: 13px; }
-    .snippet-file { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
-    .snippet pre { margin: 9px 0 0; padding: 10px; border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    @media (max-width: 760px) {
-      main { padding: 16px; }
-      header { align-items: start; flex-direction: column; }
-      .layout { grid-template-columns: 1fr; }
-      .phase-graph { min-height: 430px; }
-      .evidence-grid { grid-template-columns: 1fr; }
+    .capture figcaption { padding-top: 8px; font-size: 12px; font-weight: 620; }
+    .capture-meta { margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+    @keyframes breathe { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--running) 5%, transparent); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+    @media (max-width: 900px) {
+      .overview { grid-template-columns: 1fr; }
+      .main-column, .rail, .decision, .overview > .details-panel { grid-column: 1; grid-row: auto; }
       .changes-layout { grid-template-columns: 1fr; }
-      .change { grid-template-columns: 58px minmax(0, 1fr); }
+    }
+    @media (max-width: 620px) {
+      main { padding: 18px 14px 40px; }
+      .topbar { align-items: start; margin-bottom: 20px; }
+      .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
+      .live-state { max-width: 116px; justify-content: flex-end; font-size: 11px; text-align: right; }
+      .phase-track { grid-template-columns: 1fr; gap: 0; }
+      .phase { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 11px; align-items: center; min-height: 52px; padding: 0; }
+      .phase:not(:last-child)::after { top: 32px; bottom: -20px; left: 15px; right: auto; width: 2px; height: auto; }
+      .phase-label, .phase-status { margin: 0; }
+      .phase-status { text-align: right; }
+      .agents, .rail { grid-template-columns: 1fr; }
+      .decision { grid-column: auto; padding: 19px 18px; }
+      .decision-meta { grid-template-columns: repeat(2, 1fr); gap: 14px 0; }
+      .decision-metric + .decision-metric { padding-left: 0; border-left: 0; }
+      .decision-metric:nth-child(even) { padding-left: 14px; border-left: 1px solid var(--line); }
+      .agent { grid-template-columns: auto minmax(0, 1fr); }
+      .agent .status-label { grid-column: 2; }
+      .details-panel > summary { min-height: 56px; padding: 0 16px; }
+      .details-content, .panel-body { padding: 16px; }
+      .panel-header { padding: 16px 16px 0; }
+      .change { grid-template-columns: 1fr; gap: 5px; }
+      .evidence-grid { grid-template-columns: 1fr; }
+      .graph-header { display: grid; padding: 16px; }
+      .graph-actions { flex-wrap: wrap; }
+      .graph-actions button { min-height: 40px; }
+      .agent-graph-viewport { margin: 0 16px; }
+      .graph-inspector { padding: 0 16px 18px; }
     }
   </style>
 </head>
 <body>
 <main>
-  <header>
-    <div>
-      <h1>CrazyMarket review loop</h1>
-      <div class="subtitle" id="subtitle">Waiting for a session</div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">CM</div>
+      <div>
+        <h1>Review control room</h1>
+        <div class="session-line" id="subtitle">Waiting for a review session</div>
+      </div>
     </div>
-    <div class="updated" id="updated"></div>
+    <div class="live-state" id="updated">Connecting</div>
+    <span class="sr-only" id="freshness-announcement" role="status" aria-live="polite"></span>
   </header>
-  <div class="layout">
-    <section class="panel">
-      <h2>Review and validation graph</h2>
-      <svg class="phase-graph" id="graph" viewBox="0 0 900 330" role="img" aria-label="Review phases and active agents"></svg>
+
+  <div class="overview">
+    <section class="panel decision" id="decision-panel" aria-labelledby="decision-heading">
+      <div class="decision-status" id="decision-status">Waiting for state</div>
+      <h2 id="decision-heading">No active review</h2>
+      <p id="decision-copy">Initialize the review loop to see branch readiness and next actions.</p>
+      <div class="freshness-warning" id="freshness-warning" role="alert"></div>
+      <div class="decision-meta">
+        <div class="decision-metric"><div class="metric-value" id="metric-passed">0</div><div class="metric-label">gates passed</div></div>
+        <div class="decision-metric"><div class="metric-value skipped" id="metric-skipped">0</div><div class="metric-label">skipped checks</div></div>
+        <div class="decision-metric"><div class="metric-value incomplete" id="metric-incomplete">0</div><div class="metric-label">gates need action</div></div>
+        <div class="decision-metric"><div class="metric-value" id="metric-findings">0</div><div class="metric-label">open findings</div></div>
+        <div class="decision-metric"><div class="metric-value" id="metric-round">—</div><div class="metric-label">review round</div></div>
+      </div>
     </section>
-    <aside class="side">
-      <section class="panel">
-        <h2>Local stack</h2>
-        <div class="stack" id="stack"></div>
+
+    <section class="panel agent-graph-panel" id="agent-graph" aria-labelledby="agent-graph-heading">
+      <div class="graph-header">
+        <div>
+          <div class="graph-heading-line">
+            <h2 id="agent-graph-heading">Agent lineage</h2>
+            <span class="graph-count" data-agent-count></span>
+          </div>
+          <p class="panel-copy">Solid lines are recorded parents; dashed lines are legacy, dotted lines lead outside the current view, and red lines flag invalid records. Drag nodes or use the arrow keys.</p>
+        </div>
+        <div class="graph-actions" aria-label="Agent graph controls">
+          <button type="button" data-agent-filter="current" aria-pressed="true">Current round</button>
+          <button type="button" data-agent-filter="all" aria-pressed="false">All history</button>
+          <button type="button" data-agent-reset>Reset layout</button>
+        </div>
+      </div>
+      <div class="agent-graph-viewport">
+        <div class="agent-canvas" data-agent-canvas role="group" aria-label="Draggable agent parent and child graph">
+          <svg class="agent-edges" data-agent-edges aria-hidden="true"></svg>
+          <div class="agent-nodes" data-agent-nodes></div>
+        </div>
+      </div>
+      <div class="graph-inspector" data-agent-inspector aria-live="polite"></div>
+    </section>
+
+    <div class="main-column">
+      <section class="panel" aria-labelledby="gates-heading">
+        <div class="panel-header">
+          <div><h2 id="gates-heading">Validation gates</h2><p class="panel-copy">Skipped gates stay separate and do not count as passed.</p></div>
+        </div>
+        <div class="panel-body rows" id="checks"></div>
       </section>
-      <section class="panel">
-        <h2>Validation gates</h2>
-        <div class="checks" id="checks"></div>
+
+      <section class="panel" aria-labelledby="findings-heading">
+        <div class="panel-header">
+          <div><h2 id="findings-heading">Needs attention</h2><p class="panel-copy" id="findings-summary">Sorted by impact.</p></div>
+        </div>
+        <div class="panel-body rows" id="findings"></div>
       </section>
-      <section class="panel">
-        <h2>Open findings</h2>
-        <div class="findings" id="findings"></div>
+    </div>
+
+    <aside class="rail" aria-label="Review context">
+      <section class="panel" aria-labelledby="progress-heading">
+        <div class="panel-header">
+          <div>
+            <h2 id="progress-heading">Review map</h2>
+            <p class="panel-copy">A compact map of the five-step local loop.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <ol class="phase-track" id="phase-track" aria-label="Review phases"></ol>
+          <div class="reviewer-heading">
+            <h3>Reviewer activity</h3>
+            <span class="reviewer-count" id="reviewer-count"></span>
+          </div>
+          <div class="agents" id="agents"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="stack-heading">
+        <div class="panel-header"><h2 id="stack-heading">Local stack</h2></div>
+        <div class="panel-body stack-wrap"><div class="stack" id="stack"></div></div>
       </section>
     </aside>
-  </div>
-  <section class="panel changelog-panel">
-    <h2>Layer changelog — what is new</h2>
-    <div class="changelog" id="changelog"></div>
-  </section>
-  <section class="panel changes-panel">
-    <h2>Files and key code changes</h2>
-    <div class="changes-layout">
-      <div>
-        <table class="file-table">
-          <thead><tr><th>File</th><th>Type</th><th>Diff</th></tr></thead>
-          <tbody id="changed-files"></tbody>
-        </table>
+
+    <details class="panel details-panel" id="changelog-panel">
+      <summary><h2 class="summary-title">Layer changelog <span class="summary-count" id="changelog-count"></span></h2></summary>
+      <div class="details-content changelog" id="changelog"></div>
+    </details>
+
+    <details class="panel details-panel" id="changes-panel">
+      <summary><h2 class="summary-title">Files and key changes <span class="summary-count" id="changes-count"></span></h2></summary>
+      <div class="details-content changes-layout">
+        <div class="table-wrap">
+          <table class="file-table">
+            <thead><tr><th>File</th><th>Type</th><th>Diff</th></tr></thead>
+            <tbody id="changed-files"></tbody>
+          </table>
+        </div>
+        <div id="snippets"></div>
       </div>
-      <div id="snippets"></div>
-    </div>
-  </section>
-  <section class="panel evidence-panel">
-    <div id="action-section">
-      <h2>Unity action proof — player using the new fixtures</h2>
-      <div class="evidence-grid" id="action-evidence"></div>
-    </div>
-    <h2 id="tour-heading" style="margin-top: 22px">Feature walkthrough</h2>
-    <div class="evidence-grid" id="tour-evidence"></div>
-    <h2 style="margin-top: 22px">Validation timeline</h2>
-    <div class="evidence-grid" id="validation-evidence"></div>
-  </section>
+    </details>
+
+    <details class="panel details-panel" id="evidence-panel">
+      <summary><h2 class="summary-title">Unity evidence <span class="summary-count" id="evidence-count"></span></h2></summary>
+      <div class="details-content">
+        <section class="evidence-section" id="action-section">
+          <h3>Feature action</h3>
+          <div class="evidence-grid" id="action-evidence"></div>
+        </section>
+        <section class="evidence-section" id="tour-section">
+          <h3>Feature walkthrough</h3>
+          <div class="evidence-grid" id="tour-evidence"></div>
+        </section>
+        <section class="evidence-section" id="validation-section">
+          <h3>Validation timeline</h3>
+          <div class="evidence-grid" id="validation-evidence"></div>
+        </section>
+      </div>
+    </details>
+  </div>
+
 </main>
+
+<script src="/agent-graph.js"></script>
 <script>
   const phases = ["scope", "review", "fix", "unity", "done"];
-  const svg = document.getElementById("graph");
-  const escapeText = value => String(value ?? "");
+  const evidenceGroupLabels = {
+    integration: "Integration",
+    movement: "Movement",
+    "main-menu-ui-toolkit": "Main Menu UI Toolkit",
+    npcinteraction: "NPC interaction",
+    ui: "UI",
+  };
   let evidenceFingerprint = "";
+  let evidenceOpenedOnce = false;
+  let changesFingerprint = "";
+  let changelogOpenedOnce = false;
+  let stackFingerprint = "";
+  let stateFingerprint = "";
+  let currentState = null;
+  let stateConnected = false;
+  let freshnessTier = "";
+  const agentGraph = (() => {
+    const root = document.getElementById("agent-graph");
+    try {
+      if (typeof window.createAgentGraph !== "function") throw new Error("Agent graph module did not load.");
+      return window.createAgentGraph(root);
+    } catch (error) {
+      root.classList.add("unavailable");
+      root.querySelector("[data-agent-inspector]").textContent = "Agent lineage is unavailable. Review status and freshness remain active.";
+      return { render() {} };
+    }
+  })();
+  const severityOrder = { blocker: 0, "should-fix": 1, suggestion: 2 };
+  const findingStatusOrder = { open: 0, deferred: 1 };
+  const checkStatusOrder = { failed: 0, blocked: 1, running: 2, queued: 3, skipped: 4, passed: 5 };
 
-  function svgElement(name, attributes = {}) {
-    const element = document.createElementNS("http://www.w3.org/2000/svg", name);
-    for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
-    return element;
+  function relativeAge(seconds) {
+    if (seconds < 10) return "just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   }
 
-  function drawGraph(state) {
-    svg.replaceChildren();
-    const compact = window.innerWidth < 760;
-    const positions = phases.map((phase, index) => compact
-      ? { phase, x: 240, y: 45 + index * 65 }
-      : { phase, x: 95 + index * 175, y: 70 });
+  function updateFreshness() {
+    const updated = document.getElementById("updated");
+    const warning = document.getElementById("freshness-warning");
+    const announcement = document.getElementById("freshness-announcement");
+    if (!currentState) {
+      updated.className = "live-state disconnected";
+      updated.textContent = stateConnected ? "Waiting for state" : "Dashboard disconnected";
+      if (freshnessTier !== "disconnected") announcement.textContent = "Dashboard disconnected. No review state is available.";
+      freshnessTier = "disconnected";
+      return;
+    }
+    const timestamp = new Date(currentState.updatedAt);
+    if (Number.isNaN(timestamp.getTime())) {
+      updated.className = "live-state stale";
+      updated.textContent = "Unknown freshness";
+      warning.className = "freshness-warning visible";
+      const message = "This state has no valid update time. Do not use it for a handoff decision.";
+      if (warning.textContent !== message) warning.textContent = message;
+      if (freshnessTier !== "invalid") announcement.textContent = message;
+      freshnessTier = "invalid";
+      return;
+    }
+    const age = Math.max(0, Math.floor((Date.now() - timestamp.getTime()) / 1000));
+    updated.title = `Last state change: ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" }).format(timestamp)}`;
+    const tier = !stateConnected ? "disconnected" : age > 300 ? "stale" : age > 60 ? "delayed" : "fresh";
+    let message = "";
+    if (tier === "disconnected") {
+      updated.className = "live-state disconnected";
+      updated.textContent = `Disconnected · ${relativeAge(age)}`;
+      message = "Dashboard disconnected. Treat the visible review state as stale until the connection returns.";
+    } else if (tier === "stale") {
+      updated.className = "live-state stale";
+      updated.textContent = `Stale · ${relativeAge(age)}`;
+      message = "State is stale. Refresh or restart the review loop before acting on this decision.";
+    } else if (tier === "delayed") {
+      updated.className = "live-state delayed";
+      updated.textContent = `Delayed · ${relativeAge(age)}`;
+    } else {
+      updated.className = "live-state";
+      updated.textContent = `Fresh · ${relativeAge(age)}`;
+    }
+    warning.className = message ? "freshness-warning visible" : "freshness-warning";
+    if (warning.textContent !== message) warning.textContent = message;
+    if (tier !== freshnessTier) {
+      const announcements = {
+        fresh: "Review state is fresh.", delayed: "Review state updates are delayed.",
+        stale: "Review state is stale.", disconnected: "Dashboard disconnected. Visible state may be stale.",
+      };
+      announcement.textContent = announcements[tier];
+      freshnessTier = tier;
+    }
+  }
 
-    positions.slice(0, -1).forEach((position, index) => {
-      const next = positions[index + 1];
-      svg.appendChild(svgElement("line", { x1: position.x, y1: position.y, x2: next.x, y2: next.y, class: "edge" }));
+  function deriveState(state) {
+    const checks = Object.entries(state.checks || {}).map(([name, check]) => ({ name, ...check }))
+      .sort((a, b) => (checkStatusOrder[a.status] ?? 9) - (checkStatusOrder[b.status] ?? 9));
+    const findings = (state.findings || []).filter(item => item.status !== "resolved")
+      .sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9)
+        || (findingStatusOrder[a.status] ?? 9) - (findingStatusOrder[b.status] ?? 9));
+    const failingChecks = checks.filter(item => ["failed", "blocked"].includes(item.status));
+    const diagnoses = [
+      ...failingChecks.map(item => ({ title: item.name, detail: item.note, severity: item.status === "failed" ? "blocker" : "should-fix" })),
+      ...(state.completionProblems || []).map(detail => ({ title: "Completion revoked", detail, severity: "should-fix" })),
+      ...findings.filter(item => ["blocker", "should-fix"].includes(item.severity)),
+    ].sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9));
+    return {
+      checks, findings, diagnoses, failingChecks,
+      passedChecks: checks.filter(item => item.status === "passed"),
+      skippedChecks: checks.filter(item => item.status === "skipped"),
+      incompleteChecks: checks.filter(item => !["passed", "skipped"].includes(item.status)),
+      skippedPhases: phases.filter(phase => state.phases?.[phase] === "skipped"),
+    };
+  }
+
+  function renderPhases(state) {
+    const track = document.getElementById("phase-track");
+    track.replaceChildren();
+    phases.forEach((phase, index) => {
+      const status = state.phases?.[phase] || "queued";
+      const item = document.createElement("li");
+      item.className = `phase ${status}`;
+      item.setAttribute("aria-current", status === "running" ? "step" : "false");
+      const step = document.createElement("span");
+      step.className = "phase-step";
+      step.textContent = index + 1;
+      step.setAttribute("aria-hidden", "true");
+      const label = document.createElement("span");
+      label.className = "phase-label";
+      label.textContent = phase;
+      const statusLabel = document.createElement("span");
+      statusLabel.className = "phase-status";
+      statusLabel.textContent = status;
+      item.append(step, label, statusLabel);
+      track.appendChild(item);
     });
+  }
 
-    positions.forEach(position => {
-      const group = svgElement("g", { class: `node ${state.phases?.[position.phase] || "queued"}` });
-      group.appendChild(svgElement("rect", { x: position.x - 65, y: position.y - 25, width: 130, height: 50 }));
-      const label = svgElement("text", { x: position.x, y: position.y - 1 });
-      label.textContent = position.phase.toUpperCase();
-      group.appendChild(label);
-      const status = svgElement("text", { x: position.x, y: position.y + 16, class: "small" });
-      status.textContent = state.phases?.[position.phase] || "queued";
-      group.appendChild(status);
-      svg.appendChild(group);
-    });
-
-    const review = positions[1];
-    (state.agents || []).forEach((agent, index) => {
-      const x = compact ? 570 : 170 + index * 250;
-      const y = compact ? 70 + index * 90 : 235;
-      svg.appendChild(svgElement("line", { x1: review.x, y1: review.y + 25, x2: x, y2: y - 28, class: "agent-edge" }));
-      const group = svgElement("g", { class: `node ${agent.status || "queued"}` });
-      group.appendChild(svgElement("rect", { x: x - 95, y: y - 30, width: 190, height: 60 }));
-      const role = svgElement("text", { x, y: y - 5 });
-      role.textContent = escapeText(agent.role || agent.id);
-      group.appendChild(role);
-      const task = svgElement("text", { x, y: y + 15, class: "small" });
-      task.textContent = escapeText((agent.task || "").slice(0, 28));
-      group.appendChild(task);
-      svg.appendChild(group);
+  function renderAgents(state) {
+    const target = document.getElementById("agents");
+    const agents = state.agents || [];
+    target.replaceChildren();
+    document.getElementById("reviewer-count").textContent = agents.length ? `${agents.length} assigned` : "None assigned";
+    if (!agents.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Reviewers appear here when the review phase begins.";
+      target.appendChild(empty);
+      return;
+    }
+    const statusOrder = { running: 0, failed: 1, blocked: 2, queued: 3, passed: 4, skipped: 5 };
+    [...agents].sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9)).forEach(agent => {
+      const item = document.createElement("article");
+      item.className = "agent";
+      const indicator = document.createElement("span");
+      indicator.className = `agent-indicator ${agent.status || "queued"}`;
+      indicator.setAttribute("aria-hidden", "true");
+      const body = document.createElement("div");
+      const role = document.createElement("div");
+      role.className = "agent-role";
+      role.textContent = agent.role || agent.id;
+      const task = document.createElement("div");
+      task.className = "agent-task";
+      task.textContent = agent.note || agent.task || "Waiting for assignment details";
+      body.append(role, task);
+      const status = document.createElement("span");
+      status.className = `status-label ${agent.status || "queued"}`;
+      status.textContent = agent.status || "queued";
+      item.append(indicator, body, status);
+      target.appendChild(item);
     });
   }
 
@@ -211,7 +578,7 @@
     if (!entries.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = type === "finding" ? "No findings recorded" : "No gates recorded";
+      empty.textContent = type === "finding" ? "Nothing needs attention right now." : "No validation gates recorded yet.";
       target.appendChild(empty);
       return;
     }
@@ -220,6 +587,7 @@
       row.className = "row";
       const dot = document.createElement("span");
       dot.className = `dot ${entry.status || "queued"} ${entry.severity || ""}`;
+      dot.setAttribute("aria-hidden", "true");
       const text = document.createElement("div");
       const title = document.createElement("div");
       title.textContent = entry.title || entry.name;
@@ -231,38 +599,101 @@
         text.appendChild(note);
       }
       const status = document.createElement("span");
-      status.className = "status";
-      status.textContent = entry.status || "queued";
+      status.className = `status-label ${entry.status || "queued"} ${entry.severity || ""}`;
+      status.textContent = type === "finding" && entry.severity
+        ? `${entry.severity} · ${entry.status || "open"}`
+        : entry.status || "queued";
       row.append(dot, text, status);
       target.appendChild(row);
     });
   }
 
-  function render(state) {
-    document.getElementById("subtitle").textContent = state.session
-      ? `${state.branch} · round ${state.round} · ${state.currentPhase}`
-      : "Waiting for `review_loop.py init`";
-    document.getElementById("updated").textContent = state.updatedAt ? `Updated ${state.updatedAt}` : "";
-    drawGraph(state);
+  function renderDecision(state, derived) {
+    const { findings, diagnoses, failingChecks, passedChecks, skippedChecks, incompleteChecks, skippedPhases } = derived;
+    const phase = state.currentPhase || "scope";
+    const phaseStatus = state.phases?.[phase] || "queued";
+    const complete = state.phases?.done === "passed";
+    const panel = document.getElementById("decision-panel");
+    const status = document.getElementById("decision-status");
+    const heading = document.getElementById("decision-heading");
+    const copy = document.getElementById("decision-copy");
+    panel.className = "panel decision";
+    status.className = "decision-status";
 
-    const stack = document.getElementById("stack");
-    stack.replaceChildren();
-    (state.stack || []).forEach(branch => {
-      const item = document.createElement("div");
-      item.className = `branch ${branch.current ? "current" : ""}`;
-      const label = document.createElement("span");
-      label.textContent = branch.name;
-      item.append(label);
-      stack.appendChild(item);
-    });
-    if (!stack.children.length) stack.textContent = "No local stack detected";
+    if (!state.session) {
+      status.textContent = "Not started";
+      heading.textContent = "No active review";
+      copy.textContent = "Initialize the review loop to see branch readiness and next actions.";
+    } else if (diagnoses.length) {
+      const first = diagnoses[0];
+      const blockers = diagnoses.filter(item => item.severity === "blocker").length;
+      const tone = blockers ? "failed" : "blocked";
+      panel.classList.add(tone);
+      status.classList.add(tone);
+      status.textContent = blockers ? `${blockers} blocker${blockers === 1 ? "" : "s"}` : "Priority fixes open";
+      heading.textContent = `${diagnoses.length} priority issue${diagnoses.length === 1 ? " needs" : "s need"} attention`;
+      const detail = first.note || first.detail || (first.owner ? `Owned by ${first.owner}.` : "No diagnostic note was recorded.");
+      copy.textContent = `First: ${first.title} — ${detail}${diagnoses.length > 1 ? ` · ${diagnoses.length - 1} more below.` : ""}`;
+    } else if (complete && (skippedChecks.length || incompleteChecks.length || skippedPhases.length)) {
+      panel.classList.add("incomplete");
+      status.classList.add("blocked");
+      status.textContent = "Complete · validation incomplete";
+      heading.textContent = "Review completed with incomplete validation";
+      const skipped = [...skippedChecks.map(item => `${item.name} check`), ...skippedPhases.map(item => `${item} phase`)];
+      const pending = incompleteChecks.map(item => `${item.name} ${item.status || "queued"}`);
+      copy.textContent = `${skipped.length ? `Skipped: ${skipped.join(", ")}. ` : ""}${pending.length ? `Not complete: ${pending.join(", ")}. ` : ""}These do not count as passed validation.`;
+    } else if (complete) {
+      panel.classList.add("passed");
+      status.classList.add("passed");
+      status.textContent = "Done passed";
+      heading.textContent = "Review loop reports completion";
+      copy.textContent = "The recorded done phase is passed. Findings and gates remain visible below for detail.";
+    } else if (["failed", "blocked"].includes(phaseStatus)) {
+      panel.classList.add(phaseStatus);
+      status.classList.add(phaseStatus);
+      status.textContent = `${phase} ${phaseStatus}`;
+      heading.textContent = "The active phase failed without a recorded diagnosis";
+      copy.textContent = "No failed gate or priority finding explains this state yet. Record the failure note before continuing.";
+    } else if (phaseStatus === "skipped") {
+      panel.classList.add("incomplete");
+      status.classList.add("skipped");
+      status.textContent = `${phase} skipped`;
+      heading.textContent = "The active phase was skipped";
+      copy.textContent = "This phase is incomplete and remains separate from passed validation.";
+    } else {
+      const headings = {
+        scope: "Preparing the review",
+        review: "Independent review is underway",
+        fix: "Applying review fixes",
+        unity: "Proving the change in Unity",
+        done: "Final handoff is pending",
+      };
+      status.textContent = `${phase} ${phaseStatus}`;
+      heading.textContent = headings[phase] || "Review in progress";
+      copy.textContent = findings.length
+        ? `${findings.length} unresolved finding${findings.length === 1 ? " is" : "s are"} recorded.`
+        : "No unresolved findings are currently recorded.";
+    }
+    document.getElementById("metric-passed").textContent = passedChecks.length;
+    document.getElementById("metric-skipped").textContent = skippedChecks.length;
+    document.getElementById("metric-incomplete").textContent = incompleteChecks.length;
+    document.getElementById("metric-incomplete").className = `metric-value ${failingChecks.length ? "failed" : "incomplete"}`;
+    document.getElementById("metric-findings").textContent = findings.length;
+    document.getElementById("metric-round").textContent = state.round ? `${state.round} / 3` : "—";
+  }
 
-    renderRows(document.getElementById("checks"), Object.entries(state.checks || {}).map(([name, value]) => ({ name, ...value })), "check");
-    renderRows(document.getElementById("findings"), (state.findings || []).filter(item => item.status !== "resolved"), "finding");
-
+  function renderChanges(state) {
+    const changelogItems = state.changelog || [];
+    const nextFingerprint = JSON.stringify([changelogItems, state.changes || {}]);
+    if (nextFingerprint === changesFingerprint) return;
+    const initialRender = changesFingerprint === "";
+    const openSnippetKeys = new Set([...document.querySelectorAll("#snippets .snippet[open]")]
+      .map(item => item.dataset.snippetKey));
+    changesFingerprint = nextFingerprint;
     const changelog = document.getElementById("changelog");
     changelog.replaceChildren();
-    (state.changelog || []).forEach(item => {
+    document.getElementById("changelog-count").textContent = `${changelogItems.length} entr${changelogItems.length === 1 ? "y" : "ies"}`;
+    changelogItems.forEach(item => {
       const row = document.createElement("article");
       row.className = "change";
       const type = document.createElement("div");
@@ -282,10 +713,17 @@
       row.append(type, body);
       changelog.appendChild(row);
     });
+    if (!changelogItems.length) changelog.innerHTML = '<div class="empty">No layer-specific changelog entries.</div>';
+    if (changelogItems.length && !changelogOpenedOnce) {
+      changelogOpenedOnce = true;
+      document.getElementById("changelog-panel").open = true;
+    }
 
+    const files = state.changes?.files || [];
     const changedFiles = document.getElementById("changed-files");
     changedFiles.replaceChildren();
-    (state.changes?.files || []).forEach(file => {
+    document.getElementById("changes-count").textContent = `${files.length} changed file${files.length === 1 ? "" : "s"}`;
+    files.forEach(file => {
       const row = document.createElement("tr");
       const pathCell = document.createElement("td");
       const path = document.createElement("code");
@@ -299,7 +737,7 @@
       row.append(pathCell, kind, delta);
       changedFiles.appendChild(row);
     });
-    if (!changedFiles.children.length) {
+    if (!files.length) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
       cell.colSpan = 3;
@@ -312,9 +750,11 @@
     const snippets = document.getElementById("snippets");
     snippets.replaceChildren();
     (state.changes?.snippets || []).forEach((snippet, index) => {
+      const snippetKey = JSON.stringify([snippet.key, snippet.file]);
       const details = document.createElement("details");
       details.className = "snippet";
-      details.open = index < 2;
+      details.dataset.snippetKey = snippetKey;
+      details.open = openSnippetKeys.has(snippetKey) || (initialRender && index === 0);
       const summary = document.createElement("summary");
       summary.textContent = snippet.key;
       const file = document.createElement("span");
@@ -327,81 +767,151 @@
       details.append(summary, file, pre);
       snippets.appendChild(details);
     });
-    if (!snippets.children.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = "No readable code snippets in this layer.";
-      snippets.appendChild(empty);
+    if (!snippets.children.length) snippets.innerHTML = '<div class="empty">No readable code snippets in this layer.</div>';
+  }
+
+  function renderEvidence(state) {
+    const evidenceItems = state.evidence || [];
+    const nextFingerprint = JSON.stringify(evidenceItems);
+    document.getElementById("evidence-count").textContent = `${evidenceItems.length} capture${evidenceItems.length === 1 ? "" : "s"}`;
+    if (nextFingerprint === evidenceFingerprint) return;
+    evidenceFingerprint = nextFingerprint;
+    const groups = {
+      action: document.getElementById("action-evidence"),
+      tour: document.getElementById("tour-evidence"),
+      validation: document.getElementById("validation-evidence"),
+    };
+    const existingFigures = new Map([...document.querySelectorAll(".capture[data-evidence-key]")]
+      .map(figure => [figure.dataset.evidenceKey, figure]));
+    const visibleKeys = new Set();
+    evidenceItems.forEach(capture => {
+      const target = capture.media === "video" || capture.group?.endsWith("-action") ? groups.action
+        : capture.group?.endsWith("-tour") ? groups.tour : groups.validation;
+      const isVideo = capture.media === "video";
+      const evidenceKey = capture.url || JSON.stringify([capture.group, capture.label, capture.view, capture.media]);
+      visibleKeys.add(evidenceKey);
+      let figure = existingFigures.get(evidenceKey);
+      const existingMedia = figure?.querySelector("video, img");
+      if (figure && Boolean(existingMedia?.tagName === "VIDEO") !== isVideo) {
+        figure.remove();
+        figure = null;
+      }
+      if (!figure) {
+        figure = document.createElement("figure");
+        const media = document.createElement(isVideo ? "video" : "img");
+        media.src = capture.url;
+        if (isVideo) {
+          media.controls = true;
+          media.preload = "metadata";
+          media.playsInline = true;
+          figure.appendChild(media);
+        } else {
+          media.loading = "lazy";
+          const link = document.createElement("a");
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.appendChild(media);
+          figure.appendChild(link);
+        }
+        figure.append(document.createElement("figcaption"), document.createElement("div"));
+      }
+      figure.dataset.evidenceKey = evidenceKey;
+      figure.className = isVideo ? "capture video" : "capture";
+      const media = figure.querySelector("video, img");
+      if (media.getAttribute("src") !== capture.url) media.src = capture.url;
+      if (!isVideo) {
+        const link = figure.querySelector("a");
+        link.href = capture.url;
+        media.alt = `${capture.label} — ${capture.view} view`;
+      }
+      const caption = figure.querySelector("figcaption");
+      caption.textContent = capture.label;
+      const meta = figure.querySelector("div");
+      meta.className = "capture-meta";
+      const rawGroup = (capture.group || "").replace(/-(action|tour)$/, "");
+      const groupLabel = evidenceGroupLabels[rawGroup]
+        || rawGroup.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
+      meta.textContent = `${groupLabel ? `${groupLabel} · ` : ""}${capture.view} · ${capture.capturedAt || "capture time unavailable"}`;
+      target.appendChild(figure);
+    });
+    existingFigures.forEach((figure, key) => {
+      if (!visibleKeys.has(key)) figure.remove();
+    });
+    Object.entries(groups).forEach(([name, target]) => {
+      const section = document.getElementById(`${name}-section`);
+      section.hidden = !target.querySelector(".capture");
+    });
+    if (evidenceItems.length && !evidenceOpenedOnce) {
+      evidenceOpenedOnce = true;
+      document.getElementById("evidence-panel").open = true;
+    }
+  }
+
+  function render(state) {
+    const derived = deriveState(state);
+    document.getElementById("subtitle").textContent = state.session ? `${state.branch} · round ${state.round}` : "Waiting for a review session";
+    document.title = state.session ? `${state.currentPhase} · ${state.branch} · CrazyMarket Review` : "CrazyMarket Review";
+
+    renderPhases(state);
+    renderAgents(state);
+    renderDecision(state, derived);
+    agentGraph.render(state);
+
+    const stackItems = state.stack || [];
+    const nextStackFingerprint = JSON.stringify(stackItems);
+    if (nextStackFingerprint !== stackFingerprint) {
+      stackFingerprint = nextStackFingerprint;
+      const stack = document.getElementById("stack");
+      stack.replaceChildren();
+      stackItems.forEach(branch => {
+        const item = document.createElement("div");
+        item.className = `branch ${branch.current ? "current" : ""}`;
+        if (branch.current) item.setAttribute("aria-current", "true");
+        const label = document.createElement("span");
+        label.textContent = branch.name;
+        label.title = branch.name;
+        item.appendChild(label);
+        stack.appendChild(item);
+        if (branch.current) requestAnimationFrame(() => {
+          const viewport = stack.parentElement;
+          viewport.scrollTop = Math.max(0, item.offsetTop - (viewport.clientHeight - item.offsetHeight) / 2);
+        });
+      });
+      if (!stack.children.length) stack.innerHTML = '<div class="empty">No local stack detected.</div>';
     }
 
-    const nextEvidenceFingerprint = JSON.stringify(state.evidence || []);
-    if (nextEvidenceFingerprint !== evidenceFingerprint) {
-      evidenceFingerprint = nextEvidenceFingerprint;
-      const evidenceGroups = {
-      "feature-action": document.getElementById("action-evidence"),
-      "movement-tour": document.getElementById("tour-evidence"),
-      validation: document.getElementById("validation-evidence"),
-      };
-      Object.values(evidenceGroups).forEach(target => target.replaceChildren());
-      (state.evidence || []).forEach(capture => {
-      const evidence = capture.media === "video" ? evidenceGroups["feature-action"]
-        : capture.group?.endsWith("-tour") ? evidenceGroups["movement-tour"]
-        : capture.group?.endsWith("-action") ? evidenceGroups["feature-action"]
-        : evidenceGroups[capture.group] || evidenceGroups.validation;
-      const figure = document.createElement("figure");
-      const isVideo = capture.media === "video";
-      figure.className = isVideo ? "capture video" : "capture";
-      const link = document.createElement("a");
-      link.href = capture.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      const media = document.createElement(isVideo ? "video" : "img");
-      media.src = capture.url;
-      if (isVideo) {
-        media.controls = true;
-        media.preload = "metadata";
-        media.playsInline = true;
-      } else {
-        media.alt = `${capture.label} — ${capture.view} view`;
-        media.loading = "lazy";
-      }
-      const caption = document.createElement("figcaption");
-      caption.textContent = capture.label;
-      const meta = document.createElement("div");
-      meta.className = "capture-meta";
-      const group = capture.group?.endsWith("-action") ? "Action proof · "
-        : capture.group?.endsWith("-tour") ? `${capture.group.replace("-tour", "")} tour · ` : "";
-      meta.textContent = `${group}${capture.view} · ${capture.capturedAt || ""}`;
-      if (isVideo) figure.append(media, caption, meta);
-      else link.append(media, caption, meta);
-      if (!isVideo) figure.appendChild(link);
-        evidence.appendChild(figure);
-      });
-      Object.entries(evidenceGroups).forEach(([group, evidence]) => {
-      if (evidence.children.length) return;
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = group === "feature-action"
-        ? "Action screenshots are being captured in Unity."
-        : "No screenshots in this section yet.";
-        evidence.appendChild(empty);
-      });
-      document.getElementById("action-section").hidden = !document.querySelector("#action-evidence .capture");
-      document.getElementById("tour-heading").hidden = !document.querySelector("#tour-evidence .capture");
-    }
+    const blockerCount = derived.findings.filter(item => item.severity === "blocker").length;
+    document.getElementById("findings-summary").textContent = derived.findings.length
+      ? `${blockerCount} blocker${blockerCount === 1 ? "" : "s"} · ${derived.findings.length} open · highest impact first`
+      : "No unresolved findings.";
+    renderRows(document.getElementById("checks"), derived.checks, "check");
+    renderRows(document.getElementById("findings"), derived.findings, "finding");
+    renderChanges(state);
+    renderEvidence(state);
   }
 
   async function refresh() {
     try {
       const response = await fetch("/api/state", { cache: "no-store" });
-      render(await response.json());
+      if (!response.ok) throw new Error(`State request failed: ${response.status}`);
+      const state = await response.json();
+      currentState = state;
+      stateConnected = true;
+      updateFreshness();
+      const nextFingerprint = JSON.stringify(state);
+      if (nextFingerprint !== stateFingerprint) {
+        stateFingerprint = nextFingerprint;
+        render(state);
+      }
     } catch (error) {
-      document.getElementById("updated").textContent = "Dashboard disconnected";
+      stateConnected = false;
+      updateFreshness();
     }
   }
+
   refresh();
-  setInterval(refresh, 1500);
-  window.addEventListener("resize", refresh);
+  setInterval(refresh, 3000);
+  setInterval(updateFreshness, 1000);
 </script>
 </body>
 </html>
