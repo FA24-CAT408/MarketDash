@@ -89,7 +89,6 @@ namespace CrazyMarket.Player.V2
             if (blocked)
             {
                 jumpBuffer = 0f;
-                if (!stable) CancelAbilities(AbilityCancellationReason.ControlBlocked);
             }
             else if (intent.JumpPressed) jumpBuffer = Mathf.Max(jumpBuffer, tuning.JumpBufferTime);
             else jumpBuffer = Mathf.Max(0f, jumpBuffer - dt);
@@ -165,15 +164,15 @@ namespace CrazyMarket.Player.V2
         public PlayerOperationResult SetControlBlocked(string source, bool blocked)
         {
             if (string.IsNullOrWhiteSpace(source)) return PlayerOperationResult.RejectedInvalidArgument;
+            bool wasBlocked = blocks.Count != 0;
             if (blocked)
-            {
-                if (blocks.Add(source))
-                {
-                    jumpBuffer = 0f;
-                    CancelAbilities(AbilityCancellationReason.ControlBlocked);
-                }
-            }
+                blocks.Add(source);
             else blocks.Remove(source);
+            if (!wasBlocked && blocks.Count != 0)
+            {
+                jumpBuffer = 0f;
+                CancelAbilities(AbilityCancellationReason.ControlBlocked);
+            }
             return PlayerOperationResult.Accepted;
         }
         public PlayerOperationResult Teleport(Vector3 position, Quaternion rotation, bool resetVelocity = true)
@@ -237,7 +236,6 @@ namespace CrazyMarket.Player.V2
                 pendingProfile = null;
                 CancelAbilities(AbilityCancellationReason.ProfileChanged);
                 profile = replacement;
-                if (!Stable(observation)) CancelAbilities(AbilityCancellationReason.ProfileChanged);
                 coyote = jumpBuffer = 0f;
                 flags |= PlayerActionFlags.ProfileChanged;
             }

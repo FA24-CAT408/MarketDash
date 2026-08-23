@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CrazyMarket.Player;
 using CrazyMarket.Player.V2;
 using KinematicCharacterController;
 using UnityEngine;
@@ -7,7 +8,8 @@ namespace CrazyMarket.Player.V2.Unity
 {
     [RequireComponent(typeof(KinematicCharacterMotor))]
     [DisallowMultipleComponent]
-    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController
+    public sealed class PlayerControllerV2 : MonoBehaviour, ICharacterController, IPlayerController,
+        IPlayerSceneControl
     {
         [Header("V2 composition")]
         [SerializeField] private PlayerProfile profile;
@@ -24,6 +26,8 @@ namespace CrazyMarket.Player.V2.Unity
         private bool jumpQueued;
         private bool movementEnabled = true;
         private bool inputSubscribed;
+        private bool motorReleasedByController;
+        private bool motorDisabledByController;
         private bool stepProducedOutput;
         private LocomotionOutput output;
         private Vector3 movementDirection;
@@ -69,7 +73,18 @@ namespace CrazyMarket.Player.V2.Unity
                 Debug.LogWarning("PlayerControllerV2 has no InputReader; movement will remain idle.", this);
         }
 
-        private void OnEnable() => SubscribeToInput();
+        private void OnEnable()
+        {
+            if (motor != null && motorReleasedByController && motor.CharacterController == null)
+            {
+                motor.CharacterController = this;
+                if (motorDisabledByController)
+                    motor.enabled = true;
+            }
+            motorReleasedByController = false;
+            motorDisabledByController = false;
+            SubscribeToInput();
+        }
 
         private void OnDisable()
         {
@@ -78,6 +93,18 @@ namespace CrazyMarket.Player.V2.Unity
             movementDirection = Vector3.zero;
             jumpHeld = false;
             jumpQueued = false;
+            motorReleasedByController = false;
+            motorDisabledByController = false;
+            if (motor != null && motor.CharacterController == this)
+            {
+                motor.CharacterController = null;
+                motorReleasedByController = true;
+                if (motor.enabled)
+                {
+                    motor.enabled = false;
+                    motorDisabledByController = true;
+                }
+            }
         }
 
         public PlayerOperationResult SetControlBlocked(string source, bool blocked) =>

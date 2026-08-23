@@ -13,7 +13,7 @@ namespace CrazyMarket.Player.V2.Editor
         private SerializedProperty movementReferenceProperty;
         private SerializedProperty ignoredCollidersProperty;
         private LocomotionTuning workingTuning;
-        private string workingProfileId;
+        private string workingRuntimeProfileId;
         private bool hasWorkingCopy;
         private string status;
         private MessageType statusType = MessageType.Info;
@@ -129,10 +129,11 @@ namespace CrazyMarket.Player.V2.Editor
                 return;
             }
 
-            if (!hasWorkingCopy || workingProfileId != runtime.ProfileId.Value)
+            string runtimeProfileId = controller.Snapshot.RuntimeProfileId.Value;
+            if (!hasWorkingCopy || workingRuntimeProfileId != runtimeProfileId)
             {
                 workingTuning = runtime.Locomotion;
-                workingProfileId = runtime.ProfileId.Value;
+                workingRuntimeProfileId = runtimeProfileId;
                 hasWorkingCopy = true;
             }
 
