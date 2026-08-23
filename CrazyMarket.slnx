@@ -1,5 +1,6 @@
 ﻿<Solution>
   <Project Path="Unity.Timeline.csproj" />
+  <Project Path="MoreMountains.Tools.csproj" />
   <Project Path="Unity.ProBuilder.csproj" />
   <Project Path="Unity.Mathematics.csproj" />
   <Project Path="Unity.Timeline.Editor.csproj" />
@@ -23,6 +24,8 @@
   <Project Path="Unity.Burst.CodeGen.csproj" />
   <Project Path="Unity.Splines.Editor.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
+  <Project Path="MoreMountains.Tools.Editor.csproj" />
+  <Project Path="Lofelt.NiceVibrations.csproj" />
   <Project Path="Unity.Pipeline.CodeGen.csproj" />
   <Project Path="PsdPlugin.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.001.csproj" />
@@ -46,6 +49,8 @@
   <Project Path="Unity.Settings.Editor.csproj" />
   <Project Path="Unity.InputSystem.TestFramework.csproj" />
   <Project Path="CrazyMarket.TestCampus.Editor.csproj" />
+  <Project Path="Lofelt.NiceVibrations.Demo.csproj" />
+  <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
   <Project Path="FlatKit.Utils.Editor.csproj" />
   <Project Path="Bezi.Editor.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
