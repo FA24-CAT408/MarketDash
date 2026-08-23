@@ -16,6 +16,7 @@
 
 ## Verification
 
+- For Unity launch, Play Mode, Console, scene/prefab, generated-content, or editor-automation work, use `crazy-market-unity-automation`.
 - For gameplay, camera, UI, scene, prefab, or generator changes: compile; enter the actual affected scene in Play Mode; exercise the changed happy path and a reset or boundary path; inspect the Console and Game view.
 - Visual changes require visual inspection at a relevant Game-view resolution or aspect ratio.
 - Report validation as `verified`, `partially verified`, or `unverified`. Static inspection, stale evidence, and Test Campus results must not be presented as production verification.

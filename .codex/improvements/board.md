@@ -2,6 +2,28 @@
 
 ## Active
 
+### Issue #36 Main Menu scene foundation
+
+- **Outcome:** The production Main Menu scene has a readable hierarchy that keeps important objects at the root while consolidating repeated supermarket dressing into clear groups.
+- **Why now:** This gives the interactive Main Menu prototypes a clean foundation without prematurely committing to a final vignette architecture.
+- **Current behavior:** The scene previously exposed 49 roots, mixing individual NPCs, products, and ceiling lights with its important objects.
+- **Minimum:** Group repeated dressing into `NPCs`, `Produce Display`, `Shelf Display`, and `Ceiling Lights` while preserving world transforms and behavior.
+- **Target:** Confirm the reorganized production scene opens, compiles, and looks unchanged in Play Mode.
+- **Stretch:** Begin the first lightweight interaction concept only after this organization slice is accepted.
+- **Acceptance criteria:** Important objects remain at the root; repeated dressing appears under the four agreed groups; object placement and active state remain unchanged; the Main Menu enters Play Mode without new errors.
+- **Non-goals:** UI redesign, interaction logic, camera choreography, new art, feedback effects, accessibility behavior, or selection of the final centerpiece.
+- **Scene/zone:** `Assets/Scenes/Levels/Main Menu.unity`.
+- **Branch/base:** `main` / `origin/main`.
+- **Status:** In progress; hierarchy organization applied and smoke-validated.
+- **Budget:** Two implementation approaches and one review/fix round.
+- **Attempts used:** One hierarchy approach selected from three structural options.
+- **Progress:** Added four root groups, moved repeated scene dressing beneath them, and normalized `register` to `Register`. Replaced four invalid negative-scale shelf-prefab colliders with equivalent positive-scale proxies, regenerated the production Sample Level shelf splines, and migrated 148 stale baked Main Menu shelf colliders.
+- **Decisions:** Keep major objects at the root and group only repeated dressing. Preserve shelf collision geometry through proxy transforms instead of disabling collision or replacing box colliders with expensive convex mesh colliders.
+- **Validation:** Unity recompiled successfully and the production Main Menu entered Play Mode. The exact negative-scale `BoxCollider` warning count remained at 592 before and after the corrected run (`0` new warnings); static inspection found zero remaining direct negative-scale box colliders. Visual comparison and interactive shelf-collision testing remain pending.
+- **Checkpoints:** None.
+
+## Paused
+
 ### Player Controller V2 vertical slice
 
 - **Outcome:** The player can move, jump, and double-jump responsively in the Player V2 Test Campus scene, with animation matching the action on the frame it begins.
