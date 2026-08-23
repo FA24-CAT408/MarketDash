@@ -43,13 +43,12 @@ namespace CrazyMarket.Player.V2.Editor
 
         private static PlayerProfile BuildProfileFromCurrentLegacyPrefab()
         {
-            LocomotionTuning tuning = ReadLegacyLocomotionTuning();
             PlayerProfile profile = AssetDatabase.LoadAssetAtPath<PlayerProfile>(ProfilePath);
-            if (profile == null)
-            {
-                profile = ScriptableObject.CreateInstance<PlayerProfile>();
-                AssetDatabase.CreateAsset(profile, ProfilePath);
-            }
+            if (profile != null) return profile;
+
+            LocomotionTuning tuning = ReadLegacyLocomotionTuning();
+            profile = ScriptableObject.CreateInstance<PlayerProfile>();
+            AssetDatabase.CreateAsset(profile, ProfilePath);
 
             SerializedObject serialized = new SerializedObject(profile);
             serialized.FindProperty("profileId").stringValue = "Production";
@@ -129,7 +128,6 @@ namespace CrazyMarket.Player.V2.Editor
 
                 RemoveComponents<KCCPlayerController>(root);
                 RemoveComponents<TestCampusPlayerAdapter>(root);
-                RemoveComponents<TestCampusPlayerV2Bridge>(root);
                 RemoveComponents<PlayerCollisionManager>(root);
 
                 KinematicCharacterMotor motor = root.GetComponent<KinematicCharacterMotor>();
@@ -202,15 +200,6 @@ namespace CrazyMarket.Player.V2.Editor
                 replacement.name = playerName;
                 replacement.transform.SetPositionAndRotation(position, rotation);
             }
-            // Test Campus behavior belongs to the scene integration, not the
-            // reusable player prefab. This also leaves the canonical prefab with
-            // exactly its three production behavior components.
-            TestCampusPlayerV2Bridge bridge = replacement.GetComponent<TestCampusPlayerV2Bridge>();
-            if (bridge == null) bridge = replacement.AddComponent<TestCampusPlayerV2Bridge>();
-            PlayerControllerV2 controller = replacement.GetComponent<PlayerControllerV2>();
-            SerializedObject integration = new SerializedObject(bridge);
-            integration.FindProperty("controller").objectReferenceValue = controller;
-            integration.ApplyModifiedPropertiesWithoutUndo();
             campus.PlayerRoot = replacement.transform;
             if (!alreadyUsesV2Prefab)
             {

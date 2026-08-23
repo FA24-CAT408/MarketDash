@@ -912,7 +912,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294967040
   m_fontColor: {r: 0, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -925,7 +925,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -2536,11 +2536,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  near clip plane: 0.1
+  far clip plane: 5000
+  field of view: 58
   orthographic: 0
-  orthographic size: 5
+  orthographic size: 10
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -2565,7 +2565,7 @@ Transform:
   m_GameObject: {fileID: 485111430}
   serializedVersion: 2
   m_LocalRotation: {x: 0.2079117, y: 0, z: 0, w: 0.9781476}
-  m_LocalPosition: {x: 0, y: 9, z: -12}
+  m_LocalPosition: {x: 0, y: 7.5, z: -8.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3571,7 +3571,7 @@ MonoBehaviour:
     m_Value: 30
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -4727,49 +4727,14 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 860887198}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 541302cb08857404088c78bc75016156, type: 3}
---- !u!1 &860887195 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 9115246567303182386, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 860887194}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &860887196 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5976832322369415315, guid: 541302cb08857404088c78bc75016156,
-    type: 3}
-  m_PrefabInstance: {fileID: 860887194}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 860887195}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c6f907a49383d14e92f58ddbf37c982, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.PlayerControllerV2
 --- !u!4 &860887197 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 940588806640598781, guid: 541302cb08857404088c78bc75016156,
     type: 3}
   m_PrefabInstance: {fileID: 860887194}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &860887198
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 860887195}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f9284eddd5b45d98686f2145b0fa643, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.TestCampusPlayerV2Bridge
-  controller: {fileID: 860887196}
 --- !u!1 &878091677
 GameObject:
   m_ObjectHideFlags: 0
