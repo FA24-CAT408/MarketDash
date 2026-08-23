@@ -1,0 +1,38 @@
+flowchart LR
+  N0001["AudioManager"]
+  N0002["Campaign scenes"]
+  N0003["EndScreenManager"]
+  N0004["GameManager"]
+  N0005["GroceryListManager"]
+  N0006["InputReader"]
+  N0007["InteractionController"]
+  N0008["Item"]
+  N0009["Production KCC player"]
+  N0010["MainMenuController"]
+  N0011["NPCSplineWalker"]
+  N0012["GameSaveManager"]
+  N0013["ShelfItemSpawner"]
+  N0014["StagingAreaController"]
+  N0015["TimerManager"]
+  N0016["UIManager"]
+  N0017["Player V2"]
+  N0001 -->|"subscribes"| N0004
+  N0002 -->|"constructs"| N0009
+  N0003 -->|"reads"| N0012
+  N0004 -->|"calls"| N0005
+  N0004 -->|"configures"| N0009
+  N0004 -->|"persists"| N0012
+  N0004 -->|"calls"| N0014
+  N0004 -->|"calls"| N0015
+  N0005 -->|"emits"| N0004
+  N0006 -->|"emits"| N0009
+  N0006 -->|"emits"| N0017
+  N0008 -->|"emits"| N0005
+  N0009 -->|"calls"| N0008
+  N0010 -->|"loads"| N0002
+  N0011 -->|"depends-on"| N0004
+  N0012 -->|"reads"| N0015
+  N0014 -->|"calls"| N0016
+  N0015 -->|"emits"| N0016
+  N0016 -->|"calls"| N0004
+  N0017 -->|"depends-on"| N0009
