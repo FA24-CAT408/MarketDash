@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Dash — Main Menu Prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Atma:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ease-out: cubic-bezier(.23,1,.32,1);
+  --ease-io:  cubic-bezier(.77,0,.175,1);
+  --press: 120ms;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:Atma,system-ui,sans-serif;
+  background:#0b0b10;color:#fff;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+ul{list-style:none}
+
+/* 1280x800 design frame, uniformly scaled to the display (Unity CanvasScaler-style) */
+#stage{position:fixed;left:50%;top:50%;width:1280px;height:800px;
+  translate:-50% -50%;transform-origin:center}
+
+/* ============================================================
+   SHARED — fake gameplay scene (stylized 3D aisle + hopper)
+   ============================================================ */
+.concept{position:absolute;inset:0;visibility:hidden;opacity:0}
+.concept.active{visibility:visible;opacity:1}
+
+.scene{position:absolute;inset:-14% -28%;perspective:850px;overflow:hidden;background:var(--wall2)}
+.wall{position:absolute;inset:0;background:linear-gradient(var(--wall1) 0%,var(--wall2) 52%,var(--wall3) 60%,var(--wall3) 100%)}
+.lights{position:absolute;left:0;right:0;top:0;height:22%;
+  background:repeating-linear-gradient(90deg,transparent 0 140px,var(--light) 140px 190px,transparent 190px 330px);
+  filter:blur(1px);opacity:.9;
+  transform:rotateX(38deg);transform-origin:top center;
+}
+.lights::after{content:"";position:absolute;inset:0;background:inherit;filter:blur(18px);opacity:.7}
+.shelf{position:absolute;top:-12%;height:96%;width:58%;
+  background:
+    /* product runs (two staggered rows per shelf tile) */
+    repeating-linear-gradient(90deg, var(--p1) 0 26px, var(--p2) 26px 44px, transparent 44px 58px, var(--p3) 58px 88px, transparent 88px 102px),
+    /* shelf boards */
+    repeating-linear-gradient(0deg, var(--board) 0 10px, transparent 10px 96px);
+  background-size:204px 100%, 100% 96px;
+  animation:aisle-scroll 7s linear infinite;
+}
+.shelf::after{content:"";position:absolute;inset:0;background:linear-gradient(var(--shelfShade),transparent 30%,transparent 70%,var(--shelfShade))}
+.shelf.left {left:-26%;transform-origin:left center; transform:rotateY( 58deg)}
+.shelf.right{right:-26%;transform-origin:right center;transform:rotateY(-58deg)}
+.shelf.right{animation-direction:reverse}
+@keyframes aisle-scroll{to{background-position:-204px 0, 0 0}}
+.floor{position:absolute;left:-30%;right:-30%;bottom:-42%;height:84%;
+  transform:rotateX(54deg);transform-origin:top center;
+  background:repeating-conic-gradient(var(--f1) 0% 25%, var(--f2) 0% 50%);
+  background-size:150px 150px;
+  animation:floor-scroll 1.6s linear infinite;
+}
+@keyframes floor-scroll{to{background-position:0 150px}}
+
+/* auto-runner set dressing: crates drifting past, coins, a hopping shopper */
+.props{position:absolute;inset:0}
+.crate{position:absolute;width:74px;height:74px;border-radius:10px;
+  background:var(--crate);box-shadow:inset 0 -14px 0 rgb(0 0 0/.18), inset 0 4px 0 rgb(255 255 255/.25);
+  animation:drift linear infinite;
+}
+.crate::after{content:"";position:absolute;inset:22px;border:4px solid rgb(0 0 0/.15);border-radius:4px}
+.crate.a{bottom:30%;animation-duration:9s}
+.crate.b{bottom:44%;width:56px;height:56px;animation-duration:11s;animation-delay:-4s}
+.crate.c{bottom:26%;width:92px;height:92px;animation-duration:8s;animation-delay:-6.2s}
+@keyframes drift{from{transform:translateX(108vw)}to{transform:translateX(-16vw)}}
+.coin{position:absolute;width:22px;height:22px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%, #ffe98a, #f4b400 70%);
+  box-shadow:0 0 12px rgb(255 200 60/.6);
+  animation:drift linear infinite, spin 700ms var(--ease-io) infinite alternate;
+}
+.coin.a{bottom:52%;animation-duration:9s,700ms;animation-delay:-2s,0s}
+.coin.b{bottom:56%;animation-duration:9s,700ms;animation-delay:-2.4s,150ms}
+.coin.c{bottom:60%;animation-duration:9s,700ms;animation-delay:-2.8s,300ms}
+@keyframes spin{from{transform:scaleX(1)}to{transform:scaleX(.25)}}
+.player{position:absolute;left:31%;bottom:29%;width:88px;height:88px}
+.player .body{position:absolute;inset:0;border-radius:38% 42% 46% 44%/46% 42% 54% 58%;
+  background-image: /* Blobby: yellow goo, scribble eyes, grin */
+    radial-gradient(circle 7px at 34% 42%, #14181f 98%, transparent),
+    radial-gradient(circle 7px at 64% 42%, #14181f 98%, transparent),
+    radial-gradient(ellipse 12px 7px at 50% 63%, #5c1d12 98%, transparent),
+    linear-gradient(#ffe565,#f2b90e);
+  box-shadow:inset 0 -12px 0 rgb(160 100 0/.22);
+  animation:hop 950ms var(--ease-io) infinite;
+  transform-origin:bottom center;
+}
+.player .body::before{ /* red cap dome */
+  content:"";position:absolute;left:14px;right:20px;top:-13px;height:28px;
+  background:linear-gradient(#e23c3c,#b92222);border-radius:99px 99px 10px 10px;
+  box-shadow:inset 0 4px 0 rgb(255 255 255/.2);
+}
+.player .body::after{ /* cap brim */
+  content:"";position:absolute;left:-16px;top:3px;width:40px;height:13px;
+  background:#b92222;border-radius:99px;
+}
+.player .shadow{position:absolute;left:8%;right:8%;bottom:-14px;height:14px;border-radius:50%;
+  background:rgb(0 0 0/.35);filter:blur(3px);
+  animation:hop-shadow 950ms var(--ease-io) infinite;
+}
+@keyframes hop{
+  0%,100%{transform:translateY(0) scale(1.12,.86)}
+  18%{transform:translateY(-16px) scale(.94,1.1)}
+  50%{transform:translateY(-120px) scale(.98,1.04) rotate(4deg)}
+  82%{transform:translateY(-16px) scale(.96,1.06)}
+}
+@keyframes hop-shadow{
+  0%,100%{transform:scaleX(1);opacity:.55}
+  50%{transform:scaleX(.55);opacity:.25}
+}
+.vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(0 0 0/.45))}
+
+/* dim gameplay slightly while the player is choosing — readability on demand */
+.concept:has(.menu-zone:hover) .scene,
+.concept.kb-focus .scene{filter:var(--sceneFilter) brightness(.78)}
+.scene{transition:filter 350ms var(--ease-out)}
+
+/* ============================================================
+   CONCEPT 1 — "THE LIST" (diegetic grocery-list notepad)
+   ============================================================ */
+/* list variants use the real gameplay screenshot; synthetic scene layers hidden */
+.c1 .shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.c1 .wall,.c1 .lights,.c1 .shelf,.c1 .floor,.c1 .props{display:none}
+
+.c1{
+  --wall1:#8fd0e8; --wall2:#bfe6f2; --wall3:#7fb6c9; --light:#f6fdff;
+  --board:#3e7d8f; --shelfShade:rgb(20 60 75/.55);
+  --p1:#ff6b57; --p2:#ffd23e; --p3:#5cc46e;
+  --f1:#e8ecef; --f2:#c8d3d9; --crate:#d9a05b;
+  --sceneFilter:blur(2.5px) saturate(1.15);
+}
+.c1 .scene{filter:var(--sceneFilter)}
+
+.c1 .logo{position:absolute;top:44px;left:56px;line-height:.82;user-select:none;
+  font-family:Atma;font-weight:700;font-size:76px;letter-spacing:.5px;color:#fff;
+  text-shadow:0 4px 0 #d8452b, 0 8px 0 rgb(0 0 0/.18);
+  transform:rotate(-3deg) skewX(-5deg);
+}
+.c1 .logo em{display:block;font-style:normal;color:#ffd23e;font-size:88px;
+  text-shadow:0 4px 0 #c98a00, 0 8px 0 rgb(0 0 0/.18)}
+.c1 .logo em::before{ /* speed dashes trailing the wordmark */
+  content:"";position:absolute;left:-46px;top:78px;width:38px;height:44px;
+  background:
+    linear-gradient(#fff 0 0) 0 4px/26px 7px,
+    linear-gradient(#ffd23e 0 0) 8px 20px/30px 7px,
+    linear-gradient(#fff 0 0) 2px 36px/20px 7px;
+  background-repeat:no-repeat;border-radius:99px;opacity:.85;
+}
+
+.pad{position:absolute;right:6%;top:50%;transform:translateY(-50%) rotate(2deg);
+  width:470px;padding:86px 32px 30px;color:#26333a;
+  background: /* rule pitch = row height (47px), offset so each row's text sits on its line */
+    linear-gradient(rgb(255 82 82/.9), rgb(255 82 82/.9)) 58px 0/2px 100% no-repeat,
+    repeating-linear-gradient(#fffdf5 0 45px, #cfe3ee 45px 47px) 0 29px;
+  border-radius:6px 6px 10px 10px;
+  box-shadow:0 30px 60px rgb(10 40 55/.45), 0 2px 0 rgb(255 255 255/.6) inset;
+}
+.pad::before{ /* fridge magnet */
+  content:"";position:absolute;top:-26px;left:50%;translate:-50% 0;width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%, #ff9d9d, #e23c3c 65%);
+  box-shadow:0 8px 14px rgb(0 0 0/.3), inset 0 -8px 0 rgb(0 0 0/.15);
+}
+.pad::after{content:"";position:absolute;left:-8px;right:-8px;bottom:-10px;height:18px;
+  background:repeating-linear-gradient(-45deg,#fffdf5 0 10px,transparent 10px 20px);filter:drop-shadow(0 4px 3px rgb(10 40 55/.2))}
+.pad-head{position:absolute;top:26px;left:38px;right:38px;display:flex;justify-content:space-between;align-items:baseline;
+  font-family:Atma;font-weight:700;font-size:28px;color:#e23c3c}
+.pad-head small{font-family:'IBM Plex Mono';font-weight:700;font-size:11px;color:#e23c3c;letter-spacing:.08em;
+  font-variant-numeric:tabular-nums}
+.pad-head::after{ /* marker underline beneath title + timer; currentColor matches each variant's ink */
+  content:"";position:absolute;left:-2px;right:-2px;bottom:-9px;height:4px;border-radius:99px;
+  background:currentColor;opacity:.8;transform:rotate(-.6deg);
+}
+
+.c1 .mi{position:relative;height:47px;display:flex;align-items:center;gap:14px;padding-left:32px;
+  font-family:Atma;font-weight:600;font-size:25px;cursor:pointer;
+  transition:transform 180ms var(--ease-out);
+}
+.c1 .lbl{white-space:nowrap}
+.c1 .mi small{margin-left:auto;font-family:'IBM Plex Mono';font-weight:500;font-size:9.5px;color:#9db0ba;
+  letter-spacing:.02em;padding-right:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.c1 .mi.sel{transform:translateX(10px)}
+.c1 .mi:active{transform:translateX(10px) scale(.97)}
+.c1 .box{width:26px;height:26px;flex:none;border:3px solid #3b4c55;border-radius:37% 63% 55% 45%/55% 44% 56% 45%;
+  position:relative;background:#fffdf5}
+/* hover: one hand-drawn marker arrow slides in beside the row */
+.c1 .mi::before{ /* shaft */
+  content:"";position:absolute;left:-8px;top:50%;width:22px;height:6px;border-radius:99px;
+  background:#e23c3c;opacity:0;transform:translate(-10px,-50%) rotate(-4deg);
+  transition:opacity 100ms linear, transform 180ms var(--ease-out);
+}
+.c1 .mi::after{ /* head */
+  content:"";position:absolute;left:14px;top:50%;
+  border-left:11px solid #e23c3c;border-top:8px solid transparent;border-bottom:8px solid transparent;
+  opacity:0;transform:translate(-10px,-50%) rotate(-4deg);
+  transition:opacity 100ms linear, transform 180ms var(--ease-out);
+}
+.c1 .mi.sel::before,.c1 .mi.sel::after{opacity:1;transform:translate(0,-50%) rotate(-4deg)}
+.c1 .box::after{ /* hand-drawn check */
+  content:"";position:absolute;left:50%;top:44%;width:14px;height:8px;
+  border-left:4px solid #1c9e4f;border-bottom:4px solid #1c9e4f;border-radius:2px;
+  transform:translate(-50%,-50%) rotate(-48deg) scale(0);
+  transition:transform 200ms var(--ease-out);
+}
+/* select: the box gets its checkmark, nothing else */
+.c1 .mi.chosen .box::after{transform:translate(-50%,-50%) rotate(-48deg) scale(1)}
+.c1 .mi.chosen{animation:got-it 500ms var(--ease-out)}
+@keyframes got-it{30%{transform:translateX(10px) scale(.96)}100%{transform:translateX(10px)}}
+
+.c1 .coupon{position:absolute;left:56px;bottom:96px;padding:14px 70px 12px 22px;color:#123b47;background:#fffdf5;
+  font-family:'IBM Plex Mono';font-size:12px;line-height:1.7;letter-spacing:.04em;
+  border-radius:4px;transform:rotate(-2deg);
+  box-shadow:0 14px 30px rgb(10 40 55/.35);
+  -webkit-mask:radial-gradient(circle 7px at 0 50%,transparent 96%,#000) -7px 0/100% 100%,
+               radial-gradient(circle 7px at 100% 50%,transparent 96%,#000) 7px 0/100% 100%;
+  -webkit-mask-composite:source-in; mask-composite:intersect;
+}
+.c1 .coupon b{display:block;font-size:10.5px;font-weight:700;letter-spacing:.16em;color:#e23c3c}
+.c1 .coupon .big{display:block;margin:2px 0 1px;font-weight:700;font-size:34px;line-height:1.1;
+  letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.c1 .coupon small{font-size:10px;color:#7d8f99;letter-spacing:.03em}
+.c1 .coupon::after{ /* verification stamp — lives in the reserved right gutter */
+  content:"PB";position:absolute;right:16px;top:50%;translate:0 -50%;rotate:-14deg;
+  font-family:'IBM Plex Mono';font-weight:700;font-size:15px;letter-spacing:.08em;color:#1c9e4f;
+  border:3px solid #1c9e4f;border-radius:50%;padding:6px 7px;opacity:.8;
+}
+
+/* speedrun tempo: this concept's aisle runs hotter than the others */
+.c1 .floor{animation-duration:.85s}
+.c1 .shelf{animation-duration:4s}
+.c1 .player .body{animation-duration:720ms}
+.c1 .player .shadow{animation-duration:720ms}
+.c1 .crate.a{animation-duration:6s}
+.c1 .crate.b{animation-duration:7.5s}
+.c1 .crate.c{animation-duration:5s}
+.c1 .zip{position:absolute;inset:0;pointer-events:none;opacity:.4;
+  background-image:
+    linear-gradient(90deg,transparent,rgb(255 255 255/.9) 40% 60%,transparent),
+    linear-gradient(90deg,transparent,rgb(255 255 255/.6) 40% 60%,transparent),
+    linear-gradient(90deg,transparent,rgb(255 255 255/.8) 40% 60%,transparent);
+  background-size:280px 4px,190px 3px,340px 4px;
+  background-position:0 24%,0 46%,0 62%;
+  background-repeat:repeat-x;
+  animation:zip .55s linear infinite;
+}
+@keyframes zip{to{background-position:-280px 24%,-190px 46%,-340px 62%}}
+
+/* ============================================================
+   LIST VARIANT B — "STICKY NOTE" (dusk shift, taped post-it)
+   ============================================================ */
+.v-sticky{
+  --wall1:#2e4a5e; --wall2:#3c617a; --wall3:#27404f; --light:#ffe9b0;
+  --board:#1d3140; --shelfShade:rgb(10 25 35/.6);
+  --p1:#ff8f6b; --p2:#ffd23e; --p3:#59c9a5;
+  --f1:#54707f; --f2:#42596a; --crate:#c08a4b;
+}
+.v-sticky .pad{ /* CSS recreation of the in-game sticky asset: ink outline, adhesive strip, curled corner */
+  padding:122px 32px 34px;
+  background:linear-gradient(#f8dc80 0 40px, #e3c96f 40px 42px, #f8eda9 42px);
+  border:3px solid #1d1d1f;border-radius:0;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 54px), calc(100% - 54px) 100%, 0 100%);
+  box-shadow:inset 0 -34px 44px rgb(190 140 0/.16);
+  filter:drop-shadow(0 20px 18px rgb(5 20 35/.45));
+}
+.v-sticky .pad.enter{transform:translateY(calc(-50% + 20px)) rotate(-1.5deg)}
+.v-sticky.active .pad.enter{transform:translateY(-50%) rotate(-1.5deg)}
+.v-sticky .pad::before{display:none}
+.v-sticky .pad::after{ /* curled corner flap over the cut — inked crease, bright underside */
+  content:"";position:absolute;left:auto;right:-3px;bottom:-3px;width:54px;height:54px;
+  filter:none; /* neutralize the notepad torn-edge ::after it overrides */
+  background:linear-gradient(315deg, transparent 0 45%, #1d1d1f 45% 52%, #fdf4bd 52% 74%, #e9d582 100%);
+  clip-path:polygon(0 0, 100% 0, 0 100%);
+}
+.v-sticky .pad-head{color:#9c5f12;top:50px;font-size:28px} /* sits below the strip, full size */
+.v-sticky .pad-head small{color:#b3541e;font-size:14px}
+.v-sticky .mi{color:#4a3608}
+.v-sticky .box{border-color:#4a3608;background:rgb(255 255 255/.45)}
+.v-sticky .logo{text-shadow:0 4px 0 #a02121, 0 8px 0 rgb(0 0 0/.35)}
+.v-sticky .logo::after{color:#27404f}
+
+/* ============================================================
+   LIST VARIANT C — "CLIPBOARD" (manager's checklist, brand red)
+   ============================================================ */
+.v-clip{
+  --wall1:#f7e3c8; --wall2:#f2d5ac; --wall3:#d8b183; --light:#fff;
+  --board:#a02121; --shelfShade:rgb(120 30 30/.4);
+  --p1:#e23c3c; --p2:#ffd23e; --p3:#f7f3ea;
+  --f1:#f4e9d8; --f2:#e0cdae; --crate:#c94f4f;
+}
+.v-clip .pad{
+  background:repeating-linear-gradient(#ffffff 0 45px, #d9dade 45px 47px) 0 29px; /* printed form rules */
+  border:10px solid #a5713a;border-radius:12px;
+  box-shadow:0 30px 60px rgb(90 40 20/.45), inset 0 0 0 2px rgb(0 0 0/.08);
+}
+.v-clip .pad::before{ /* metal clip */
+  width:150px;height:30px;border-radius:8px 8px 4px 4px;top:-26px;
+  background:linear-gradient(#eef0f4,#9fa2ad);
+  box-shadow:0 4px 8px rgb(0 0 0/.3), inset 0 2px 0 #fff;
+}
+.v-clip .pad::after{display:none} /* clipboards don't tear */
+.v-clip .pad-head{color:#a02121;font-size:24px;letter-spacing:.03em;text-transform:uppercase}
+.v-clip .box{border-radius:5px} /* printed square checkbox */
+.v-clip .logo{text-shadow:0 4px 0 #a02121, 0 8px 0 rgb(0 0 0/.15)}
+.v-clip .logo em{color:#e23c3c;text-shadow:0 4px 0 #7d1616, 0 8px 0 rgb(0 0 0/.15)}
+
+/* ============================================================
+   CONCEPT 2 — "AISLE 5" (P5 energy, duotone + price-tag buttons)
+   ============================================================ */
+#c2{
+  --wall1:#77777f; --wall2:#55555c; --wall3:#3d3d44; --light:#ffffff;
+  --board:#17171a; --shelfShade:rgb(0 0 0/.45);
+  --p1:#d6d6de; --p2:#8f8f99; --p3:#f2f2f6;
+  --f1:#5b5b64; --f2:#75757e; --crate:#a9a9b2;
+  --sceneFilter:grayscale(1) contrast(1.05) brightness(1.6);
+}
+#c2 .scene{filter:var(--sceneFilter)}
+#c2 .player{left:56%}
+#c2 .duotone{position:absolute;inset:0;background:#e0231c;mix-blend-mode:multiply;pointer-events:none}
+#c2 .halftone{position:absolute;inset:0;pointer-events:none;opacity:.22;
+  background:radial-gradient(rgb(0 0 0/.9) 1.2px, transparent 1.4px);background-size:7px 7px}
+#c2 .band{position:absolute;left:-12%;top:-20%;bottom:-20%;width:42%;
+  background:linear-gradient(#0c0c0e,#000);transform:rotate(6deg);
+  box-shadow:34px 0 0 rgb(255 210 20/.95), 44px 0 0 rgb(0 0 0/.8);
+}
+#c2 .logo{position:absolute;top:48px;left:52px;font-family:Anton,sans-serif;font-size:72px;line-height:.9;
+  color:#fff;letter-spacing:.01em;transform:rotate(-4deg);user-select:none}
+#c2 .logo em{font-style:normal;display:block;color:#000;background:#ffd214;padding:2px 14px 6px;
+  transform:rotate(2deg);width:max-content;box-shadow:6px 6px 0 #000}
+#c2 .logo::after{content:"EVERYTHING MUST GO!!";display:block;margin-top:16px;width:max-content;
+  font-size:18px;letter-spacing:.28em;color:#ffd214;background:#000;padding:6px 12px;transform:rotate(-1deg)}
+
+#c2 .menu-zone{position:absolute;left:52px;bottom:120px}
+#c2 .mi{position:relative;width:max-content;margin:10px 0;cursor:pointer;
+  font-family:Anton,sans-serif;font-size:44px;letter-spacing:.02em;color:#fff;
+  padding:2px 22px 6px;transform:rotate(-2deg) skewX(-6deg);
+  transition:transform 160ms var(--ease-out)}
+#c2 .mi:nth-child(2n){transform:rotate(1.4deg) skewX(-6deg)}
+#c2 .mi .txt{position:relative;z-index:2;display:block;transition:transform 160ms var(--ease-out), color 120ms linear;
+  text-shadow:3px 3px 0 #000}
+#c2 .mi::before{ /* sticker plate revealed on selection */
+  content:"";position:absolute;inset:0;z-index:1;background:#fff;
+  clip-path:polygon(2% 12%, 98% 0%, 100% 84%, 4% 100%);
+  transform:scale(.9);opacity:0;
+  transition:transform 180ms var(--ease-out), opacity 120ms linear;
+  box-shadow:6px 6px 0 #000;
+}
+#c2 .mi.sel::before{opacity:1;transform:scale(1)}
+#c2 .mi.sel .txt{color:#000;transform:scale(1.08) rotate(-1deg);text-shadow:none}
+#c2 .mi:active .txt{transform:scale(1.02) rotate(-1deg)}
+#c2 .mi .was{ /* slashed price gag on the active item */
+  position:absolute;right:-116px;top:50%;z-index:3;translate:0 -50%;rotate:8deg;
+  font-family:'IBM Plex Mono';font-weight:700;font-size:13px;line-height:1.25;text-align:center;
+  color:#000;background:#ffd214;padding:7px 10px;border-radius:50%;
+  opacity:0;transform:scale(.6);transition:transform 200ms var(--ease-out),opacity 100ms linear;
+  box-shadow:4px 4px 0 rgb(0 0 0/.9);
+}
+#c2 .mi .was s{display:block;color:#a00;font-size:11px}
+#c2 .mi.sel .was{opacity:1;transform:scale(1)}
+#c2 .mi.chosen{animation:slam 420ms var(--ease-out)}
+@keyframes slam{
+  0%{transform:rotate(-2deg) skewX(-6deg) scale(1)}
+  35%{transform:rotate(-2deg) skewX(-10deg) scale(.92)}
+  70%{transform:rotate(-2deg) skewX(-4deg) scale(1.1)}
+  100%{transform:rotate(-2deg) skewX(-6deg) scale(1)}
+}
+#c2 .ticker{position:absolute;left:0;right:0;bottom:0;height:44px;background:#000;overflow:hidden;
+  display:flex;align-items:center;border-top:4px solid #ffd214}
+#c2 .ticker span{white-space:nowrap;font-family:Anton;font-size:20px;letter-spacing:.14em;color:#ffd214;
+  animation:ticker 14s linear infinite}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ============================================================
+   CONCEPT 3 — "THE RECEIPT" (thermal print, highlighter, stamps)
+   ============================================================ */
+#c3{
+  --wall1:#ffd9e8; --wall2:#ffeef5; --wall3:#e9b8cf; --light:#fff;
+  --board:#b96a92; --shelfShade:rgb(120 40 80/.4);
+  --p1:#7ec8ff; --p2:#ffd23e; --p3:#ff8fb3;
+  --f1:#fff3f8; --f2:#f3d3e1; --crate:#e0a15e;
+  --sceneFilter:blur(3px) saturate(1.2) brightness(1.03);
+}
+#c3 .scene{filter:var(--sceneFilter)}
+#c3 .logo{position:absolute;top:52px;left:56px;font-family:Atma;font-weight:700;font-size:72px;line-height:.85;
+  color:#fff;transform:rotate(-2deg);
+  text-shadow:0 4px 0 #d8578e, 0 9px 0 rgb(90 20 50/.25);user-select:none}
+#c3 .logo em{font-style:normal;display:block;font-size:84px;color:#ffe14d;
+  text-shadow:0 4px 0 #d09a00, 0 9px 0 rgb(90 20 50/.25)}
+
+#c3 .till{position:absolute;right:9%;top:0;bottom:0;width:400px}
+#c3 .till::before{ /* printer slot the paper comes out of */
+  content:"";position:absolute;top:0;left:-24px;right:-24px;height:26px;border-radius:0 0 14px 14px;
+  background:linear-gradient(#3c4753,#232a33);box-shadow:0 10px 24px rgb(60 20 40/.35);z-index:2}
+#c3 .paper-clip{position:absolute;inset:0;overflow:hidden}
+.receipt{position:absolute;top:18px;left:0;right:0;padding:34px 30px 30px;color:#2b2b33;background:#fdfdf7;
+  font-family:'IBM Plex Mono';font-size:13.5px;line-height:1.5;
+  box-shadow:0 24px 50px rgb(90 20 50/.35);
+  transform:translateY(-102%);
+}
+#c3.active .receipt{transform:translateY(0);transition:transform 1.3s steps(22, end)}
+.receipt::after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;
+  background:repeating-linear-gradient(-45deg,#fdfdf7 0 8px,transparent 8px 16px)}
+.receipt .rc{text-align:center}
+.receipt h2{font-family:'IBM Plex Mono';font-weight:700;font-size:19px;letter-spacing:.18em;margin-bottom:2px}
+.receipt .meta{color:#8a8a94;font-size:11px}
+.receipt hr{border:none;border-top:2px dashed #c9c9cf;margin:14px 0}
+#c3 .mi{position:relative;display:flex;align-items:baseline;gap:8px;padding:7px 6px;cursor:pointer;
+  transition:transform var(--press) var(--ease-out)}
+#c3 .mi:active{transform:scale(.975)}
+#c3 .mi .cur{width:20px;flex:none;font-weight:700;color:#e23c6e;opacity:0}
+#c3 .mi.sel .cur{opacity:1}
+#c3 .mi .name{font-weight:500;letter-spacing:.05em}
+#c3 .mi.sel .name{font-weight:700}
+#c3 .mi .dots{flex:1;border-bottom:2px dotted #b9b9c2;translate:0 -3px}
+#c3 .mi .price{font-weight:700}
+#c3 .mi .hl{ /* highlighter swipe */
+  position:absolute;inset:2px -4px;background:#ffe14d;mix-blend-mode:multiply;border-radius:3px;
+  transform:rotate(-.5deg);
+  clip-path:inset(0 100% 0 0 round 3px);
+  transition:clip-path 200ms var(--ease-out);pointer-events:none}
+#c3 .mi.sel .hl{clip-path:inset(0 0 0 0 round 3px)}
+#c3 .stamp{position:absolute;right:-8px;top:50%;translate:0 -50%;rotate:-14deg;z-index:2;
+  font-weight:700;font-size:15px;letter-spacing:.14em;color:#e0231c;
+  border:3px solid #e0231c;border-radius:6px;padding:1px 8px;
+  mix-blend-mode:multiply;opacity:0;transform:scale(1.7);filter:blur(2px);pointer-events:none}
+#c3 .mi.chosen .stamp{opacity:.9;transform:scale(1);filter:blur(0);
+  transition:transform 190ms var(--ease-out), opacity 90ms linear, filter 190ms var(--ease-out)}
+.receipt .tot{display:flex;justify-content:space-between;font-weight:700;font-size:16px;margin-top:2px}
+.receipt .save{text-align:center;margin-top:12px;font-weight:700;color:#1c9e4f}
+.receipt .barcode{margin:16px auto 0;height:44px;width:78%;
+  background:repeating-linear-gradient(90deg,#2b2b33 0 2px,transparent 2px 5px,#2b2b33 5px 6px,transparent 6px 11px)}
+.receipt .bnum{text-align:center;font-size:10px;letter-spacing:.5em;color:#8a8a94;margin-top:4px}
+
+/* ============================================================
+   ENTRANCES (staggered, transform+opacity only)
+   ============================================================ */
+.enter{opacity:0;transform:translateY(14px)}
+.active .enter{opacity:1;transform:none;
+  transition:opacity 400ms var(--ease-out), transform 500ms var(--ease-out);
+  transition-delay:calc(var(--i,0) * 60ms)}
+.pad.enter{transform:translateY(calc(-50% + 20px)) rotate(2deg)}
+.active .pad.enter{transform:translateY(-50%) rotate(2deg)}
+
+/* ============================================================
+   CHROME — concept switcher / hints / sound
+   ============================================================ */
+#chrome{position:fixed;left:50%;bottom:14px;translate:-50% 0;z-index:50;display:flex;gap:8px;align-items:center;
+  transition:opacity 200ms var(--ease-out), translate 250ms var(--ease-out);
+  padding:8px 10px;border-radius:99px;background:rgb(10 10 16/.72);backdrop-filter:blur(10px);
+  border:1px solid rgb(255 255 255/.14);box-shadow:0 10px 30px rgb(0 0 0/.4);
+  font-size:12.5px;font-weight:600;letter-spacing:.02em}
+#chrome .chip{padding:7px 14px;border-radius:99px;color:rgb(255 255 255/.75);
+  transition:transform var(--press) var(--ease-out), background 150ms linear, color 150ms linear}
+#chrome .chip:hover{color:#fff}
+#chrome .chip:active{transform:scale(.95)}
+#chrome .chip.on{background:#fff;color:#111}
+#chrome .sep{width:1px;height:18px;background:rgb(255 255 255/.18)}
+#chrome .hint{color:rgb(255 255 255/.5);font-weight:500;padding:0 8px}
+#chrome kbd{font-family:'IBM Plex Mono';font-size:11px;background:rgb(255 255 255/.12);
+  border-radius:4px;padding:1px 5px;margin:0 1px}
+
+/* .c1 logo/coupon tilt must outrank `.active .enter{transform:none}` */
+.c1 .logo.enter{transform:translateY(14px) rotate(-3deg) skewX(-5deg)}
+.c1.active .logo.enter{transform:rotate(-3deg) skewX(-5deg)}
+.c1 .coupon.enter{transform:translateY(14px) rotate(-2deg)}
+.c1.active .coupon.enter{transform:rotate(-2deg)}
+
+/* ---- live A/B toggles: bg, speed fx, title placement ---- */
+body.no-fx .zip{display:none}
+body.no-fx .c1 .logo em::before{display:none}
+body.no-bg .scene>*{display:none} /* flat wall color remains */
+body.no-bg .scene{filter:none !important}
+body.no-chrome #chrome{opacity:0;translate:-50% 16px;pointer-events:none} /* H brings it back */
+body[data-title="center"] .c1 .logo.enter{left:50%;top:36px;transform:translateX(-50%) rotate(-2deg) skewX(-5deg);text-align:center}
+body[data-title="center"] .c1 .pad{right:50%;translate:50% 0} /* note centers under the centered title */
+body[data-title="small"] .c1 .logo{font-size:40px;top:32px;left:40px}
+body[data-title="small"] .c1 .logo em{font-size:46px}
+body[data-title="small"] .c1 .logo em::before{left:-26px;top:40px;transform:scale(.55);transform-origin:left top}
+
+@media (prefers-reduced-motion: reduce){
+  .shelf,.floor,.crate,.coin,.player .body,.player .shadow,#c2 .ticker span,.c1 .zip{animation:none !important}
+  .enter,.active .enter{transition-duration:1ms !important;transform:none}
+  #c3.active .receipt{transition-duration:1ms}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ================= CONCEPT 1 : THE LIST ================= -->
+<section class="concept c1" id="c1">
+  <div class="scene">
+    <img class="shot" src="bg.png" alt="">
+    <div class="wall"></div><div class="lights"></div>
+    <div class="shelf left"></div><div class="shelf right"></div>
+    <div class="floor"></div>
+    <div class="props">
+      <b class="crate a"></b><b class="crate b"></b><b class="crate c"></b>
+      <b class="coin a"></b><b class="coin b"></b><b class="coin c"></b>
+      <div class="player"><span class="shadow"></span><span class="body"></span></div>
+      <i class="zip"></i>
+    </div>
+    <div class="vignette"></div>
+  </div>
+
+  <h1 class="logo enter" style="--i:0">MARKET<em>DASH</em></h1>
+
+  <div class="pad menu-zone enter" style="--i:1">
+    <div class="pad-head">shift list <small class="idle">IDLE 0:00.00</small></div>
+    <ul class="menu">
+      <li class="mi"><i class="box"></i><span class="lbl">Continue</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">New Game</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Leaderboards</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Options</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Quit</span></li>
+    </ul>
+  </div>
+
+  <div class="coupon enter" style="--i:2"><b>BEST RUN · ALL LEVELS</b><span class="big">23:41.09</span><small>RANK #147 · WR 12:34.56 "cartgod"</small></div>
+</section>
+
+<!-- ================= LIST VARIANT B : STICKY NOTE ================= -->
+<section class="concept c1 v-sticky" id="c1b">
+  <div class="scene">
+    <img class="shot" src="bg.png" alt="">
+    <div class="wall"></div><div class="lights"></div>
+    <div class="shelf left"></div><div class="shelf right"></div>
+    <div class="floor"></div>
+    <div class="props">
+      <b class="crate a"></b><b class="crate b"></b><b class="crate c"></b>
+      <b class="coin a"></b><b class="coin b"></b><b class="coin c"></b>
+      <div class="player"><span class="shadow"></span><span class="body"></span></div>
+      <i class="zip"></i>
+    </div>
+    <div class="vignette"></div>
+  </div>
+
+  <h1 class="logo enter" style="--i:0">MARKET<em>DASH</em></h1>
+
+  <div class="pad menu-zone enter" style="--i:1">
+    <div class="pad-head">To do <small class="idle">IDLE 0:00.00</small></div>
+    <ul class="menu">
+      <li class="mi"><i class="box"></i><span class="lbl">Continue</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">New Game</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Leaderboards</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Options</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Quit</span></li>
+    </ul>
+  </div>
+
+  <div class="coupon enter" style="--i:2"><b>BEST RUN · ALL LEVELS</b><span class="big">23:41.09</span><small>RANK #147 · WR 12:34.56 "cartgod"</small></div>
+</section>
+
+<!-- ================= LIST VARIANT C : CLIPBOARD ================= -->
+<section class="concept c1 v-clip" id="c1c">
+  <div class="scene">
+    <img class="shot" src="bg.png" alt="">
+    <div class="wall"></div><div class="lights"></div>
+    <div class="shelf left"></div><div class="shelf right"></div>
+    <div class="floor"></div>
+    <div class="props">
+      <b class="crate a"></b><b class="crate b"></b><b class="crate c"></b>
+      <b class="coin a"></b><b class="coin b"></b><b class="coin c"></b>
+      <div class="player"><span class="shadow"></span><span class="body"></span></div>
+      <i class="zip"></i>
+    </div>
+    <div class="vignette"></div>
+  </div>
+
+  <h1 class="logo enter" style="--i:0">MARKET<em>DASH</em></h1>
+
+  <div class="pad menu-zone enter" style="--i:1">
+    <div class="pad-head">daily checklist <small class="idle">IDLE 0:00.00</small></div>
+    <ul class="menu">
+      <li class="mi"><i class="box"></i><span class="lbl">Continue</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">New Game</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Leaderboards</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Options</span></li>
+      <li class="mi"><i class="box"></i><span class="lbl">Quit</span></li>
+    </ul>
+  </div>
+
+  <div class="coupon enter" style="--i:2"><b>BEST RUN · ALL LEVELS</b><span class="big">23:41.09</span><small>RANK #147 · WR 12:34.56 "cartgod"</small></div>
+</section>
+
+<!-- ================= CONCEPT 2 : AISLE 5 ================= -->
+<section class="concept" id="c2">
+  <div class="scene">
+    <div class="wall"></div><div class="lights"></div>
+    <div class="shelf left"></div><div class="shelf right"></div>
+    <div class="floor"></div>
+    <div class="props">
+      <b class="crate a"></b><b class="crate b"></b><b class="crate c"></b>
+      <b class="coin a"></b><b class="coin b"></b><b class="coin c"></b>
+      <div class="player"><span class="shadow"></span><span class="body"></span></div>
+    </div>
+  </div>
+  <div class="duotone"></div>
+  <div class="halftone"></div>
+  <div class="band enter" style="--i:0"></div>
+
+  <h1 class="logo enter" style="--i:1">MARKET<em>DASH</em></h1>
+
+  <ul class="menu-zone enter" style="--i:2">
+    <li class="mi"><span class="txt">CONTINUE</span><span class="was"><s>$59.99</s>FREE!</span></li>
+    <li class="mi"><span class="txt">NEW GAME</span><span class="was"><s>$59.99</s>FREE!</span></li>
+    <li class="mi"><span class="txt">TIME ATTACK</span><span class="was"><s>$59.99</s>FREE!</span></li>
+    <li class="mi"><span class="txt">OPTIONS</span><span class="was"><s>$59.99</s>FREE!</span></li>
+    <li class="mi"><span class="txt">QUIT</span><span class="was"><s>bye</s>:(</span></li>
+  </ul>
+
+  <div class="ticker"><span>★ ATTENTION SHOPPERS — CLEAN-UP ON AISLE 5 — EVERYTHING MUST GO — CART AT YOUR OWN RISK — ★ ATTENTION SHOPPERS — CLEAN-UP ON AISLE 5 — EVERYTHING MUST GO — CART AT YOUR OWN RISK — </span></div>
+</section>
+
+<!-- ================= CONCEPT 3 : THE RECEIPT ================= -->
+<section class="concept" id="c3">
+  <div class="scene">
+    <div class="wall"></div><div class="lights"></div>
+    <div class="shelf left"></div><div class="shelf right"></div>
+    <div class="floor"></div>
+    <div class="props">
+      <b class="crate a"></b><b class="crate b"></b><b class="crate c"></b>
+      <b class="coin a"></b><b class="coin b"></b><b class="coin c"></b>
+      <div class="player"><span class="shadow"></span><span class="body"></span></div>
+    </div>
+    <div class="vignette"></div>
+  </div>
+
+  <h1 class="logo enter" style="--i:0">MARKET<em>DASH</em></h1>
+
+  <div class="till menu-zone">
+    <div class="paper-clip">
+      <div class="receipt">
+        <div class="rc">
+          <h2>MARKET DASH</h2>
+          <div class="meta">STORE #005 · REGISTER 03<br>CASHIER: MOM · MEMBER: YOU</div>
+        </div>
+        <hr>
+        <ul class="menu">
+          <li class="mi"><span class="cur">&gt;&gt;</span><span class="name">CONTINUE</span><span class="dots"></span><span class="price">$1.99</span><i class="hl"></i><em class="stamp">PAID</em></li>
+          <li class="mi"><span class="cur">&gt;&gt;</span><span class="name">NEW GAME</span><span class="dots"></span><span class="price">$0.00</span><i class="hl"></i><em class="stamp">PAID</em></li>
+          <li class="mi"><span class="cur">&gt;&gt;</span><span class="name">TIME ATTACK</span><span class="dots"></span><span class="price">$4.99</span><i class="hl"></i><em class="stamp">PAID</em></li>
+          <li class="mi"><span class="cur">&gt;&gt;</span><span class="name">OPTIONS</span><span class="dots"></span><span class="price">$0.50</span><i class="hl"></i><em class="stamp">PAID</em></li>
+          <li class="mi"><span class="cur">&gt;&gt;</span><span class="name">QUIT</span><span class="dots"></span><span class="price">$0.01</span><i class="hl"></i><em class="stamp">VOID</em></li>
+        </ul>
+        <hr>
+        <div class="tot"><span>TOTAL</span><span>1 PLAYTHROUGH</span></div>
+        <div class="save">** YOU SAVED $12.47 TODAY **</div>
+        <div class="barcode"></div>
+        <div class="bnum">0 042616 300005</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ================= CHROME ================= -->
+<nav id="chrome">
+  <button class="chip on" data-c="0">1 · Notepad</button>
+  <button class="chip" data-c="1">2 · Sticky</button>
+  <button class="chip" data-c="2">3 · Clipboard</button>
+  <button class="chip" data-c="3">4 · Aisle 5</button>
+  <button class="chip" data-c="4">5 · Receipt</button>
+  <span class="sep"></span>
+  <button class="chip" id="bg">bg: on</button>
+  <button class="chip" id="fx">✦ fx: on</button>
+  <button class="chip" id="titlepos">title: left</button>
+  <button class="chip" id="snd">🔊 sound</button>
+  <button class="chip" id="hide">✕ hide</button>
+  <span class="hint"><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>Enter</kbd> select · <kbd>1</kbd>–<kbd>5</kbd> switch · <kbd>H</kbd> show/hide bar</span>
+</nav>
+
+<script>
+const concepts=[...document.querySelectorAll('.concept')];
+const chips=[...document.querySelectorAll('#chrome .chip[data-c]')];
+let current=0;
+const sel=concepts.map(()=>0);
+
+/* ---------- tiny synth (scanner beeps) ---------- */
+let actx=null, soundOn=true;
+const ac=()=>actx??=new (window.AudioContext||window.webkitAudioContext)();
+function tone(freq,dur=.05,type='square',gain=.03,when=0){
+  if(!soundOn)return;
+  try{
+    const c=ac(),o=c.createOscillator(),g=c.createGain(),t=c.currentTime+when;
+    o.type=type;o.frequency.value=freq;o.connect(g);g.connect(c.destination);
+    g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.start(t);o.stop(t+dur+.02);
+  }catch(e){}
+}
+const sndHover =()=>tone(720,.03,'square',.018);
+const sndSelect=()=>{tone(1244,.08,'sine',.05);tone(1865,.12,'sine',.04,.07)};
+const sndSwitch=()=>tone(520,.05,'triangle',.03);
+
+/* ---------- selection model ---------- */
+function items(i){return [...concepts[i].querySelectorAll('.mi')]}
+function paint(i){
+  items(i).forEach((el,n)=>el.classList.toggle('sel',n===sel[i]));
+}
+function move(d){
+  const list=items(current);
+  sel[current]=(sel[current]+d+list.length)%list.length;
+  paint(current);
+  concepts[current].classList.add('kb-focus');
+  sndHover();
+}
+function choose(){
+  const el=items(current)[sel[current]];
+  if(!el||el.classList.contains('chosen'))return;
+  el.classList.add('chosen');
+  sndSelect();
+  setTimeout(()=>el.classList.remove('chosen'),1100);
+}
+function setConcept(i){
+  if(i===current)return;
+  concepts[current].classList.remove('active','kb-focus');
+  current=i;
+  const c=concepts[current];
+  c.classList.remove('active');
+  void c.offsetWidth;              // restart entrance animations
+  c.classList.add('active');
+  chips.forEach((ch,n)=>ch.classList.toggle('on',n===i));
+  paint(current);
+  sndSwitch();
+}
+
+/* ---------- wire up ---------- */
+concepts.forEach((c,i)=>{
+  items(i).forEach((el,n)=>{
+    el.addEventListener('pointerenter',()=>{
+      c.classList.remove('kb-focus');
+      if(sel[i]!==n){sel[i]=n;paint(i);sndHover();}
+    });
+    el.addEventListener('click',()=>{sel[i]=n;paint(i);choose();});
+  });
+  paint(i);
+});
+chips.forEach((ch,i)=>ch.addEventListener('click',()=>setConcept(i)));
+document.getElementById('snd').addEventListener('click',e=>{
+  soundOn=!soundOn;
+  e.currentTarget.textContent=soundOn?'🔊 sound':'🔇 muted';
+});
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();move(1)}
+  else if(e.key==='ArrowUp'){e.preventDefault();move(-1)}
+  else if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}
+  else if(e.key>='1'&&e.key<='5'){setConcept(+e.key-1)}
+  else if(e.key==='h'||e.key==='H'){document.body.classList.toggle('no-chrome')}
+});
+/* default to the Sticky variant — matches the in-game post-it grocery-list UI */
+current=1;
+concepts[1].classList.add('active');
+chips.forEach((ch,n)=>ch.classList.toggle('on',n===1));
+
+/* A/B toggles: bg, speed fx, title placement */
+let bgOn=true;
+document.getElementById('bg').addEventListener('click',e=>{
+  bgOn=!bgOn;
+  document.body.classList.toggle('no-bg',!bgOn);
+  e.currentTarget.textContent=bgOn?'bg: on':'bg: off';
+});
+document.getElementById('hide').addEventListener('click',()=>document.body.classList.add('no-chrome'));
+let fxOn=true;
+document.getElementById('fx').addEventListener('click',e=>{
+  fxOn=!fxOn;
+  document.body.classList.toggle('no-fx',!fxOn);
+  e.currentTarget.textContent=fxOn?'✦ fx: on':'✦ fx: off';
+});
+const titleModes=['left','center','small'];let ti=0;
+document.getElementById('titlepos').addEventListener('click',e=>{
+  ti=(ti+1)%titleModes.length;
+  document.body.dataset.title=titleModes[ti];
+  e.currentTarget.textContent='title: '+titleModes[ti];
+});
+
+/* scale the design frame to the display, like Unity's CanvasScaler */
+const stage=document.getElementById('stage');
+function fit(){stage.style.transform='scale('+Math.min(innerWidth/1280,innerHeight/800)+')'}
+addEventListener('resize',fit);
+fit();
+
+/* idle punch-clock: counts up until you do something, then guilt-trips from zero */
+const idles=[...document.querySelectorAll('.idle')];
+let idleStart=performance.now();
+const fmt=ms=>{
+  const s=ms/1000;
+  return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')+'.'+String(Math.floor(ms%1000/10)).padStart(2,'0');
+};
+setInterval(()=>{const t='IDLE '+fmt(performance.now()-idleStart);idles.forEach(el=>el.textContent=t)},53);
+['keydown','pointerdown'].forEach(ev=>addEventListener(ev,()=>{idleStart=performance.now()}));
+</script>
+</body>
+</html>

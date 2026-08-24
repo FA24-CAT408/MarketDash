@@ -2,25 +2,7 @@
 
 ## Active
 
-### Issue #36 Main Menu scene foundation
-
-- **Outcome:** The production Main Menu scene has a readable hierarchy that keeps important objects at the root while consolidating repeated supermarket dressing into clear groups.
-- **Why now:** This gives the interactive Main Menu prototypes a clean foundation without prematurely committing to a final vignette architecture.
-- **Current behavior:** The scene previously exposed 49 roots, mixing individual NPCs, products, and ceiling lights with its important objects.
-- **Minimum:** Group repeated dressing into `NPCs`, `Produce Display`, `Shelf Display`, and `Ceiling Lights` while preserving world transforms and behavior.
-- **Target:** Confirm the reorganized production scene opens, compiles, and looks unchanged in Play Mode.
-- **Stretch:** Begin the first lightweight interaction concept only after this organization slice is accepted.
-- **Acceptance criteria:** Important objects remain at the root; repeated dressing appears under the four agreed groups; object placement and active state remain unchanged; the Main Menu enters Play Mode without new errors.
-- **Non-goals:** UI redesign, interaction logic, camera choreography, new art, feedback effects, accessibility behavior, or selection of the final centerpiece.
-- **Scene/zone:** `Assets/Scenes/Levels/Main Menu.unity`.
-- **Branch/base:** `main` / `origin/main`.
-- **Status:** In progress; hierarchy organization applied and smoke-validated.
-- **Budget:** Two implementation approaches and one review/fix round.
-- **Attempts used:** One hierarchy approach selected from three structural options.
-- **Progress:** Added four root groups, moved repeated scene dressing beneath them, and normalized `register` to `Register`. Replaced four invalid negative-scale shelf-prefab colliders with equivalent positive-scale proxies, regenerated the production Sample Level shelf splines, and migrated 148 stale baked Main Menu shelf colliders.
-- **Decisions:** Keep major objects at the root and group only repeated dressing. Preserve shelf collision geometry through proxy transforms instead of disabling collision or replacing box colliders with expensive convex mesh colliders.
-- **Validation:** Unity recompiled successfully and the production Main Menu entered Play Mode. The exact negative-scale `BoxCollider` warning count remained at 592 before and after the corrected run (`0` new warnings); static inspection found zero remaining direct negative-scale box colliders. Visual comparison and interactive shelf-collision testing remain pending.
-- **Checkpoints:** None.
+<!-- No active improvement. -->
 
 ## Paused
 
@@ -70,3 +52,12 @@ Budget, Attempts used, Progress, Decisions, Validation, and Checkpoints. -->
 ## Completed
 
 <!-- Newest first: date, outcome, validated scope, branch/commits, deferred work. -->
+
+### 2026-08-23 — Approved sticky-note Main Menu
+
+- **Outcome:** Replaced the production Main Menu visuals with the approved sticky-note composition while preserving the existing settings canvas, fade transition, controller API, and save ownership.
+- **Validated scope:** Live gameplay backdrop with Blobby's idle/breathing animation and both NPC paths preserved; vignette; stacked Market Dash logo; outlined/curling sticky note; five menu rows; shared hover/selection arrow and background dim; green submit check and squash; idle timer reset; save-driven best-run card and empty state; leaderboard no-op shake; Options open/close reset; keyboard and gamepad wrap navigation; entrance staging; 1280x800, 1920x1080, and 1920x800 visual layouts.
+- **Behavior evidence:** The production scene compiled and ran in Unity 6000.4.1f1. Mouse hover/submit and Settings return were exercised in the Game view. Connected Input System events moved `Continue -> New Game`, wrapped `Continue -> Quit` by keyboard, and wrapped `Quit -> Continue` by gamepad. A 12-second production capture confirmed the live Blobby animation and both NPC paths continued behind the UI. The isolated final Play Mode log contained zero relevant errors, exceptions, or assertions.
+- **Review note:** The generic `unity-smoke` baseline was run but expected the seven-scene Test Campus topology and found the one loaded production menu scene. Focused production Play Mode and visual evidence supplied the applicable acceptance signal.
+- **Branch/commits:** `main`; atomic feature commit prepared for publication.
+- **Deferred work:** New Game still intentionally has no confirmation dialog, and Leaderboards remains a serialized placeholder/no-op until a backend exists.
