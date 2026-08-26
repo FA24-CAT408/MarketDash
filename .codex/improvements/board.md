@@ -53,6 +53,24 @@ Budget, Attempts used, Progress, Decisions, Validation, and Checkpoints. -->
 
 <!-- Newest first: date, outcome, validated scope, branch/commits, deferred work. -->
 
+### 2026-08-25 — Receipt-printer detail and Settings receipt
+
+- **Outcome:** Made the production UI Toolkit register feel like a physical receipt printer, gave the unavailable Leaderboard row a naturally rubbed-off treatment, and made Options tear off the main receipt before printing a fully interactive Settings receipt.
+- **Validated scope:** Added a recessed slot, serrated tear comb, rollers, vents, shell seam, fasteners, model plate, contact shadow, feed-state light, paper edge definition, a licensed CC0 rubbed-print overlay, a shorter Settings slip, stepped sensitivity/volume scales, an animated centered invert check, Back/Escape/gamepad-B behavior, and overlapping tear/feed choreography. Removed the redundant receipt-side Best Run while preserving the detached Best Run · All Levels ticket. Kept the Post-It variant archived and left the 3D environment untouched.
+- **Behavior evidence:** Unity 6000.4.1f1 compiled with zero errors. Both receipt states were visually inspected at 1024×768, 1280×720, 1280×800, 1920×800, and 1920×1080. Real Options submission kept the main canvas active and legacy Settings canvas inactive. Settings navigation wrapped `0→3→0`; main navigation returned to Options and wrapped `3→4→0`; Leaderboard stayed disabled and unfocusable. Sensitivity, volume, and invert updated through the existing settings owner and were restored after testing. Back reprinted Main with focus on Options. Both NPC walkers moved and the active KCC animator advanced. The isolated Play Mode Console had zero errors; one pre-existing convex-mesh warning was unrelated.
+- **Design review:** A dedicated design pass refined the printer hardware, overlapping paper motion, shortened Settings slip, header collision fix, contact shadow, typography floor, control alignment, and stronger printed-paper treatment.
+- **Branch/commits:** `main`; atomic UI Toolkit receipt commit based on `a81b571`.
+- **Deferred work:** Leaderboard still has no backend by design. A dedicated user-facing reduced-motion preference can later drive the already-supported reduced-motion transition path.
+
+### 2026-08-24 — Main Menu UI Toolkit migration
+
+- **Outcome:** Migrated the approved sticky-note Main Menu from generated uGUI to one runtime `UIDocument`, then corrected the Toolkit authoring defaults and composition to match the approved web and GameObject versions without changing the live market backdrop or menu action ownership.
+- **Validated scope:** Removed `Sticky Menu Visuals`, `StickyMainMenuView`, and `StickyMenuRow`; made the complete UXML composition visible by default in UI Builder; restored the approved 1280×800 design frame, 470×400 note, 47px row rhythm, Atma typography, copy, logo colors, and tinted interaction art; removed the UI-owned vignette so post-processing owns screen-edge treatment; grouped the logo into independently movable `market-word` and `dash-word` authoring units with an explicit gap; joined the marker arrow shaft and right-facing head into one slim continuous visual; preserved entrance staging, hover/selection styling, submit feedback, keyboard/gamepad wrap navigation, save-driven best-run state, idle timer, leaderboard unavailable feedback, and the unchanged legacy Settings canvas.
+- **Behavior evidence:** The production scene compiled and ran in Unity 6000.4.1f1. The corrected Play Mode view was visually inspected against `Prototypes/MainMenu/final-sticky.html`; Blobby's active animator advanced and both NPC spline walkers changed world position. The selection arrow resolved to a 180-degree right-facing head, a roughly 4.3px shaft, and approximately 5.2px of shaft/head overlap, then followed the selected row through `Quit -> Continue` wrap navigation. Keyboard and gamepad navigation wrapped selection; Options opened Settings and returned to a rebuilt UI Toolkit tree with one callback bound. The isolated final Play Mode Console contained zero errors.
+- **Review note:** The generic `unity-smoke` baseline expected the seven-scene Test Campus topology and therefore rejected the production menu's single loaded scene. Focused production Play Mode, interaction, lifecycle, motion, visual, and Console checks supplied the applicable acceptance evidence.
+- **Branch/commits:** `main`; local uncommitted migration based on `a81b571`.
+- **Deferred work:** Settings remains on its existing uGUI canvas by request. Leaderboards remains a serialized placeholder/no-op until a backend exists.
+
 ### 2026-08-23 — Approved sticky-note Main Menu
 
 - **Outcome:** Replaced the production Main Menu visuals with the approved sticky-note composition while preserving the existing settings canvas, fade transition, controller API, and save ownership.

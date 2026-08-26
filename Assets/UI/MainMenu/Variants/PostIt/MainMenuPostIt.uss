@@ -1,0 +1,442 @@
+.main-menu-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    color: rgb(74, 54, 8);
+    -unity-font-definition: url("../../../Fonts/RobotoMono/RobotoMono-Regular.ttf");
+}
+
+.entrance-element {
+    opacity: 0;
+    translate: 0 14px;
+    transition-property: opacity, translate;
+    transition-duration: 0.4s, 0.46s;
+    transition-timing-function: ease-out, ease-out;
+}
+
+.entrance-element.is-visible {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.market-dash-logo {
+    position: absolute;
+    left: 56px;
+    top: 44px;
+    width: 340px;
+    height: 164px;
+    rotate: -3deg;
+}
+
+.logo-words {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 340px;
+    height: 164px;
+}
+
+.logo-word-group {
+    position: absolute;
+    left: 0;
+}
+
+.logo-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 0;
+    margin: 0;
+    -unity-font-definition: url("../../../Fonts/Atma/Atma-Bold.ttf");
+    -unity-font-style: bold;
+    -unity-text-align: upper-left;
+    white-space: nowrap;
+}
+
+.logo-market-group {
+    top: 0;
+    width: 340px;
+    height: 82px;
+}
+
+.logo-market-group .logo-layer {
+    width: 340px;
+    height: 82px;
+    color: rgb(255, 255, 255);
+    font-size: 76px;
+    letter-spacing: 0.5px;
+}
+
+.logo-dash-group {
+    top: 64px;
+    width: 310px;
+    height: 92px;
+}
+
+.logo-dash-group .logo-layer {
+    width: 310px;
+    height: 92px;
+    color: rgb(255, 210, 62);
+    font-size: 88px;
+}
+
+.logo-extrusion {
+    top: 4px;
+}
+
+.logo-market-group .logo-extrusion {
+    color: rgb(216, 69, 43);
+}
+
+.logo-dash-group .logo-extrusion {
+    color: rgb(201, 138, 0);
+}
+
+.logo-deep-shadow {
+    top: 8px;
+}
+
+.logo-market-group .logo-deep-shadow {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.logo-dash-group .logo-deep-shadow {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.speed-marks {
+    position: absolute;
+    left: -42px;
+    top: 18px;
+    width: 38px;
+    height: 44px;
+    opacity: 0.85;
+}
+
+.speed-mark {
+    position: absolute;
+    left: 0;
+    height: 7px;
+    border-radius: 4px;
+}
+
+.speed-mark-top {
+    top: 4px;
+    width: 26px;
+}
+
+.speed-mark-middle {
+    left: 8px;
+    top: 20px;
+    width: 30px;
+}
+
+.speed-mark-bottom {
+    left: 2px;
+    top: 36px;
+    width: 20px;
+}
+
+.speed-mark-white {
+    background-color: rgb(255, 255, 255);
+}
+
+.speed-mark-yellow {
+    background-color: rgb(255, 210, 62);
+}
+
+.best-run-card {
+    position: absolute;
+    left: 56px;
+    bottom: 96px;
+    width: 348px;
+    height: 112px;
+    rotate: -2deg;
+}
+
+.best-run-paper {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-image: url("../BestRunCard.png");
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.best-run-heading,
+.best-run-time,
+.leaderboard-placeholder,
+.pb-stamp-text {
+    padding: 0;
+    margin: 0;
+    -unity-text-align: upper-left;
+}
+
+.best-run-heading {
+    position: absolute;
+    left: 22px;
+    top: 12px;
+    width: 260px;
+    height: 18px;
+    color: rgb(226, 60, 60);
+    font-size: 10.5px;
+    -unity-font-definition: url("../../../Fonts/RobotoMono/RobotoMono-Bold.ttf");
+    -unity-font-style: bold;
+    letter-spacing: 1.7px;
+}
+
+.best-run-time {
+    position: absolute;
+    left: 22px;
+    top: 30px;
+    width: 245px;
+    height: 44px;
+    color: rgb(18, 59, 71);
+    font-size: 34px;
+    -unity-font-definition: url("../../../Fonts/RobotoMono/RobotoMono-Bold.ttf");
+    -unity-font-style: bold;
+    letter-spacing: 0.3px;
+}
+
+.leaderboard-placeholder {
+    position: absolute;
+    left: 22px;
+    top: 81px;
+    width: 278px;
+    height: 18px;
+    color: rgb(125, 143, 153);
+    font-size: 10px;
+    letter-spacing: 0.3px;
+}
+
+.pb-stamp {
+    position: absolute;
+    right: 16px;
+    top: 29px;
+    width: 54px;
+    height: 54px;
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgba(28, 158, 79, 0.82);
+    border-right-color: rgba(28, 158, 79, 0.82);
+    border-top-color: rgba(28, 158, 79, 0.82);
+    border-bottom-color: rgba(28, 158, 79, 0.82);
+    border-radius: 27px;
+    align-items: center;
+    justify-content: center;
+    rotate: -14deg;
+}
+
+.pb-stamp-text {
+    color: rgba(28, 158, 79, 0.82);
+    font-size: 15px;
+    -unity-font-definition: url("../../../Fonts/RobotoMono/RobotoMono-Bold.ttf");
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+}
+
+.sticky-note {
+    position: absolute;
+    right: 76px;
+    top: 200px;
+    width: 470px;
+    height: 400px;
+    rotate: -1.5deg;
+}
+
+.sticky-shadow,
+.sticky-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 470px;
+    height: 400px;
+    background-image: url("../StickyNote.png");
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.sticky-shadow {
+    left: 8px;
+    top: 14px;
+    opacity: 0.42;
+    -unity-background-image-tint-color: rgb(5, 20, 35);
+}
+
+.sticky-heading {
+    position: absolute;
+    left: 38px;
+    top: 49px;
+    width: 205px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
+    color: rgb(156, 95, 18);
+    font-size: 28px;
+    -unity-font-definition: url("../../../Fonts/Atma/Atma-Bold.ttf");
+    -unity-font-style: bold;
+    -unity-text-align: upper-left;
+}
+
+.idle-timer {
+    position: absolute;
+    right: 38px;
+    top: 55px;
+    width: 190px;
+    height: 24px;
+    padding: 0;
+    margin: 0;
+    color: rgb(179, 84, 30);
+    font-size: 14px;
+    -unity-font-definition: url("../../../Fonts/RobotoMono/RobotoMono-Bold.ttf");
+    -unity-font-style: bold;
+    -unity-text-align: upper-right;
+    letter-spacing: 1px;
+}
+
+.marker-underline {
+    position: absolute;
+    left: 38px;
+    right: 38px;
+    top: 98px;
+    height: 4px;
+    background-color: rgba(156, 95, 18, 0.8);
+    border-radius: 2px;
+    rotate: -0.6deg;
+}
+
+.menu-rows {
+    position: absolute;
+    left: 32px;
+    right: 32px;
+    top: 122px;
+    height: 235px;
+}
+
+.menu-row {
+    height: 47px;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 32px;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    color: rgb(74, 54, 8);
+    background-color: rgba(255, 255, 255, 0);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-radius: 0;
+    transition-property: translate;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.menu-row:hover,
+.menu-row.is-selected {
+    translate: 10px 0;
+}
+
+.menu-row.is-unavailable {
+    opacity: 0.52;
+}
+
+.unavailable-strike {
+    position: absolute;
+    left: 27px;
+    top: 22px;
+    width: 210px;
+    height: 3px;
+    border-radius: 1.5px;
+    rotate: -2deg;
+    transform-origin: 0% 50%;
+    background-color: rgb(156, 67, 35);
+}
+
+.checkbox {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    margin-right: 14px;
+    background-image: url("../CheckboxRing.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(74, 54, 8);
+}
+
+.checkmark {
+    display: none;
+    position: absolute;
+    left: 0.5px;
+    top: 0.75px;
+    width: 24px;
+    height: 24px;
+    opacity: 0;
+    scale: 0.82 0.82;
+    transform-origin: 50% 50%;
+    background-image: url("../Checkmark.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(28, 158, 79);
+}
+
+.menu-row.is-submitting .checkmark {
+    display: flex;
+}
+
+.menu-label {
+    padding: 0;
+    margin: 0;
+    color: rgb(74, 54, 8);
+    font-size: 25px;
+    -unity-font-definition: url("../../../Fonts/Atma/Atma-SemiBold.ttf");
+    -unity-font-style: normal;
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.selection-arrow {
+    position: absolute;
+    left: -4px;
+    top: 15.5px;
+    width: 28px;
+    height: 16px;
+    opacity: 0;
+    rotate: -4deg;
+    transition-property: left, top, opacity;
+    transition-duration: 0.18s, 0.18s, 0.1s;
+    transition-timing-function: ease-out, ease-out, linear;
+}
+
+.selection-arrow.is-visible {
+    left: 6px;
+    opacity: 1;
+}
+
+.selection-arrow-shaft {
+    position: absolute;
+    left: 0;
+    top: 5.75px;
+    width: 22px;
+    height: 4.5px;
+    border-radius: 2.25px;
+    background-color: rgb(226, 60, 60);
+}
+
+.selection-arrow-head {
+    position: absolute;
+    left: 17px;
+    top: 0;
+    width: 11px;
+    height: 16px;
+    rotate: 180deg;
+    background-image: url("../ArrowTriangle.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-background-image-tint-color: rgb(226, 60, 60);
+}

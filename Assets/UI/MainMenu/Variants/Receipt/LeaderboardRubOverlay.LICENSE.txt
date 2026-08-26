@@ -1,0 +1,7 @@
+Source: ~100 grunge brushstrokes and splatters set
+Author: Dino0040
+Original asset: normal_opacity/brush063.png
+License: CC0 1.0 Universal
+Source URL: https://opengameart.org/content/100-grunge-brushstrokes-and-splatters-set
+
+The source brush is used as a tinted UI overlay for the disabled Leaderboard row.

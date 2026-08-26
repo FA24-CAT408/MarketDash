@@ -29,6 +29,18 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameSaveManager _gameSaveManager;
     
     private Tween _currentFadeTween;
+
+    public float Sensitivity => _gameSettingsManager != null
+        ? _gameSettingsManager.Sensitivity
+        : sensitivitySlider != null ? sensitivitySlider.value : 1f;
+
+    public float Volume => _gameSettingsManager != null
+        ? _gameSettingsManager.Volume
+        : volumeSlider != null ? volumeSlider.value : 0.5f;
+
+    public bool InvertCamera => _gameSettingsManager != null
+        ? _gameSettingsManager.InvertCamera
+        : invertCameraToggle != null && invertCameraToggle.isOn;
     
     private void Start()
     {
@@ -209,36 +221,55 @@ public class MainMenuController : MonoBehaviour
     // Called when sensitivity slider value changes
     private void OnSensitivityChanged(float value)
     {
+        SetSensitivity(value);
+    }
+
+    public void SetSensitivity(float value)
+    {
+        value = Mathf.Clamp(value, 0.1f, 5f);
         if (_gameSettingsManager != null)
             _gameSettingsManager.Sensitivity = value;
-        
+
+        if (sensitivitySlider != null && !Mathf.Approximately(sensitivitySlider.value, value))
+            sensitivitySlider.SetValueWithoutNotify(value);
+
         if (sensitivityText != null)
-        {
-            // float normalized = 0.1f + ((value - 0.1f) / (5f - 0.1f)) * (1f - 0.1f);
-            // normalized = Mathf.Clamp(normalized, 0.1f, 1f);
             sensitivityText.text = value.ToString("F2");
-        }
     }
     
     // Called when volume slider value changes
     private void OnVolumeChanged(float value)
     {
+        SetVolume(value);
+    }
+
+    public void SetVolume(float value)
+    {
+        value = Mathf.Clamp01(value);
         if (_gameSettingsManager != null)
             _gameSettingsManager.SetVolume(value);
-        
-        if (AudioManager.Instance != null)
+        else if (AudioManager.Instance != null)
             AudioManager.Instance.SetMusicVolume(value);
-        
+
+        if (volumeSlider != null && !Mathf.Approximately(volumeSlider.value, value))
+            volumeSlider.SetValueWithoutNotify(value);
+
         if (volumeText != null)
-        {
             volumeText.text = value.ToString("F2");
-        }
     }
     
     // Called when invert camera toggle value changes
     private void OnInvertCameraChanged(bool value)
     {
+        SetInvertCamera(value);
+    }
+
+    public void SetInvertCamera(bool value)
+    {
         if (_gameSettingsManager != null)
             _gameSettingsManager.InvertCamera = value;
+
+        if (invertCameraToggle != null && invertCameraToggle.isOn != value)
+            invertCameraToggle.SetIsOnWithoutNotify(value);
     }
 }

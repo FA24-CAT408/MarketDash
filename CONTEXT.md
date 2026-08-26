@@ -54,3 +54,9 @@ _Avoid_: Direct stat mutation, profile edit
 A semantic, read-only description of player gameplay that presentation uses to
 choose visuals and animation. It contains no Animator parameter names.
 _Avoid_: Animator state, animation booleans
+
+**Main Menu Market Vignette**:
+The production 3D supermarket environment visible behind the Main Menu UI,
+including its composition, lighting, post-processing, props, and ambient activity.
+It excludes UI controls, menu layout, and general-purpose NPC behavior.
+_Avoid_: Background, setting behind the UI, menu scene

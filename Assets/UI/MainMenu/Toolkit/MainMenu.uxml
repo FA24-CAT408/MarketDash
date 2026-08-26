@@ -1,0 +1,208 @@
+<UXML xmlns="UnityEngine.UIElements">
+    <Style src="MainMenu.uss" />
+    <VisualElement name="main-menu-root" class="main-menu-root">
+        <VisualElement name="centered-stage" class="centered-stage">
+            <VisualElement name="best-run-card" class="best-run-card entrance-element is-visible" picking-mode="Ignore">
+                <VisualElement class="best-run-paper">
+                    <Label text="BEST RUN &#183; ALL LEVELS" class="best-run-heading" />
+                    <Label name="best-run-tag-time" text="--:--.--" class="best-run-time" />
+                    <Label text="PERSONAL BEST" class="best-run-caption" />
+                    <VisualElement class="pb-stamp"><Label text="PB" class="pb-stamp-text" /></VisualElement>
+                </VisualElement>
+            </VisualElement>
+
+            <VisualElement name="receipt-zone" class="receipt-zone">
+                <VisualElement class="paper-feed-mask">
+                    <VisualElement name="menu-shadow" class="receipt-cast-shadow" picking-mode="Ignore" />
+                    <VisualElement name="settings-shadow" class="receipt-cast-shadow settings-cast-shadow" picking-mode="Ignore" />
+                    <VisualElement name="menu-surface" class="receipt-paper entrance-element is-visible">
+                        <VisualElement class="receipt-body-fill" picking-mode="Ignore" />
+                        <VisualElement class="receipt-header" picking-mode="Ignore">
+                            <VisualElement class="printed-brand">
+                                <Label text="MARKET DASH" class="receipt-title receipt-title-shadow" />
+                                <Label text="MARKET DASH" class="receipt-title" />
+                                <Label text="REGISTER THREE &#183; STORE #005" class="receipt-register" />
+                                <Label text="CASHIER: BLOBBY &#183; MEMBER: YOU" class="receipt-meta" />
+                            </VisualElement>
+                        </VisualElement>
+
+                        <Label text="- - - - - - - - - - - - - - - - - - -" class="receipt-rule" picking-mode="Ignore" />
+
+                        <VisualElement name="menu-rows" class="menu-rows">
+                            <Button name="continue" tooltip="Continue" class="menu-row is-selected">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <Label text="CONTINUE" class="row-name" picking-mode="Ignore" />
+                                <Label text="................" class="row-leader" picking-mode="Ignore" />
+                                <Label text="$1.99" class="row-price" picking-mode="Ignore" />
+                                <VisualElement class="row-stamp paid-stamp" picking-mode="Ignore"><Label text="PAID" /></VisualElement>
+                            </Button>
+                            <Button name="new-game" tooltip="New Game" class="menu-row">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <Label text="NEW GAME" class="row-name" picking-mode="Ignore" />
+                                <Label text="................" class="row-leader" picking-mode="Ignore" />
+                                <Label text="$0.00" class="row-price" picking-mode="Ignore" />
+                                <VisualElement class="row-stamp paid-stamp" picking-mode="Ignore"><Label text="PAID" /></VisualElement>
+                            </Button>
+                            <Button name="leaderboards" tooltip="Leaderboard unavailable" class="menu-row is-unavailable">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <Label text="LEADERBOARD" class="row-name" picking-mode="Ignore" />
+                                <Label text="................" class="row-leader" picking-mode="Ignore" />
+                                <Label text="N/A" class="row-price unavailable-price" picking-mode="Ignore" />
+                                <VisualElement class="rub-texture-overlay" picking-mode="Ignore" />
+                            </Button>
+                            <Button name="options" tooltip="Options" class="menu-row">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <Label text="OPTIONS" class="row-name" picking-mode="Ignore" />
+                                <Label text="................" class="row-leader" picking-mode="Ignore" />
+                                <Label text="$0.50" class="row-price" picking-mode="Ignore" />
+                                <VisualElement class="row-stamp paid-stamp" picking-mode="Ignore"><Label text="PAID" /></VisualElement>
+                            </Button>
+                            <Button name="quit" tooltip="Quit" class="menu-row">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <Label text="QUIT" class="row-name" picking-mode="Ignore" />
+                                <Label text="................" class="row-leader" picking-mode="Ignore" />
+                                <Label text="$0.01" class="row-price" picking-mode="Ignore" />
+                                <VisualElement class="row-stamp void-stamp" picking-mode="Ignore"><Label text="VOID" /></VisualElement>
+                            </Button>
+                        </VisualElement>
+
+                        <Label text="- - - - - - - - - - - - - - - - - - -" class="receipt-rule footer-rule" picking-mode="Ignore" />
+                        <VisualElement class="receipt-total-line" picking-mode="Ignore">
+                            <Label text="TOTAL PLAYTHROUGHS" class="total-label" />
+                            <Label name="playthrough-count" text="0" class="total-value" />
+                        </VisualElement>
+                        <VisualElement class="receipt-detail-line" picking-mode="Ignore">
+                            <Label text="ITEMS 4" />
+                            <Label text="TAX $0.00" />
+                            <Label text="REGISTER 03" />
+                        </VisualElement>
+                        <VisualElement class="barcode" picking-mode="Ignore">
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-wide" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-mid" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-mid" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-wide" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-mid" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-wide" />
+                            <VisualElement class="barcode-bar bar-mid" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-wide" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-mid" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-mid" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-mid" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-wide" />
+                        </VisualElement>
+                        <Label text="0 042616 300005" class="barcode-number" picking-mode="Ignore" />
+                        <Label text="THANK YOU &#183; CART SAFELY" class="receipt-thanks" picking-mode="Ignore" />
+                        <VisualElement class="receipt-torn-edge" picking-mode="Ignore" />
+                    </VisualElement>
+
+                    <VisualElement name="settings-surface" class="receipt-paper settings-paper">
+                        <VisualElement class="receipt-body-fill" picking-mode="Ignore" />
+                        <VisualElement class="receipt-header settings-header" picking-mode="Ignore">
+                            <VisualElement class="printed-brand">
+                                <Label text="SETTINGS" class="receipt-title receipt-title-shadow" />
+                                <Label text="SETTINGS" class="receipt-title" />
+                                <Label text="ADJUSTMENTS &#183; REGISTER THREE" class="receipt-register" />
+                                <Label text="MEMBER: YOU &#183; AUTO-SAVED" class="receipt-meta" />
+                            </VisualElement>
+                        </VisualElement>
+
+                        <Label text="- - - - - - - - - - - - - - - - - - -" class="receipt-rule" picking-mode="Ignore" />
+                        <VisualElement name="settings-rows" class="settings-rows">
+                            <Button name="set-sensitivity" tooltip="Adjust look speed. Use left and right." class="setting-row is-selected">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <VisualElement class="setting-copy" picking-mode="Ignore">
+                                    <Label text="LOOK SPEED" class="setting-name" />
+                                    <Label text="LEFT / RIGHT TO ADJUST" class="setting-hint" />
+                                </VisualElement>
+                                <VisualElement name="sensitivity-notches" class="notch-track" picking-mode="Ignore">
+                                    <VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" />
+                                    <VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" />
+                                </VisualElement>
+                                <Label name="sensitivity-value" text="1.00" class="setting-value" picking-mode="Ignore" />
+                            </Button>
+                            <Button name="set-volume" tooltip="Adjust music volume. Use left and right." class="setting-row">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <VisualElement class="setting-copy" picking-mode="Ignore">
+                                    <Label text="MUSIC VOL" class="setting-name" />
+                                    <Label text="LEFT / RIGHT TO ADJUST" class="setting-hint" />
+                                </VisualElement>
+                                <VisualElement name="volume-notches" class="notch-track" picking-mode="Ignore">
+                                    <VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" />
+                                    <VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" /><VisualElement class="notch" />
+                                </VisualElement>
+                                <Label name="volume-value" text="50%" class="setting-value" picking-mode="Ignore" />
+                            </Button>
+                            <Button name="set-invert" tooltip="Toggle inverted camera controls." class="setting-row toggle-setting-row">
+                                <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                                <Label text=">>" class="row-caret" picking-mode="Ignore" />
+                                <VisualElement class="setting-copy" picking-mode="Ignore">
+                                    <Label text="INVERT CAM" class="setting-name" />
+                                    <Label text="PRESS TO TOGGLE" class="setting-hint" />
+                                </VisualElement>
+                                <VisualElement class="printed-checkbox" picking-mode="Ignore">
+                                    <VisualElement name="invert-check" class="hand-check">
+                                        <VisualElement class="check-short" /><VisualElement class="check-long" />
+                                    </VisualElement>
+                                </VisualElement>
+                                <Label name="invert-value" text="OFF" class="setting-value toggle-value" picking-mode="Ignore" />
+                            </Button>
+                        </VisualElement>
+
+                        <Label text="- - - - - - - - - - - - - - - - - - -" class="receipt-rule settings-footer-rule" picking-mode="Ignore" />
+                        <Button name="set-back" tooltip="Return to the main menu" class="menu-row settings-back-row">
+                            <VisualElement class="row-highlighter" picking-mode="Ignore" />
+                            <Label text="&lt;&lt;" class="row-caret" picking-mode="Ignore" />
+                            <Label text="BACK TO MENU" class="row-name" picking-mode="Ignore" />
+                            <Label text="................" class="row-leader" picking-mode="Ignore" />
+                            <Label text="$0.00" class="row-price" picking-mode="Ignore" />
+                        </Button>
+                        <Label text="SETTINGS SAVED AUTOMATICALLY" class="settings-saved" picking-mode="Ignore" />
+                        <VisualElement class="barcode settings-barcode" picking-mode="Ignore">
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-mid" />
+                            <VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-mid" /><VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-mid" /><VisualElement class="barcode-bar bar-thin" />
+                            <VisualElement class="barcode-bar bar-wide" /><VisualElement class="barcode-bar bar-thin" /><VisualElement class="barcode-bar bar-mid" />
+                        </VisualElement>
+                        <Label text="0 005003 030058" class="barcode-number" picking-mode="Ignore" />
+                        <Label text="KEEP THIS SLIP" class="receipt-thanks settings-keep" picking-mode="Ignore" />
+                        <VisualElement class="receipt-torn-edge" picking-mode="Ignore" />
+                    </VisualElement>
+                    <VisualElement class="paper-contact-shadow" picking-mode="Ignore" />
+                </VisualElement>
+                <VisualElement name="receipt-fall-layer" class="receipt-fall-layer" picking-mode="Ignore" />
+
+                <VisualElement class="printer-shell" picking-mode="Ignore">
+                    <VisualElement class="printer-body-back" />
+                    <VisualElement class="printer-highlight" />
+                    <VisualElement class="vent-bank">
+                        <VisualElement class="vent-slit" /><VisualElement class="vent-slit" /><VisualElement class="vent-slit" /><VisualElement class="vent-slit" /><VisualElement class="vent-slit" />
+                    </VisualElement>
+                    <VisualElement class="printer-bezel-seam" />
+                    <VisualElement class="printer-slot">
+                        <VisualElement class="feed-roller roller-left" /><VisualElement class="feed-roller roller-right" />
+                        <VisualElement class="printer-tear-comb" />
+                    </VisualElement>
+                    <VisualElement name="printer-kick" class="printer-kick" />
+                    <VisualElement class="printer-status-halo" />
+                    <VisualElement class="printer-status-light" />
+                    <VisualElement class="spec-plate">
+                        <Label text="CM-03" class="printer-model" />
+                        <Label text="THERMAL 58MM" class="printer-spec" />
+                    </VisualElement>
+                    <VisualElement class="printer-screw screw-left" /><VisualElement class="printer-screw screw-right" />
+                </VisualElement>
+            </VisualElement>
+        </VisualElement>
+    </VisualElement>
+</UXML>

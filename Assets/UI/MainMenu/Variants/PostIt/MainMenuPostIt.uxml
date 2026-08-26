@@ -1,0 +1,71 @@
+<UXML xmlns="UnityEngine.UIElements">
+    <Style src="MainMenuPostIt.uss" />
+    <VisualElement name="main-menu-root" class="main-menu-root">
+        <VisualElement name="market-dash-logo" class="market-dash-logo entrance-element is-visible" picking-mode="Ignore">
+            <VisualElement name="logo-words" class="logo-words">
+                <VisualElement name="market-word" class="logo-word-group logo-market-group">
+                    <Label text="MARKET" class="logo-layer logo-deep-shadow" />
+                    <Label text="MARKET" class="logo-layer logo-extrusion" />
+                    <Label text="MARKET" class="logo-layer" />
+                </VisualElement>
+                <VisualElement name="dash-word" class="logo-word-group logo-dash-group">
+                    <Label text="DASH" class="logo-layer logo-deep-shadow" />
+                    <Label text="DASH" class="logo-layer logo-extrusion" />
+                    <Label text="DASH" class="logo-layer" />
+                    <VisualElement class="speed-marks">
+                        <VisualElement class="speed-mark speed-mark-white speed-mark-top" />
+                        <VisualElement class="speed-mark speed-mark-yellow speed-mark-middle" />
+                        <VisualElement class="speed-mark speed-mark-white speed-mark-bottom" />
+                    </VisualElement>
+                </VisualElement>
+            </VisualElement>
+        </VisualElement>
+
+        <VisualElement name="best-run-card" class="best-run-card entrance-element is-visible" picking-mode="Ignore">
+            <VisualElement class="best-run-paper">
+                <Label text="BEST RUN &#183; ALL LEVELS" class="best-run-heading" />
+                <Label name="best-run-time" text="--:--.--" class="best-run-time" />
+                <Label name="leaderboard-placeholder" text="UNAVAILABLE" class="leaderboard-placeholder" />
+                <VisualElement class="pb-stamp">
+                    <Label text="PB" class="pb-stamp-text" />
+                </VisualElement>
+            </VisualElement>
+        </VisualElement>
+
+        <VisualElement name="sticky-note" class="sticky-note entrance-element is-visible">
+            <VisualElement class="sticky-shadow" picking-mode="Ignore" />
+            <VisualElement class="sticky-paper" picking-mode="Ignore" />
+            <Label text="To do" class="sticky-heading" picking-mode="Ignore" />
+            <Label name="idle-timer" text="IDLE 0:00.00" class="idle-timer" picking-mode="Ignore" />
+            <VisualElement class="marker-underline" picking-mode="Ignore" />
+
+            <VisualElement name="menu-rows" class="menu-rows">
+                <VisualElement name="selection-arrow" class="selection-arrow is-visible" picking-mode="Ignore">
+                    <VisualElement class="selection-arrow-shaft" />
+                    <VisualElement class="selection-arrow-head" />
+                </VisualElement>
+                <Button name="continue" class="menu-row is-selected">
+                    <VisualElement class="checkbox"><VisualElement class="checkmark" picking-mode="Ignore" /></VisualElement>
+                    <Label text="Continue" class="menu-label" picking-mode="Ignore" />
+                </Button>
+                <Button name="new-game" class="menu-row">
+                    <VisualElement class="checkbox"><VisualElement class="checkmark" picking-mode="Ignore" /></VisualElement>
+                    <Label text="New Game" class="menu-label" picking-mode="Ignore" />
+                </Button>
+                <Button name="leaderboards" class="menu-row is-unavailable">
+                    <VisualElement class="checkbox"><VisualElement class="checkmark" picking-mode="Ignore" /></VisualElement>
+                    <Label text="Leaderboards" class="menu-label" picking-mode="Ignore" />
+                    <VisualElement class="unavailable-strike" picking-mode="Ignore" />
+                </Button>
+                <Button name="options" class="menu-row">
+                    <VisualElement class="checkbox"><VisualElement class="checkmark" picking-mode="Ignore" /></VisualElement>
+                    <Label text="Options" class="menu-label" picking-mode="Ignore" />
+                </Button>
+                <Button name="quit" class="menu-row">
+                    <VisualElement class="checkbox"><VisualElement class="checkmark" picking-mode="Ignore" /></VisualElement>
+                    <Label text="Quit" class="menu-label" picking-mode="Ignore" />
+                </Button>
+            </VisualElement>
+        </VisualElement>
+    </VisualElement>
+</UXML>
