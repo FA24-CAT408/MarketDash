@@ -22448,8 +22448,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuToolkitView
   _controller: {fileID: 820414135}
   _gameSaveManager: {fileID: 11400000, guid: 0f7aa85281773b0489e7034bb991daf4, type: 2}
+  _leaderboardPlaceholder: "RANK #147 \xB7 WR 12:34.56 \"cartgod\""
   _entranceDelay: 1.25
-  _reduceMotion: 0
 --- !u!114 &358186753
 MonoBehaviour:
   m_ObjectHideFlags: 0
