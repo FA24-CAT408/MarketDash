@@ -53,6 +53,15 @@ Budget, Attempts used, Progress, Decisions, Validation, and Checkpoints. -->
 
 <!-- Newest first: date, outcome, validated scope, branch/commits, deferred work. -->
 
+### 2026-08-27 — Accessible main-menu keyboard navigation
+
+- **Outcome:** Discrete Up/Down keyboard presses now move exactly one enabled Main Menu option at a time without requiring Left/Right or held inputs.
+- **Validated scope:** Made `MainMenuToolkitView` the single owner of directional navigation by suppressing UI Toolkit's duplicate automatic `NavigationMoveEvent`; kept pointer behavior, gamepad/manual input, wraparound, Settings controls, and the disabled Leaderboard unchanged. No scene, UXML, font, package, recovery, or serialized asset was changed for this fix.
+- **Behavior evidence:** The production combined-path repro failed before the fix on the first Down press (`Continue → Options`, index `0→3`) and passed after the fix. The final Play Mode sequence traversed Down `0→1→3→4→0` and Up `0→4→3→1→0`, repeated both cycles, skipped Leaderboard deliberately, opened Settings, returned to Options, and moved to Quit on the next Down press. Main and Settings Game views were visually inspected at the active 16:9 aspect; the isolated Console showed zero logs, warnings, or errors. Unity returned to Edit Mode with the pre-existing dirty scene state preserved.
+- **Root cause:** Each physical direction was handled once by `MainMenuToolkitView.ReadInput()` and a second time by UI Toolkit's automatic focus navigation.
+- **Branch/commits:** `main`; completion commit based on `b5f4ac0`.
+- **Deferred work:** None for this defect.
+
 ### 2026-08-25 — Receipt-printer detail and Settings receipt
 
 - **Outcome:** Made the production UI Toolkit register feel like a physical receipt printer, gave the unavailable Leaderboard row a naturally rubbed-off treatment, and made Options tear off the main receipt before printing a fully interactive Settings receipt.

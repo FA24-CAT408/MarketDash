@@ -208,6 +208,7 @@ public sealed class MainMenuToolkitView : MonoBehaviour
         sensitivityTrack?.Query<VisualElement>(className: "notch").ForEach(_sensitivityNotches.Add);
         volumeTrack?.Query<VisualElement>(className: "notch").ForEach(_volumeNotches.Add);
         _entranceElements.Add(_root.Q<VisualElement>("best-run-card"));
+        _root.RegisterCallback<NavigationMoveEvent>(SuppressToolkitNavigation, TrickleDown.TrickleDown);
         _root.RegisterCallback<GeometryChangedEvent>(HandleRootGeometryChanged);
         ApplyResponsiveScale();
     }
@@ -494,6 +495,12 @@ public sealed class MainMenuToolkitView : MonoBehaviour
 
     private VisualElement GetPaper(ReceiptPage page) => page == ReceiptPage.Main ? _mainPaper : _settingsPaper;
     private List<Button> GetRows(ReceiptPage page) => page == ReceiptPage.Main ? _mainRows : _settingsRows;
+
+    private static void SuppressToolkitNavigation(NavigationMoveEvent navigationEvent)
+    {
+        navigationEvent.PreventDefault();
+        navigationEvent.StopImmediatePropagation();
+    }
 
     private void HandleRootGeometryChanged(GeometryChangedEvent _) => ApplyResponsiveScale();
 
