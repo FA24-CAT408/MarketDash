@@ -112,7 +112,6 @@ public sealed class MainMenuToolkitView : MonoBehaviour
         if (settingsShadow != null)
             settingsShadow.style.translate = new Translate(0f, -ReceiptFeedDistance);
 
-        root?.Q<VisualElement>("best-run-card")?.RemoveFromClassList("is-visible");
     }
 
     private void OnDisable()
@@ -207,7 +206,6 @@ public sealed class MainMenuToolkitView : MonoBehaviour
         VisualElement volumeTrack = _root.Q<VisualElement>("volume-notches");
         sensitivityTrack?.Query<VisualElement>(className: "notch").ForEach(_sensitivityNotches.Add);
         volumeTrack?.Query<VisualElement>(className: "notch").ForEach(_volumeNotches.Add);
-        _entranceElements.Add(_root.Q<VisualElement>("best-run-card"));
         _root.RegisterCallback<NavigationMoveEvent>(SuppressToolkitNavigation, TrickleDown.TrickleDown);
         _root.RegisterCallback<GeometryChangedEvent>(HandleRootGeometryChanged);
         ApplyResponsiveScale();

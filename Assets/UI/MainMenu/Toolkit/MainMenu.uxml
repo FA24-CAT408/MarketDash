@@ -2,16 +2,6 @@
     <Style src="project://database/Assets/UI/MainMenu/Toolkit/MainMenu.uss?fileID=7433441132597879392&amp;guid=16d68ff2dc974cf498601a58ec1ccd95&amp;type=3#MainMenu"/>
     <VisualElement name="main-menu-root" class="main-menu-root">
         <VisualElement name="centered-stage" class="centered-stage">
-            <VisualElement name="best-run-card" picking-mode="Ignore" class="best-run-card entrance-element is-visible">
-                <VisualElement class="best-run-paper">
-                    <Label text="BEST RUN · ALL LEVELS" class="best-run-heading"/>
-                    <Label name="best-run-tag-time" text="--:--.--" class="best-run-time"/>
-                    <Label text="PERSONAL BEST" class="best-run-caption"/>
-                    <VisualElement class="pb-stamp">
-                        <Label text="PB" class="pb-stamp-text"/>
-                    </VisualElement>
-                </VisualElement>
-            </VisualElement>
             <VisualElement name="receipt-zone" class="receipt-zone">
                 <VisualElement class="paper-feed-mask">
                     <VisualElement name="menu-shadow" picking-mode="Ignore" class="receipt-cast-shadow"/>
@@ -81,6 +71,10 @@
                         <VisualElement picking-mode="Ignore" class="receipt-total-line">
                             <Label text="TOTAL PLAYTHROUGHS" class="total-label"/>
                             <Label name="playthrough-count" text="0" class="total-value"/>
+                        </VisualElement>
+                        <VisualElement picking-mode="Ignore" class="receipt-total-line receipt-best-run-line">
+                            <Label text="BEST RUN · ALL LEVELS" class="total-label"/>
+                            <Label name="best-run-tag-time" text="--:--.--" class="total-value"/>
                         </VisualElement>
                         <VisualElement picking-mode="Ignore" class="receipt-detail-line">
                             <Label text="ITEMS 4"/>
