@@ -8,7 +8,9 @@ namespace Obvious.Soap
 {
     public abstract class ScriptableDictionary<T, V> : ScriptableDictionaryBase, IDictionary<T, V>
     {
+        #pragma warning disable UAC1016 // Unity 6.6 analyzer: generic key/value types are constrained by concrete subclasses
         [SerializeField] protected Dictionary<T, V> _dictionary = new Dictionary<T, V>();
+        #pragma warning restore UAC1016
         
         public override int Count => _dictionary.Count;
         public bool IsReadOnly => false;

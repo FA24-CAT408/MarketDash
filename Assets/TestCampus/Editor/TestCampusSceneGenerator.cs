@@ -835,7 +835,7 @@ namespace CrazyMarket.TestCampus.Editor
             mesh.color = color;
             mesh.fontSize = size * 10f;
             mesh.alignment = TextAlignmentOptions.Center;
-            mesh.enableWordWrapping = false;
+            mesh.textWrappingMode = TextWrappingModes.NoWrap;
             return go;
         }
         private static GameObject InstantiatePrefab(string path, Scene scene)
