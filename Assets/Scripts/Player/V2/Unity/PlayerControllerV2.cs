@@ -319,7 +319,18 @@ namespace CrazyMarket.Player.V2.Unity
 
         public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
             Vector3 atCharacterPosition, Quaternion atCharacterRotation,
-            ref HitStabilityReport hitStabilityReport) { }
+            ref HitStabilityReport hitStabilityReport)
+        {
+            // KCC's step detection runs after ledge validation and can mark an
+            // unsupported edge stable again, suspending the capsule beside it.
+            if (motor.LedgeAndDenivelationHandling && hitStabilityReport.ValidStepDetected &&
+                hitStabilityReport.LedgeDetected && hitStabilityReport.IsOnEmptySideOfLedge &&
+                hitStabilityReport.DistanceFromLedge > motor.MaxStableDistanceFromLedge)
+            {
+                hitStabilityReport.IsStable = false;
+                hitStabilityReport.ValidStepDetected = false;
+            }
+        }
 
         public void OnDiscreteCollisionDetected(Collider hitCollider) { }
 
