@@ -44,7 +44,6 @@
   <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
   <Project Path="FlatKit.Utils.Editor.csproj" />
   <Project Path="Unity.InputSystem.ForUI.Editor.csproj" />
-  <Project Path="Bezi.Editor.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="Unity.ProBuilder.Stl.csproj" />
   <Project Path="CrazyMarket.TestCampus.PlayModeTests.csproj" />
