@@ -25,6 +25,8 @@ namespace CrazyMarket.Player.V2.Unity
         private int reserveShape = -1;
         private float initialShape;
         private float initialMass, dashTime, cooldown;
+        private const float RefillDuration = .7f;
+        private float refillTime, refillFrom;
         private int spentDashes;
         private bool dashQueued, recallQueued;
 
@@ -76,7 +78,11 @@ namespace CrazyMarket.Player.V2.Unity
                 return;
             }
             cooldown = Mathf.Max(0f, cooldown - deltaTime);
-            if (recallQueued) RestoreButter();
+            if (recallQueued)
+            {
+                recallQueued = false;
+                if (refillTime <= 0f && (trail == null || !trail.GatheringButter)) RestoreButter(true);
+            }
         }
 
         internal void ApplyDash(ref Vector3 velocity, Vector3 intent, Vector3 up, bool grounded,
@@ -96,6 +102,7 @@ namespace CrazyMarket.Player.V2.Unity
                     dashDirection = Vector3.ProjectOnPlane(transform.forward, up);
                 dashDirection.Normalize();
                 spentDashes++;
+                refillTime = 0f;
                 dashTime = dashDuration;
                 cooldown = Mathf.Max(dashDuration, dashCooldown);
                 ApplyBody();
@@ -112,14 +119,22 @@ namespace CrazyMarket.Player.V2.Unity
             if (Vector3.Dot(normal, dashDirection) < -.1f) dashTime = 0f;
         }
 
-        private void RestoreButter()
+        private void RestoreButter(bool animate = false)
         {
+            refillFrom = bodySkin != null && reserveShape >= 0 ? bodySkin.GetBlendShapeWeight(reserveShape) : 0f;
+            refillTime = animate ? RefillDuration : 0f;
             spentDashes = 0;
             dashQueued = recallQueued = false;
             dashTime = 0f;
-            if (trail != null) trail.ClearTransientEffects();
+            if (trail != null)
+            {
+                if (animate) trail.PlayRecall(RefillDuration);
+                else trail.ClearTransientEffects();
+            }
             if (surfaceMovement != null) surfaceMovement.ClearCoating();
             ApplyBody();
+            if (animate && bodySkin != null && reserveShape >= 0)
+                bodySkin.SetBlendShapeWeight(reserveShape, refillFrom);
         }
 
         private void ApplyBody()
@@ -132,8 +147,16 @@ namespace CrazyMarket.Player.V2.Unity
 
         private void Update()
         {
+            if (refillTime > 0f)
+            {
+                refillTime = Mathf.Max(0f, refillTime - Time.deltaTime);
+                float fill = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.15f, .9f, 1f - refillTime / RefillDuration));
+                if (bodySkin != null && reserveShape >= 0)
+                    bodySkin.SetBlendShapeWeight(reserveShape, Mathf.Lerp(refillFrom, initialShape, fill));
+            }
             if (!CanReadInput) dashQueued = recallQueued = false;
-            if (player != null && !player.isActiveAndEnabled && (spentDashes != 0 || IsDashing))
+            if (player != null && !player.isActiveAndEnabled && (spentDashes != 0 || IsDashing || refillTime > 0f ||
+                (trail != null && trail.HasRecallEffect)))
                 RestoreButter();
         }
 

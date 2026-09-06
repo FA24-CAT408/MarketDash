@@ -2322,6 +2322,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.Unity.ButterVfx
   liquidMaterial: {fileID: 2100000, guid: 0c100247b046b2c48ac5d579f793f2a4, type: 2}
   puddleMaterial: {fileID: 2100000, guid: 3f96eca9f970f294ca4d2743d3d81eb6, type: 2}
+  recallPuffMaterial: {fileID: 2100000, guid: bacc1b07ff3b5b944a871e9d51dea769, type: 2}
+  recallDropMaterial: {fileID: 2100000, guid: ad85c998538145e4abd283e540b94d02, type: 2}
   dropletMesh: {fileID: 4300000, guid: 39b35ebdbc3db5f418f5f066dd16faed, type: 2}
   puddleMesh: {fileID: 4300000, guid: 4906719a17d22d3429d8bf10b4a386ff, type: 2}
   dripSources:

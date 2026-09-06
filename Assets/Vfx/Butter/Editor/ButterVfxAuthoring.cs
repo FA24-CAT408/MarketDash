@@ -72,6 +72,8 @@ namespace CrazyMarket.Butter.Editor
                 var so = new SerializedObject(fx);
                 so.FindProperty("liquidMaterial").objectReferenceValue = liquid;
                 so.FindProperty("puddleMaterial").objectReferenceValue = surface;
+                so.FindProperty("recallPuffMaterial").objectReferenceValue = RecallPuffMaterial();
+                so.FindProperty("recallDropMaterial").objectReferenceValue = RecallDropMaterial();
                 so.FindProperty("dropletMesh").objectReferenceValue = drop;
                 so.FindProperty("puddleMesh").objectReferenceValue = puddle;
                 string[] bones = { "hand.L", "hand.R", "spine.003", "spine", "spine.006", "spine" };
@@ -121,6 +123,72 @@ namespace CrazyMarket.Butter.Editor
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem("CrazyMarket/Test Campus/Rebuild Butter Recall Material")]
+        public static void RebuildRecall()
+        {
+            var scene = SceneManager.GetActiveScene();
+            if (EditorApplication.isPlaying || scene.path != ScenePath || scene.isDirty)
+                throw new InvalidOperationException("Open the saved, stopped Market scene before configuring recall VFX.");
+            var material = RecallPuffMaterial();
+            var drops = RecallDropMaterial();
+            string path = Folder + "/Butter VFX.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var settings = new SerializedObject(root.GetComponent<ButterVfx>());
+                settings.FindProperty("recallPuffMaterial").objectReferenceValue = material;
+                settings.FindProperty("recallDropMaterial").objectReferenceValue = drops;
+                if (settings.ApplyModifiedPropertiesWithoutUndo()) PrefabUtility.SaveAsPrefabAsset(root,path);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        private static Material RecallPuffMaterial()
+        {
+            var material = Material("Butter Recall Puff", "Universal Render Pipeline/Particles/Unlit");
+            var dust = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Feel/MMTools/Accessories/MMVFX/MMParticles/MMParticlesDust.png");
+            if (dust == null) throw new InvalidOperationException("The existing dust mask is required for the recall puff.");
+            material.SetTexture("_BaseMap",dust);
+            material.SetColor("_BaseColor",new Color(6f,6f,6f,1f));
+            material.SetFloat("_Surface",1f);
+            material.SetFloat("_Blend",2f);
+            material.SetFloat("_BlendOp",0f);
+            material.SetFloat("_SrcBlend",(float)BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend",(float)BlendMode.One);
+            material.SetFloat("_SrcBlendAlpha",(float)BlendMode.One);
+            material.SetFloat("_DstBlendAlpha",(float)BlendMode.One);
+            material.SetFloat("_ZWrite",0f);
+            material.SetFloat("_Cull",0f);
+            material.SetFloat("_ColorMode",0f);
+            material.SetFloat("_FlipbookBlending",0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType","Transparent");
+            material.renderQueue = (int)RenderQueue.Transparent;
+            material.SetShaderPassEnabled("ShadowCaster",false);
+            material.SetShaderPassEnabled("DepthOnly",false);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssetIfDirty(material);
+            return material;
+        }
+
+        private static Material RecallDropMaterial()
+        {
+            var material = Material("Butter Recall Drops", "Universal Render Pipeline/Unlit");
+            material.shader = Shader.Find("Universal Render Pipeline/Unlit");
+            material.SetColor("_BaseColor",new Color(1f,.82f,.25f,1f));
+            material.SetFloat("_Surface",1f);
+            material.SetFloat("_Blend",0f);
+            material.SetFloat("_SrcBlend",(float)BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend",(float)BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite",0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType","Transparent");
+            material.renderQueue=(int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssetIfDirty(material);
+            return material;
         }
 
         private static void ConfigureButterAnimation(PlayerControllerV2 player)

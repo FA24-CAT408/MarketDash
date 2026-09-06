@@ -18,6 +18,8 @@ namespace CrazyMarket.Player.V2.Unity
         [Header("Liquid assets")]
         [SerializeField] private Material liquidMaterial;
         [SerializeField] private Material puddleMaterial;
+        [SerializeField] private Material recallPuffMaterial;
+        [SerializeField] private Material recallDropMaterial;
         [SerializeField] private Mesh dropletMesh;
         [SerializeField] private Mesh puddleMesh;
         [SerializeField] private DripSource[] dripSources;
@@ -52,6 +54,15 @@ namespace CrazyMarket.Player.V2.Unity
         private ButterBody body;
         private ParticleSystem droplets;
         private ParticleSystem dashSpray;
+        private ParticleSystem recallDrops, recallPuff;
+        private struct ReturningDrop { public Vector3 origin; public float size, delay, arc; }
+        private ReturningDrop[] returning;
+        private ParticleSystem.Particle[] recallParticles;
+        private int returningCount;
+        private float recallAge, recallDuration;
+        private bool recallActive, recallPuffed;
+        internal bool GatheringButter => recallActive && recallAge < recallDuration;
+        internal bool HasRecallEffect => recallActive;
         private LineRenderer[] dashWake;
         private LineRenderer dashRing;
         private float dashAge = 1f;
@@ -115,6 +126,7 @@ namespace CrazyMarket.Player.V2.Unity
             }
             worldRoot = new GameObject("Butter VFX - Pooled Surfaces").transform;
             CreateDashEffects();
+            CreateRecallEffects();
             properties = new MaterialPropertyBlock();
             puddles = new Puddle[puddleCapacity];
             for (int i = 0; i < puddles.Length; i++)
@@ -187,6 +199,13 @@ namespace CrazyMarket.Player.V2.Unity
             bool grounded = snapshot.StableGrounded;
 
             UpdateDashEffects();
+            UpdateRecallEffects();
+            if (GatheringButter)
+            {
+                previousVelocity = velocity;
+                wasGrounded = grounded;
+                return;
+            }
             UpdateDrips(velocity, snapshot.ControlBlocked);
             if (Reserve > 0f && grounded && !snapshot.ControlBlocked && !teleport && TryGetSurface(position + Vector3.up*.7f, 1.7f, out RaycastHit floor))
             {
@@ -365,7 +384,7 @@ namespace CrazyMarket.Player.V2.Unity
 
         private void PlacePuddle(Collider surface, Vector3 point, Vector3 normal, Vector3 forward, Vector2 size, float lifetimeScale)
         {
-            if (Reserve <= 0f) return;
+            if (Reserve <= 0f || GatheringButter) return;
             var puddle = puddles[nextPuddle];
             nextPuddle = (nextPuddle+1)%puddles.Length;
             puddle.active = true;
@@ -403,6 +422,10 @@ namespace CrazyMarket.Player.V2.Unity
 
         public void ClearTransientEffects()
         {
+            recallActive = false;
+            returningCount = 0;
+            if (recallDrops != null) recallDrops.Clear();
+            if (recallPuff != null) recallPuff.Clear();
             if (droplets != null) droplets.Clear();
             if (dashSpray != null) dashSpray.Clear();
             dashAge = 1f;
@@ -419,6 +442,8 @@ namespace CrazyMarket.Player.V2.Unity
             sprayRemainder=idlePoolTimer=airborneTime=0;
             previousVelocity=Vector3.zero;
             wasGrounded=false;
+            if (dripRenderers != null) foreach (var renderer in dripRenderers)
+                if (renderer != null) renderer.enabled = false;
             if (dripMotions != null)
                 for (int i=0;i<dripMotions.Length;i++)
                 {
@@ -426,6 +451,131 @@ namespace CrazyMarket.Player.V2.Unity
                     dripMotions[i].hasOrigin=false;
                     dripPhases[i]=i*.173f%1f;
                 }
+        }
+
+        private void CreateRecallEffects()
+        {
+            int capacity = Mathf.Max(12, puddleCapacity + droplets.main.maxParticles + dashSpray.main.maxParticles + dripSources.Length);
+            returning = new ReturningDrop[capacity];
+            recallParticles = new ParticleSystem.Particle[capacity];
+            var go = new GameObject("Butter returning to Blobby");
+            go.transform.SetParent(worldRoot, false);
+            recallDrops = go.AddComponent<ParticleSystem>();
+            recallDrops.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = recallDrops.main;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.simulationSpeed = 0f;
+            main.maxParticles = capacity;
+            main.startSize3D = main.startRotation3D = true;
+            var emission = recallDrops.emission; emission.enabled = false;
+            var shape = recallDrops.shape; shape.enabled = false;
+            var renderer = recallDrops.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Mesh;
+            renderer.alignment = ParticleSystemRenderSpace.World;
+            renderer.mesh = dropletMesh;
+            renderer.sharedMaterial = recallDropMaterial != null ? recallDropMaterial : liquidMaterial;
+            renderer.enableGPUInstancing = false;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            go = new GameObject("Butter refill puff");
+            go.transform.SetParent(worldRoot, false);
+            recallPuff = go.AddComponent<ParticleSystem>();
+            recallPuff.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            main = recallPuff.main;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.maxParticles = 32;
+            main.startSpeed = 0f;
+            emission = recallPuff.emission; emission.enabled = false;
+            shape = recallPuff.shape; shape.enabled = false;
+            var size = recallPuff.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f,.25f),new Keyframe(.3f,1f),new Keyframe(1f,1.5f)));
+            var color = recallPuff.colorOverLifetime;
+            color.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[]{new GradientColorKey(Color.white,0f),new GradientColorKey(Color.white,1f)},
+                new[]{new GradientAlphaKey(0f,0f),new GradientAlphaKey(1f,.12f),new GradientAlphaKey(0f,1f)});
+            color.color = fade;
+            renderer = recallPuff.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = recallPuffMaterial != null ? recallPuffMaterial : liquidMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        public void PlayRecall(float duration)
+        {
+            if (!isActiveAndEnabled || recallDrops == null) { ClearTransientEffects(); return; }
+            returningCount = 0;
+            foreach (var puddle in puddles)
+                if (puddle.active) AddReturningDrop(puddle.transform.position, Mathf.Clamp(Mathf.Sqrt(puddle.size.x*puddle.size.z)*.4f,.12f,.7f));
+            for (int i=0;i<hangingDrops.Length;i++)
+                if (dripRenderers[i].enabled) AddReturningDrop(hangingDrops[i].position, Mathf.Max(.08f,hangingDrops[i].localScale.x));
+            int count = droplets.GetParticles(recallParticles);
+            for (int i=0;i<count;i++) AddReturningDrop(recallParticles[i].position, Mathf.Max(.08f,recallParticles[i].GetCurrentSize(droplets)));
+            count = dashSpray.GetParticles(recallParticles);
+            for (int i=0;i<count;i++) AddReturningDrop(recallParticles[i].position, Mathf.Max(.08f,recallParticles[i].GetCurrentSize(dashSpray)));
+            if (returningCount == 0)
+                for (int i=0;i<12;i++)
+                {
+                    float angle=i*Mathf.PI*2f/12f;
+                    AddReturningDrop(player.transform.position+new Vector3(Mathf.Cos(angle)*1.3f,.2f,Mathf.Sin(angle)*1.3f),.16f);
+                }
+            count = returningCount;
+            ClearTransientEffects();
+            returningCount = count;
+            recallDuration = Mathf.Max(.2f,duration);
+            recallAge = 0f;
+            recallActive = true;
+            recallPuffed = false;
+            recallDrops.Play();
+        }
+
+        private void AddReturningDrop(Vector3 origin, float size)
+        {
+            if (returningCount >= returning.Length) return;
+            returning[returningCount] = new ReturningDrop { origin=origin, size=size,
+                delay=(returningCount%5)*.018f, arc=Mathf.Clamp(Vector3.Distance(origin,player.transform.position)*.15f,.6f,2.8f) };
+            returningCount++;
+        }
+
+        private void UpdateRecallEffects()
+        {
+            if (!recallActive) return;
+            recallAge += Time.deltaTime;
+            Vector3 target = player.transform.position + Vector3.up*.95f;
+            recallPuff.transform.position = target;
+            int live = 0;
+            for (int i=0;i<returningCount;i++)
+            {
+                var drop = returning[i];
+                float t = Mathf.Clamp01((recallAge-drop.delay)/(recallDuration*.82f));
+                if (t >= 1f) continue;
+                float pull = t*t;
+                Vector3 side = Vector3.Cross(Vector3.up,target-drop.origin).normalized;
+                Vector3 arc = (Vector3.up*drop.arc + side*((i%2==0?1f:-1f)*.45f))*Mathf.Sin(t*Mathf.PI);
+                recallParticles[live++] = new ParticleSystem.Particle {
+                    position=Vector3.Lerp(drop.origin,target,pull)+arc,
+                    startLifetime=10f, remainingLifetime=10f,
+                    startSize3D=new Vector3(drop.size,drop.size*(1f+t*2f),drop.size)*(1f-pull*.85f),
+                    rotation3D=Quaternion.FromToRotation(Vector3.up,(target-drop.origin).normalized).eulerAngles,
+                    startColor=new Color(1f,1f,.75f,1f)
+                };
+            }
+            recallDrops.SetParticles(recallParticles,live);
+            if (!recallPuffed && recallAge >= recallDuration*.78f)
+            {
+                recallPuffed = true;
+                recallPuff.Play();
+                for(int i=0;i<18;i++)
+                {
+                    Vector3 direction=Random.onUnitSphere;
+                    recallPuff.Emit(new ParticleSystem.EmitParams { position=direction*.35f, velocity=direction*1.1f+Vector3.up*.3f,
+                        startSize=Random.Range(1f,1.5f), startLifetime=Random.Range(.35f,.55f),
+                        startColor=new Color(1f,.8f,.08f,.65f), rotation=Random.Range(0f,360f) },1);
+                }
+            }
+            if (recallAge >= recallDuration+.6f) { recallActive=false; returningCount=0; }
         }
 
         private void CreateDashEffects()
