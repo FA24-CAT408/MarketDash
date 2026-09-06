@@ -30,7 +30,7 @@ public class DollyCartTweener : MonoBehaviour
             .SetEase(easeType)
             .OnComplete(() =>
             {
-                FindObjectOfType<KCCPlayerController>().TogglePlayerCanMove();
+                GameManager.Instance.SetPlayerMovementEnabled(true);
                 
                 FindObjectOfType<CameraSystem>().SetCameraByIndex(0);
                 

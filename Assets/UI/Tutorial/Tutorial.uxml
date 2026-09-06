@@ -1,0 +1,70 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Tutorial/Tutorial.uss?fileID=7433441132597879392&amp;guid=ac8605480c60a064e815adfd41dbbd4c&amp;type=3#Tutorial"/>
+    <ui:VisualElement name="tutorialRoot" picking-mode="Ignore" class="tutorial-root">
+        <ui:VisualElement name="hud" picking-mode="Ignore" class="hud">
+            <ui:VisualElement picking-mode="Ignore" class="receipt order">
+                <ui:Label name="phase" text="FIRST SHIFT / WARM-UP" class="eyebrow"/>
+                <ui:Label name="objective" text="Pick up the eggs" class="title"/>
+                <ui:VisualElement class="rule"/>
+                <ui:Label name="instruction" text="Practice here, then follow the marker through the doors." class="body"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="clock" picking-mode="Ignore" class="receipt clock hidden">
+                <ui:Label text="SHIFT TIME" class="eyebrow"/>
+                <ui:Label name="time" text="0.00" class="time"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="marker" picking-mode="Ignore" class="marker hidden">
+            <ui:Label name="markerArrow" text="↓" class="marker-arrow"/>
+            <ui:Label name="markerLabel" class="marker-label"/>
+            <ui:Label name="markerDistance" class="marker-distance"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="briefShade" class="modal-shade">
+            <ui:VisualElement class="receipt modal">
+                <ui:Label text="FIRST SHIFT" class="eyebrow"/>
+                <ui:Label text="Grab. Deliver. Done!" class="modal-title"/>
+                <ui:VisualElement class="brief-row">
+                    <ui:Image name="itemPreview" class="item-image"/>
+                    <ui:VisualElement class="brief-copy">
+                        <ui:Label text="1 × Eggs" class="title"/>
+                        <ui:Label text="On the display table." class="body"/>
+                        <ui:Label text="1. Grab the eggs." class="step"/>
+                        <ui:Label text="2. Return to Delivery Bay." class="step"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="rule"/>
+                <ui:Label text="Practice first. Enter the market to start the clock." class="body"/>
+                <ui:Button name="readyButton" text="GOT IT  "/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="pauseShade" class="modal-shade hidden">
+            <ui:VisualElement class="receipt modal">
+                <ui:Label text="PAUSED" class="eyebrow"/>
+                <ui:Label text="On a break." class="modal-title"/>
+                <ui:VisualElement class="settings">
+                    <ui:Slider name="sensitivity" label="Look sensitivity" low-value="0.1" high-value="5"/>
+                    <ui:Slider name="volume" label="Music volume" low-value="0" high-value="1"/>
+                    <ui:Toggle name="invert" label="Invert camera Y"/>
+                </ui:VisualElement>
+                <ui:Button name="resumeButton" text="RESUME  [ESC]"/>
+                <ui:VisualElement class="buttons">
+                    <ui:Button name="retryButton" text="RESTART" class="secondary"/>
+                    <ui:Button name="menuButton" text="MENU" class="secondary"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="resultShade" class="modal-shade hidden">
+            <ui:VisualElement class="receipt modal">
+                <ui:Label text="ORDER DELIVERED!" class="eyebrow"/>
+                <ui:Label text="Shift smashed!" class="modal-title"/>
+                <ui:Label text="1 × EGGS DELIVERED" class="body"/>
+                <ui:VisualElement class="rule"/>
+                <ui:Label name="resultTime" class="time"/>
+                <ui:Button name="nextButton" text="NEXT SHIFT"/>
+                <ui:VisualElement class="buttons">
+                    <ui:Button name="againButton" text="TRY AGAIN" class="secondary"/>
+                    <ui:Button name="resultMenuButton" text="MENU" class="secondary"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

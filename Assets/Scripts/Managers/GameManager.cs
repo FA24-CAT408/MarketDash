@@ -1,4 +1,6 @@
-using System;
+﻿using System;
+using CrazyMarket.Player.V2;
+using CrazyMarket.Player.V2.Unity;
 using UnityEngine;
 using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
@@ -73,11 +75,18 @@ public class GameManager : MonoBehaviour
     
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (scene.name.StartsWith("Level ") && int.TryParse(scene.name.Substring(6), out int levelNumber))
+            currentLevel = levelNumber;
+
         // Find references to scene-specific components
         SetGroceryListManager(FindObjectOfType<GroceryListManager>());
         _timerManager = FindObjectOfType<TimerManager>();
         _sceneEventManager = FindObjectOfType<SceneEventManager>();
         
+        // A new player still needs the loading gate when the persistent manager
+        // is already in LoadingIn and ChangeState would return early.
+        SetPlayerMovementEnabled(false);
+
         // Initialize the scene based on current state
         ChangeState(GameState.LoadingIn);
     }
@@ -134,11 +143,23 @@ public class GameManager : MonoBehaviour
         }
     }
     
+    public void SetPlayerMovementEnabled(bool enabled)
+    {
+        var playerV2 = FindAnyObjectByType<PlayerControllerV2>();
+        if (playerV2 != null)
+        {
+            playerV2.SetMovementEnabled(enabled);
+            return;
+        }
+
+        var legacyPlayer = FindObjectOfType<KCCPlayerController>();
+        if (legacyPlayer != null)
+            legacyPlayer.SetMovementEnabled(enabled);
+    }
+
     public void EnterLoadingInState()
     {
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.SetMovementEnabled(false);
+        SetPlayerMovementEnabled(false);
     }
     
     public void EnterPreGameState()
@@ -146,9 +167,7 @@ public class GameManager : MonoBehaviour
         if (_sceneEventManager != null) 
             _sceneEventManager.OnPreGame?.Invoke();
         
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.SetMovementEnabled(true);
+        SetPlayerMovementEnabled(true);
 
         Debug.Log("Entered PreGame");
     }
@@ -156,11 +175,20 @@ public class GameManager : MonoBehaviour
     public void EnterEndGameState()
     {
         Debug.Log("Game Over! EndGame state triggered.");
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null && !_hasDoubledSpeed)
+        var playerV2 = FindAnyObjectByType<PlayerControllerV2>();
+        if (playerV2 != null)
         {
-            player.MaxStableMoveSpeed *= 2f;
-            _hasDoubledSpeed = true;
+            playerV2.SetModifier(new PlayerModifierId("ReturnRun"), PlayerStat.StableMoveSpeed,
+                PlayerModifierOperation.Multiplicative, 2f);
+        }
+        else
+        {
+            var player = FindObjectOfType<KCCPlayerController>();
+            if (player != null && !_hasDoubledSpeed)
+            {
+                player.MaxStableMoveSpeed *= 2f;
+                _hasDoubledSpeed = true;
+            }
         }
 
         // Resume timer if it exists and isn't already active
@@ -194,9 +222,7 @@ public class GameManager : MonoBehaviour
         UpdateCursorVisible(true);
         _hasDoubledSpeed = false;
         
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.SetMovementEnabled(false);
+        SetPlayerMovementEnabled(false);
             
         if (_timerManager != null)
             _timerManager.StopTimer();
@@ -227,9 +253,7 @@ public class GameManager : MonoBehaviour
     {
         UpdateCursorVisible(true);
         
-        var player = FindObjectOfType<KCCPlayerController>();
-        if (player != null)
-            player.SetMovementEnabled(false);
+        SetPlayerMovementEnabled(false);
         
         if (_timerManager != null)
             _timerManager.StopTimer();
@@ -257,10 +281,7 @@ public class GameManager : MonoBehaviour
         
         if (currentState == GameState.Pause && previousState != GameState.Pause && previousState != GameState.LoadingIn)
         {
-            var player = FindObjectOfType<KCCPlayerController>();
-            
-            if (player != null)
-                player.SetMovementEnabled(true);
+            SetPlayerMovementEnabled(true);
             
             UpdateCursorVisible(false);
             
@@ -379,3 +400,4 @@ public class GameManager : MonoBehaviour
             AudioManager.Instance.SetMusicVolume(_gameSettingsData.Volume);
     }
 }
+

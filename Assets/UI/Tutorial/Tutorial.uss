@@ -1,0 +1,40 @@
+﻿.tutorial-root { position: absolute; left: 0; right: 0; top: 0; bottom: 0; color: #202542; -unity-font-definition: url("project://database/Assets/Fonts/Atma/Atma-Medium.ttf"); }
+.hidden { display: none; }
+.hud { position: absolute; left: 24px; right: 24px; top: 20px; flex-direction: row; justify-content: space-between; align-items: flex-start; }
+.receipt { background-color: #fff9e6; border-width: 4px; border-bottom-width: 9px; border-color: #202542; border-radius: 20px; padding: 16px 22px; }
+.order { width: 330px; }
+.eyebrow { font-size: 13px; -unity-font-style: bold; letter-spacing: 1px; background-color: #65e7c2; border-radius: 7px; align-self: flex-start; padding: 3px 10px; margin-bottom: 8px; }
+.title { font-size: 32px; -unity-font-definition: url("project://database/Assets/Fonts/Atma/Atma-Bold.ttf"); white-space: normal; }
+.body { font-size: 16px; white-space: normal; margin-top: 8px; }
+.rule { height: 3px; background-color: #e5dac0; margin-top: 12px; margin-bottom: 5px; border-radius: 2px; }
+.clock { width: 176px; background-color: #ffd349; }
+.clock .eyebrow { background-color: rgba(0,0,0,0); padding: 0; }
+.time { font-size: 36px; -unity-font-definition: url("project://database/Assets/Fonts/Atma/Atma-Bold.ttf"); }
+.footer { position: absolute; bottom: 16px; align-self: center; background-color: #202542; color: #fff9e6; border-radius: 12px; padding: 8px 18px; font-size: 14px; }
+.modal-shade { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(22,23,48,.66); justify-content: center; align-items: center; }
+.modal { width: 650px; max-width: 92%; padding: 22px 28px; }
+.modal-title { font-size: 44px; -unity-font-definition: url("project://database/Assets/Fonts/Atma/Atma-Bold.ttf"); white-space: normal; }
+.brief-row { flex-direction: row; margin-top: 10px; align-items: center; }
+.item-image { width: 190px; height: 154px; margin-right: 20px; flex-shrink: 0; background-color: #ffda62; border-width: 3px; border-color: #202542; border-radius: 16px; }
+.brief-copy { flex-grow: 1; flex-shrink: 1; }
+.step { font-size: 15px; margin-top: 7px; white-space: normal; }
+#tutorialRoot .unity-button { background-color: #ff8b40; color: #202542; border-width: 3px; border-bottom-width: 6px; border-color: #202542; border-radius: 12px; padding: 10px 14px; font-size: 20px; -unity-font-definition: url("project://database/Assets/Fonts/Atma/Atma-Bold.ttf"); margin: 14px 0 0 0; -unity-text-align: middle-center; }
+#tutorialRoot .unity-button:hover, #tutorialRoot .unity-button:focus { background-color: #ffd84f; border-color: #5e3693; }
+#tutorialRoot .unity-button:active { background-color: #ffab4a; }
+#tutorialRoot .unity-button.secondary { background-color: #e1dcff; font-size: 17px; margin-top: 10px; }
+#tutorialRoot .unity-button.secondary:hover, #tutorialRoot .unity-button.secondary:focus { background-color: #c9b9ff; }
+.buttons { flex-direction: row; }
+.buttons .unity-button { flex-grow: 1; margin-right: 6px; }
+#resultShade .eyebrow { background-color: #ff99c4; }
+#resultShade .time { background-color: #65e7c2; border-radius: 12px; padding: 8px 14px; margin-top: 8px; }
+.marker { position: absolute; width: 200px; align-items: center; }
+.marker-arrow { font-size: 30px; -unity-font-definition: url("project://database/Assets/Fonts/RobotoMono/RobotoMono-Bold.ttf"); background-color: #ffd349; border-width: 3px; border-color: #202542; border-radius: 25px; width: 48px; height: 48px; -unity-text-align: middle-center; }
+.marker-label { background-color: #202542; color: #fff9e6; padding: 5px 10px; margin-top: 3px; border-radius: 8px; font-size: 14px; -unity-text-align: middle-center; white-space: normal; }
+.marker-distance { background-color: #65e7c2; border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; padding: 1px 9px; font-size: 13px; }
+.settings { margin-top: 10px; }
+.settings .unity-base-field { margin-top: 14px; font-size: 17px; color: #202542; }
+.settings .unity-base-field__label { min-width: 185px; color: #202542; }
+.settings .unity-base-slider__tracker { background-color: #cac1e6; height: 8px; border-radius: 4px; }
+.settings .unity-base-slider__dragger { background-color: #7048af; border-width: 2px; border-color: #202542; border-radius: 7px; width: 20px; height: 24px; }
+.settings .unity-toggle__input { background-color: #e1dcff; border-color: #202542; border-width: 2px; border-radius: 5px; }
+.settings .unity-toggle__checkmark { -unity-background-image-tint-color: #202542; }

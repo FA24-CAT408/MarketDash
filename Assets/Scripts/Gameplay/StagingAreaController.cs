@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +10,9 @@ public class StagingAreaController : MonoBehaviour
     // public GameObject[] stagingAreas; // Not used in this context
     public SplineContainer[] splineContainers; // Assign Spline(1), Spline(2), ... in Inspector
 
+    [SerializeField] private bool showLegacyGlow = true;
+    [SerializeField, Min(0)] private float presentationDelay;
+    public bool PresentationComplete { get; private set; }
     private GameObject glow;
     private UIManager uIManager;
     private GroceryListManager groceryListManager;
@@ -23,12 +26,14 @@ public class StagingAreaController : MonoBehaviour
 
     void Update()
     {
-        if(GameManager.Instance.CurrentState == GameManager.GameState.EndGame) 
+        if(showLegacyGlow && GameManager.Instance.CurrentState == GameManager.GameState.EndGame) 
             glow.gameObject.SetActive(true);
     }
     
     public IEnumerator SpawnItemsCoroutine()
     {
+        PresentationComplete = false;
+        if (presentationDelay > 0) yield return new WaitForSeconds(presentationDelay);
         var items = groceryListManager.GroceryList;
         int count = items.Count;
 
@@ -48,8 +53,12 @@ public class StagingAreaController : MonoBehaviour
             yield return new WaitForSeconds(0.6f);
         }
 
-        uIManager.ShowInGameUI(false);
-        uIManager.ShowLevelBeatUI(true);
-        uIManager.UpdateLevelBeatUI();
+        PresentationComplete = true;
+        if (uIManager != null)
+        {
+            uIManager.ShowInGameUI(false);
+            uIManager.ShowLevelBeatUI(true);
+            uIManager.UpdateLevelBeatUI();
+        }
     }
 }
