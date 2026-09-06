@@ -485,21 +485,17 @@ namespace CrazyMarket.Player.V2.Unity
             main = recallPuff.main;
             main.playOnAwake = false;
             main.simulationSpace = ParticleSystemSimulationSpace.Local;
-            main.maxParticles = 32;
+            main.maxParticles = 16;
             main.startSpeed = 0f;
             emission = recallPuff.emission; emission.enabled = false;
             shape = recallPuff.shape; shape.enabled = false;
             var size = recallPuff.sizeOverLifetime;
             size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f,.25f),new Keyframe(.3f,1f),new Keyframe(1f,1.5f)));
-            var color = recallPuff.colorOverLifetime;
-            color.enabled = true;
-            var fade = new Gradient();
-            fade.SetKeys(new[]{new GradientColorKey(Color.white,0f),new GradientColorKey(Color.white,1f)},
-                new[]{new GradientAlphaKey(0f,0f),new GradientAlphaKey(1f,.12f),new GradientAlphaKey(0f,1f)});
-            color.color = fade;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+                new Keyframe(0f,.35f),new Keyframe(.18f,1f),new Keyframe(.5f,.95f),new Keyframe(1f,0f)));
             renderer = recallPuff.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = recallPuffMaterial != null ? recallPuffMaterial : liquidMaterial;
+            renderer.sortMode = ParticleSystemSortMode.Distance;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
@@ -567,12 +563,16 @@ namespace CrazyMarket.Player.V2.Unity
             {
                 recallPuffed = true;
                 recallPuff.Play();
-                for(int i=0;i<18;i++)
+                for(int i=0;i<14;i++)
                 {
-                    Vector3 direction=Random.onUnitSphere;
-                    recallPuff.Emit(new ParticleSystem.EmitParams { position=direction*.35f, velocity=direction*1.1f+Vector3.up*.3f,
-                        startSize=Random.Range(1f,1.5f), startLifetime=Random.Range(.35f,.55f),
-                        startColor=new Color(1f,.8f,.08f,.65f), rotation=Random.Range(0f,360f) },1);
+                    // An even burst keeps the outlined cloudlets readable around the torso.
+                    float angle=i*2.399963f;
+                    float height=1f-2f*(i+.5f)/14f;
+                    float radius=Mathf.Sqrt(1f-height*height);
+                    Vector3 direction=new Vector3(Mathf.Cos(angle)*radius,height*.65f,Mathf.Sin(angle)*radius);
+                    recallPuff.Emit(new ParticleSystem.EmitParams { position=direction*.6f, velocity=direction*2.1f+Vector3.up*.45f,
+                        startSize=Random.Range(1.15f,1.6f), startLifetime=Random.Range(.45f,.6f),
+                        startColor=Color.white, rotation=Random.Range(-25f,25f) },1);
                 }
             }
             if (recallAge >= recallDuration+.6f) { recallActive=false; returningCount=0; }

@@ -147,23 +147,15 @@ namespace CrazyMarket.Butter.Editor
 
         private static Material RecallPuffMaterial()
         {
-            var material = Material("Butter Recall Puff", "Universal Render Pipeline/Particles/Unlit");
-            var dust = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Feel/MMTools/Accessories/MMVFX/MMParticles/MMParticlesDust.png");
-            if (dust == null) throw new InvalidOperationException("The existing dust mask is required for the recall puff.");
-            material.SetTexture("_BaseMap",dust);
-            material.SetColor("_BaseColor",new Color(6f,6f,6f,1f));
-            material.SetFloat("_Surface",1f);
-            material.SetFloat("_Blend",2f);
-            material.SetFloat("_BlendOp",0f);
-            material.SetFloat("_SrcBlend",(float)BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend",(float)BlendMode.One);
-            material.SetFloat("_SrcBlendAlpha",(float)BlendMode.One);
-            material.SetFloat("_DstBlendAlpha",(float)BlendMode.One);
-            material.SetFloat("_ZWrite",0f);
-            material.SetFloat("_Cull",0f);
-            material.SetFloat("_ColorMode",0f);
-            material.SetFloat("_FlipbookBlending",0f);
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            const string shaderName = "CrazyMarket/Butter Recall Puff";
+            var material = Material("Butter Recall Puff", shaderName);
+            material.shader = Shader.Find(shaderName);
+            material.shaderKeywords = Array.Empty<string>();
+            material.SetColor("_BaseColor",new Color(.98f,.906f,.47f,1f));
+            material.SetColor("_ShadowColor",new Color(.784f,.604f,.208f,1f));
+            material.SetColor("_HighlightColor",new Color(1f,.957f,.69f,1f));
+            material.SetColor("_OutlineColor",new Color(.125f,.106f,.071f,1f));
+            material.SetFloat("_OutlineWidth",.055f);
             material.SetOverrideTag("RenderType","Transparent");
             material.renderQueue = (int)RenderQueue.Transparent;
             material.SetShaderPassEnabled("ShadowCaster",false);
