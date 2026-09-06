@@ -3,6 +3,7 @@
   "rootNamespace": "CrazyMarket.TestCampus.Tests",
   "references": [
     "CrazyMarket.TestCampus.Runtime",
+    "CrazyMarket.Camera.Shared",
     "Unity.Cinemachine"
   ],
   "optionalUnityReferences": [

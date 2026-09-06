@@ -3,6 +3,8 @@
   "rootNamespace": "CrazyMarket.TestCampus",
   "references": [
     "CrazyMarket.Player.Contracts",
+    "CrazyMarket.Player.Presentation",
+    "CrazyMarket.Camera.Shared",
     "Unity.Cinemachine",
     "Unity.InputSystem"
   ]

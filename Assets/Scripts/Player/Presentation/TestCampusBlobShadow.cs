@@ -6,6 +6,7 @@ namespace CrazyMarket.TestCampus
     [DisallowMultipleComponent]
     public sealed class TestCampusBlobShadow : MonoBehaviour
     {
+        [SerializeField] private Shader shadowShader;
         [SerializeField] private float maxDistance = 18f;
         [SerializeField] private float groundOffset = 0.025f;
         [SerializeField] private float groundedRadius = 0.95f;
@@ -26,7 +27,7 @@ namespace CrazyMarket.TestCampus
             MeshRenderer renderer = shadowObject.AddComponent<MeshRenderer>();
             _mesh = CreateDisc();
             filter.sharedMesh = _mesh;
-            Shader shader = Shader.Find("Sprites/Default");
+            Shader shader = shadowShader != null ? shadowShader : Shader.Find("Sprites/Default");
             _material = new Material(shader) { name = "Test Campus Blob Shadow (Runtime)" };
             _material.color = new Color(0.02f, 0.025f, 0.035f, groundedAlpha);
             renderer.sharedMaterial = _material;
@@ -68,6 +69,11 @@ namespace CrazyMarket.TestCampus
             if (_shadow != null) Destroy(_shadow.gameObject);
             if (_material != null) Destroy(_material);
             if (_mesh != null) Destroy(_mesh);
+        }
+
+        private void OnDisable()
+        {
+            if (_shadow != null) _shadow.gameObject.SetActive(false);
         }
 
         private static Mesh CreateDisc()

@@ -1,0 +1,5 @@
+{
+  "name": "CrazyMarket.Camera.Shared",
+  "rootNamespace": "CrazyMarket.TestCampus",
+  "references": ["Unity.Cinemachine", "Unity.InputSystem"]
+}
