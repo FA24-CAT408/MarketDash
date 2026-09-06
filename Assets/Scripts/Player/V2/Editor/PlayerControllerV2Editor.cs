@@ -147,7 +147,16 @@ namespace CrazyMarket.Player.V2.Editor
             {
                 EditorGUI.indentLevel++;
                 changed |= FloatField(ref workingTuning.StableMoveSpeed, "Stable Move Speed");
-                changed |= FloatField(ref workingTuning.StableMovementSharpness, "Stable Movement Sharpness");
+                bool separate = EditorGUILayout.Toggle("Separate Ground Response", workingTuning.SeparateGroundResponse);
+                changed |= separate != workingTuning.SeparateGroundResponse;
+                workingTuning.SeparateGroundResponse = separate;
+                if (separate)
+                {
+                    changed |= FloatField(ref workingTuning.GroundAcceleration, "Ground Acceleration (m/s²)");
+                    changed |= FloatField(ref workingTuning.GroundDecelerationSharpness, "Coast Deceleration Sharpness");
+                    changed |= FloatField(ref workingTuning.GroundTurnSharpness, "Ground Turn Sharpness");
+                }
+                else changed |= FloatField(ref workingTuning.StableMovementSharpness, "Stable Movement Sharpness");
                 EditorGUI.indentLevel--;
             }
 
@@ -259,6 +268,10 @@ namespace CrazyMarket.Player.V2.Editor
             SetFloat(locomotion, "AirMoveSpeed", workingTuning.AirMoveSpeed);
             SetFloat(locomotion, "AirAcceleration", workingTuning.AirAcceleration);
             SetFloat(locomotion, "StableMovementSharpness", workingTuning.StableMovementSharpness);
+            locomotion.FindPropertyRelative("SeparateGroundResponse").boolValue = workingTuning.SeparateGroundResponse;
+            SetFloat(locomotion, "GroundAcceleration", workingTuning.GroundAcceleration);
+            SetFloat(locomotion, "GroundDecelerationSharpness", workingTuning.GroundDecelerationSharpness);
+            SetFloat(locomotion, "GroundTurnSharpness", workingTuning.GroundTurnSharpness);
             SetFloat(locomotion, "OrientationSharpness", workingTuning.OrientationSharpness);
             SetFloat(locomotion, "JumpSpeed", workingTuning.JumpSpeed);
             SetFloat(locomotion, "JumpBufferTime", workingTuning.JumpBufferTime);
@@ -291,6 +304,8 @@ namespace CrazyMarket.Player.V2.Editor
         {
             return Finite(tuning.StableMoveSpeed) && Finite(tuning.AirMoveSpeed) &&
                 Finite(tuning.AirAcceleration) && Finite(tuning.StableMovementSharpness) &&
+                Finite(tuning.GroundAcceleration) && Finite(tuning.GroundDecelerationSharpness) &&
+                Finite(tuning.GroundTurnSharpness) &&
                 Finite(tuning.OrientationSharpness) && Finite(tuning.JumpSpeed) &&
                 Finite(tuning.JumpBufferTime) && Finite(tuning.CoyoteTime) &&
                 Finite(tuning.Gravity) && Finite(tuning.FallGravityMultiplier) &&

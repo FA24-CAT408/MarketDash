@@ -20,6 +20,8 @@ namespace CrazyMarket.Player.V2.Unity
         [SerializeField] private List<Collider> ignoredColliders = new List<Collider>();
 
         private KinematicCharacterMotor motor;
+        private ButterSurfaceMovement butterMovement;
+        private ButterBody butterBody;
         private PlayerLocomotionMachine locomotion;
         private Vector2 rawMove;
         private bool jumpHeld;
@@ -48,6 +50,8 @@ namespace CrazyMarket.Player.V2.Unity
 
         private void Awake()
         {
+            butterMovement = GetComponent<ButterSurfaceMovement>();
+            butterBody = GetComponent<ButterBody>();
             if (motor == null)
                 motor = GetComponent<KinematicCharacterMotor>();
 
@@ -88,6 +92,7 @@ namespace CrazyMarket.Player.V2.Unity
 
         private void OnDisable()
         {
+            if (butterMovement != null) butterMovement.ClearCoating();
             UnsubscribeFromInput();
             rawMove = Vector2.zero;
             movementDirection = Vector3.zero;
@@ -217,6 +222,10 @@ namespace CrazyMarket.Player.V2.Unity
             output = locomotion.Step(intent, observation, safeDeltaTime);
             orientationSharpness = output.OrientationSharpness;
             stepProducedOutput = true;
+            if (butterMovement != null)
+                butterMovement.BeginMotorStep(output.HasTeleport, output.Mode == LocomotionMode.Disabled, safeDeltaTime);
+            if (butterBody != null && butterBody.isActiveAndEnabled)
+                butterBody.BeginMotorStep(output.HasTeleport, output.Mode == LocomotionMode.Disabled, safeDeltaTime);
 
             if (output.HasTeleport)
             {
@@ -231,8 +240,12 @@ namespace CrazyMarket.Player.V2.Unity
                 currentVelocity = motor.GetDirectionTangentToSurface(currentVelocity, observation.GroundNormal) * magnitude;
                 Vector3 target = motor.GetDirectionTangentToSurface(output.TargetPlanarVelocity,
                     observation.GroundNormal) * output.TargetPlanarVelocity.magnitude;
-                currentVelocity = Vector3.Lerp(currentVelocity, target,
-                    SafeSmoothingFactor(output.StableMovementSharpness, safeDeltaTime));
+                if (butterBody != null && butterBody.isActiveAndEnabled)
+                    target *= butterBody.MoveSpeedMultiplier;
+                currentVelocity = output.SeparateGroundResponse
+                    ? ApplySeparateGroundResponse(currentVelocity, target, observation.GroundNormal, safeDeltaTime)
+                    : Vector3.Lerp(currentVelocity, target,
+                        SafeSmoothingFactor(output.StableMovementSharpness, safeDeltaTime));
             }
             else if (output.Mode == LocomotionMode.Disabled)
             {
@@ -259,7 +272,42 @@ namespace CrazyMarket.Player.V2.Unity
                 currentVelocity += jumpDirection.normalized * output.JumpVerticalVelocity
                     - Vector3.Project(currentVelocity, motor.CharacterUp);
             }
+            if (butterBody != null && butterBody.isActiveAndEnabled)
+                butterBody.ApplyDash(ref currentVelocity, movementDirection, motor.CharacterUp, stable,
+                    output.Mode == LocomotionMode.Disabled, output.HasJumpInfluence, safeDeltaTime);
             currentVelocity = SanitizeVelocity(currentVelocity);
+        }
+
+        private Vector3 ApplySeparateGroundResponse(Vector3 velocity, Vector3 target, Vector3 groundNormal,
+            float deltaTime)
+        {
+            float deceleration = output.GroundDecelerationSharpness;
+            float turnSharpness = output.GroundTurnSharpness;
+            if (butterMovement != null && butterMovement.isActiveAndEnabled)
+                butterMovement.ResolveGroundResponse(motor.GroundingStatus.GroundCollider,
+                    motor.GroundingStatus.GroundPoint, movementDirection.magnitude, deltaTime,
+                    ref target, ref deceleration, ref turnSharpness);
+            float speed = velocity.magnitude;
+            float targetSpeed = target.magnitude;
+            Vector3 direction = speed > 0.0001f ? velocity / speed : target.normalized;
+            if (speed > 0.0001f && targetSpeed > 0.0001f)
+            {
+                // Rotate within the contact plane, including a full reversal, without
+                // losing speed or introducing the vertical arc of a vector slerp.
+                float angle = Vector3.SignedAngle(direction, target / targetSpeed, groundNormal);
+                direction = Quaternion.AngleAxis(angle * SafeSmoothingFactor(turnSharpness, deltaTime),
+                    groundNormal) * direction;
+            }
+
+            // A higher cap extends the buildup instead of increasing the initial thrust.
+            // Coasting keeps its own exponential falloff, independent of steering.
+            if (targetSpeed > speed)
+                speed = butterMovement != null && butterMovement.isActiveAndEnabled
+                    ? butterMovement.Accelerate(speed, targetSpeed, movementDirection.magnitude, output.GroundAcceleration, deltaTime)
+                    : Mathf.MoveTowards(speed, targetSpeed, Mathf.Max(0f, output.GroundAcceleration) * deltaTime);
+            else
+                speed = Mathf.Lerp(speed, targetSpeed, SafeSmoothingFactor(deceleration, deltaTime));
+            return direction * speed;
         }
 
         private void ApplyAirAcceleration(ref Vector3 currentVelocity, float deltaTime)
@@ -292,6 +340,8 @@ namespace CrazyMarket.Player.V2.Unity
                 }
             }
             currentVelocity += added;
+            if (output.SeparateGroundResponse && butterMovement != null && butterMovement.isActiveAndEnabled)
+                butterMovement.LimitAirAcceleration(ref currentVelocity, up, planar.magnitude);
         }
 
         public void PostGroundingUpdate(float deltaTime) { }
@@ -315,7 +365,10 @@ namespace CrazyMarket.Player.V2.Unity
             ref HitStabilityReport hitStabilityReport) { }
 
         public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
-            ref HitStabilityReport hitStabilityReport) { }
+            ref HitStabilityReport hitStabilityReport)
+        {
+            if (butterBody != null && butterBody.isActiveAndEnabled) butterBody.OnMovementHit(hitNormal);
+        }
 
         public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
             Vector3 atCharacterPosition, Quaternion atCharacterRotation,

@@ -10,6 +10,14 @@ namespace CrazyMarket.Player.V2
         public float AirMoveSpeed;
         public float AirAcceleration;
         public float StableMovementSharpness;
+        [Tooltip("Tune speed gain, coasting, and steering independently. Disabled profiles keep their existing movement response.")]
+        public bool SeparateGroundResponse;
+        [Min(0f), Tooltip("Speed gained per second, independent of Stable Move Speed (m/s²).")]
+        public float GroundAcceleration;
+        [Min(0f), Tooltip("How quickly excess speed fades when releasing or reducing movement input. Lower values give a longer coast (1/s).")]
+        public float GroundDecelerationSharpness;
+        [Min(0f), Tooltip("How quickly travel direction follows movement input. Does not change speed or character-facing response (1/s).")]
+        public float GroundTurnSharpness;
         public float OrientationSharpness;
         public float JumpSpeed;
         public float JumpBufferTime;
@@ -24,6 +32,9 @@ namespace CrazyMarket.Player.V2
             AirMoveSpeed = 8f,
             AirAcceleration = 60f,
             StableMovementSharpness = 15f,
+            GroundAcceleration = 12f,
+            GroundDecelerationSharpness = 1f,
+            GroundTurnSharpness = 6f,
             OrientationSharpness = 10f,
             JumpSpeed = 12f,
             JumpBufferTime = 0.15f,
@@ -37,6 +48,7 @@ namespace CrazyMarket.Player.V2
         {
             return Finite(StableMoveSpeed) && Finite(AirMoveSpeed) && Finite(AirAcceleration) &&
                    Finite(StableMovementSharpness) && Finite(OrientationSharpness) && Finite(JumpSpeed) &&
+                   Finite(GroundAcceleration) && Finite(GroundDecelerationSharpness) && Finite(GroundTurnSharpness) &&
                    Finite(JumpBufferTime) && Finite(CoyoteTime) && Finite(Gravity) &&
                    Finite(FallGravityMultiplier) && Finite(Drag);
         }

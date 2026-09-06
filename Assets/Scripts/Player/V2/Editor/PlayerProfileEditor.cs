@@ -33,7 +33,14 @@ namespace CrazyMarket.Player.V2.Editor
             {
                 EditorGUI.indentLevel++;
                 Draw(tuning, "StableMoveSpeed", "Stable Move Speed");
-                Draw(tuning, "StableMovementSharpness", "Stable Movement Sharpness");
+                Draw(tuning, "SeparateGroundResponse", "Separate Ground Response");
+                if (tuning.FindPropertyRelative("SeparateGroundResponse").boolValue)
+                {
+                    Draw(tuning, "GroundAcceleration", "Ground Acceleration (m/s²)");
+                    Draw(tuning, "GroundDecelerationSharpness", "Coast Deceleration Sharpness");
+                    Draw(tuning, "GroundTurnSharpness", "Ground Turn Sharpness");
+                }
+                else Draw(tuning, "StableMovementSharpness", "Stable Movement Sharpness");
                 EditorGUI.indentLevel--;
             }
 

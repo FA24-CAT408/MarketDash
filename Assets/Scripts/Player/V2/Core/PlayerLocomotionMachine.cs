@@ -144,7 +144,9 @@ namespace CrazyMarket.Player.V2
                 stable && !jumped && teleport == null, jumped, MotorSafe(jumpVelocity), flags, teleport != null,
                 teleport == null ? Vector3.zero : teleport.Position,
                 teleport == null ? Quaternion.identity : teleport.Rotation,
-                teleport != null && teleport.ResetVelocity);
+                teleport != null && teleport.ResetVelocity, baseTuning.SeparateGroundResponse,
+                MotorSafe(baseTuning.GroundAcceleration), MotorSafe(baseTuning.GroundDecelerationSharpness),
+                MotorSafe(baseTuning.GroundTurnSharpness));
 
             Vector3 velocity = Sanitize(observation.Velocity);
             if (jumped) velocity.y = jumpVelocity;
@@ -159,7 +161,8 @@ namespace CrazyMarket.Player.V2
                 output.StableMovementSharpness, output.OrientationSharpness, output.Drag, output.Gravity,
                 output.ApplyGrounding, output.HasJumpInfluence, output.JumpVerticalVelocity,
                 output.ActionFlags | requestFlags, output.HasTeleport, output.TeleportPosition,
-                output.TeleportRotation, output.ResetVelocity);
+                output.TeleportRotation, output.ResetVelocity, output.SeparateGroundResponse,
+                output.GroundAcceleration, output.GroundDecelerationSharpness, output.GroundTurnSharpness);
         }
         public PlayerOperationResult SetControlBlocked(string source, bool blocked)
         {

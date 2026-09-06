@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bce6f983ce13ce0419f847f43e8166ff, type: 3}
+  m_Name: PlayerProfileV2_Butter
+  m_EditorClassIdentifier: Assembly-CSharp::CrazyMarket.Player.V2.PlayerProfile
+  profileId: Market Butter
+  data:
+    locomotion:
+      StableMoveSpeed: 16
+      AirMoveSpeed: 8
+      AirAcceleration: 60
+      StableMovementSharpness: 1
+      SeparateGroundResponse: 1
+      GroundAcceleration: 5
+      GroundDecelerationSharpness: 0.1
+      GroundTurnSharpness: 6
+      OrientationSharpness: 8
+      JumpSpeed: 12
+      JumpBufferTime: 0.15
+      CoyoteTime: 0.2
+      Gravity: -30
+      FallGravityMultiplier: 2
+      Drag: 0.1

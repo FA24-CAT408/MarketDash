@@ -129,6 +129,10 @@ namespace CrazyMarket.Player.V2
         public Vector3 TargetPlanarVelocity { get; }
         public float AirAcceleration { get; }
         public float StableMovementSharpness { get; }
+        public bool SeparateGroundResponse { get; }
+        public float GroundAcceleration { get; }
+        public float GroundDecelerationSharpness { get; }
+        public float GroundTurnSharpness { get; }
         public float OrientationSharpness { get; }
         public float Drag { get; }
         public Vector3 Gravity { get; }
@@ -145,12 +149,17 @@ namespace CrazyMarket.Player.V2
             float stableMovementSharpness, float orientationSharpness, float drag, Vector3 gravity,
             bool applyGrounding, bool hasJumpInfluence, float jumpVerticalVelocity,
             PlayerActionFlags actionFlags, bool hasTeleport, Vector3 teleportPosition,
-            Quaternion teleportRotation, bool resetVelocity)
+            Quaternion teleportRotation, bool resetVelocity, bool separateGroundResponse,
+            float groundAcceleration, float groundDecelerationSharpness, float groundTurnSharpness)
         {
             Mode = mode;
             TargetPlanarVelocity = targetPlanarVelocity;
             AirAcceleration = airAcceleration;
             StableMovementSharpness = stableMovementSharpness;
+            SeparateGroundResponse = separateGroundResponse;
+            GroundAcceleration = groundAcceleration;
+            GroundDecelerationSharpness = groundDecelerationSharpness;
+            GroundTurnSharpness = groundTurnSharpness;
             OrientationSharpness = orientationSharpness;
             Drag = drag;
             Gravity = gravity;
@@ -166,7 +175,7 @@ namespace CrazyMarket.Player.V2
 
         public static LocomotionOutput Empty => new LocomotionOutput(
             LocomotionMode.Disabled, Vector3.zero, 0f, 0f, 0f, 0f, Vector3.zero, false, false, 0f,
-            PlayerActionFlags.None, false, Vector3.zero, Quaternion.identity, false);
+            PlayerActionFlags.None, false, Vector3.zero, Quaternion.identity, false, false, 0f, 0f, 0f);
     }
 
     public readonly struct PlayerPresentationState
